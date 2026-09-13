@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block page_title %}My Syllabus{% endblock %}
+{% block content %}
+{% if not teacher %}
+<div class="alert alert-warning">No teacher profile linked to your account.</div>
+{% elif not subject_data %}
+<div class="alert alert-info">You don't have any MANEB subjects or class assignments set up yet. Ask an administrator to link your syllabus subjects (Teacher admin) and class assignments.</div>
+{% else %}
+{% for block in subject_data %}
+<div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <h6 class="mb-0 fw-bold">{{ block.subject.code }} - {{ block.subject.name }} &middot; {{ block.class_name }}{{ block.stream }}</h6>
+        <span class="badge bg-{% if block.percentage >= 80 %}success{% elif block.percentage >= 40 %}warning text-dark{% else %}danger{% endif %}">{{ block.covered }}/{{ block.total }} topics covered ({{ block.percentage }}%)</span>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead><tr><th>Topic</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+            {% for entry in block.topics %}
+            <tr>
+                <td>{{ entry.topic.code }} {{ entry.topic.title }}</td>
+                <td>{% if entry.is_covered %}<span class="badge bg-success">Covered</span>{% else %}<span class="badge bg-secondary">Pending</span>{% endif %}</td>
+                <td>
+                    <form method="post" action="{% url 'syllabus:toggle_coverage' entry.topic.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="class_name" value="{{ block.class_name }}">
+                        <input type="hidden" name="stream" value="{{ block.stream }}">
+                        <button type="submit" class="btn btn-sm btn-outline-success">Toggle</button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}<tr><td colspan="3">No topics recorded for this subject yet.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+{% endblock %}

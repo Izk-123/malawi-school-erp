@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+{% if student %}
+<div class="row g-3 mb-4">
+    <div class="col-md-4"><div class="card"><div class="card-body"><h5>{{ student.attendance_percentage }}%</h5><p class="text-secondary small mb-0">My Attendance</p></div></div></div>
+    <div class="col-md-4"><div class="card"><div class="card-body"><h5>{{ student.average_grade }}</h5><p class="text-secondary small mb-0">Average Grade</p></div></div></div>
+    <div class="col-md-4"><div class="card"><div class="card-body"><h5>MK {{ student.balance }}</h5><p class="text-secondary small mb-0">Fee Balance</p></div></div></div>
+</div>
+<div class="card">
+    <div class="card-header"><h6 class="fw-bold">My Recent Grades</h6></div>
+    <div class="card-body p-0"><table class="table mb-0">
+        <thead><tr><th>Subject</th><th>Exam</th><th>Score</th><th>Grade</th></tr></thead>
+        <tbody>{% for g in grades %}<tr><td>{{ g.subject }}</td><td>{{ g.exam }}</td><td>{{ g.score }}%</td><td>{{ g.grade }}</td></tr>{% empty %}<tr><td colspan="4">No grades yet</td></tr>{% endfor %}</tbody>
+    </table></div>
+</div>
+{% else %}
+<div class="alert alert-warning">No student profile is linked to your account yet. Ask an administrator to link it.</div>
+{% endif %}
+{% endblock %}

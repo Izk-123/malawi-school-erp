@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block page_title %}Attendance Summary{% endblock %}
+{% block content %}
+<div class="card"><div class="card-header"><h5 class="mb-0 fw-bold">Attendance Summary</h5></div>
+<div class="card-body p-0"><table class="table table-hover mb-0">
+<thead><tr><th>Student</th><th>Class</th><th>Attendance %</th><th></th></tr></thead>
+<tbody>{% for s in students %}<tr><td>{{ s.full_name }}</td><td>{{ s.class_display }}</td><td>{{ s.attendance_percentage }}%</td>
+<td>{% if current_role == 'parent' %}<a class="btn btn-sm btn-outline-primary" href="{% url 'attendance:child_attendance' s.pk %}"><i class="bi bi-eye"></i></a>{% endif %}</td>
+</tr>{% endfor %}</tbody>
+</table></div></div>
+{% endblock %}

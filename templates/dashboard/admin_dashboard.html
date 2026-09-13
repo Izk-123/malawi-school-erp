@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+<div class="row g-3 mb-4">
+    <div class="col-md-6 col-xl-3">
+        <a href="{% url 'students:list' %}" class="text-decoration-none">
+        <div class="card h-100"><div class="card-body d-flex align-items-center gap-3">
+            <div class="rounded-circle bg-success-subtle text-success p-3"><i class="bi bi-people fs-4"></i></div>
+            <div><h3 class="mb-0 text-dark">{{ active_students }}</h3><p class="text-secondary small mb-0">Active Students</p><small class="text-secondary">{{ total_students }} total</small></div>
+        </div></div></a>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <a href="{% url 'teachers:list' %}" class="text-decoration-none">
+        <div class="card h-100"><div class="card-body d-flex align-items-center gap-3">
+            <div class="rounded-circle bg-primary-subtle text-primary p-3"><i class="bi bi-person-video3 fs-4"></i></div>
+            <div><h3 class="mb-0 text-dark">{{ active_teachers }}</h3><p class="text-secondary small mb-0">Active Teachers</p></div>
+        </div></div></a>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <a href="{% url 'attendance:mark' %}" class="text-decoration-none">
+        <div class="card h-100"><div class="card-body d-flex align-items-center gap-3">
+            <div class="rounded-circle bg-warning-subtle text-warning p-3"><i class="bi bi-clipboard-check fs-4"></i></div>
+            <div><h3 class="mb-0 text-dark">{{ avg_attendance }}%</h3><p class="text-secondary small mb-0">Avg Attendance</p>{% if todays_attendance_percentage is not None %}<small class="text-secondary">Today: {{ todays_attendance_percentage }}%</small>{% endif %}</div>
+        </div></div></a>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <a href="{% url 'fees:list' %}" class="text-decoration-none">
+        <div class="card h-100"><div class="card-body d-flex align-items-center gap-3">
+            <div class="rounded-circle bg-info-subtle text-info p-3"><i class="bi bi-cash-coin fs-4"></i></div>
+            <div><h3 class="mb-0 text-dark">MK {{ fees_collected }}</h3><p class="text-secondary small mb-0">Fees Collected</p><small class="text-secondary">of MK {{ fees_expected }}</small></div>
+        </div></div></a>
+    </div>
+</div>
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between"><h6 class="mb-0 fw-bold">Recent Students</h6><a class="btn btn-sm btn-primary" href="{% url 'students:list' %}">View All</a></div>
+            <div class="card-body p-0"><table class="table table-hover mb-0">
+                <thead><tr><th>Name</th><th>Class</th><th>Status</th><th>Grade</th></tr></thead>
+                <tbody>{% for s in recent_students %}<tr><td>{{ s.full_name }}</td><td>{{ s.class_display }}</td><td><span class="badge rounded-pill bg-success-subtle text-success">{{ s.status }}</span></td><td>{{ s.average_grade }}</td></tr>{% endfor %}</tbody>
+            </table></div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0 fw-bold">Today's Timetable (Monday)</h6></div>
+            <div class="card-body p-0"><table class="table table-hover mb-0">
+                <thead><tr><th>Time</th><th>Subject</th><th>Class</th></tr></thead>
+                <tbody>{% for p in today_periods %}<tr><td>{{ p.time_range }}</td><td>{{ p.subject }}</td><td>{{ p.class_display }}</td></tr>{% endfor %}</tbody>
+            </table></div>
+        </div>
+    </div>
+</div>
+{% endblock %}

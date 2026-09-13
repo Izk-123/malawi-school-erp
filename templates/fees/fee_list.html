@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block page_title %}Fees & Payments{% endblock %}
+{% block content %}
+{% if current_role == 'admin' %}
+<div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="card"><div class="card-body"><h5>MK {{ total_paid }}</h5><p class="text-secondary small mb-0">Collected</p></div></div></div>
+    <div class="col-md-3"><div class="card"><div class="card-body"><h5>MK {{ total_expected }}</h5><p class="text-secondary small mb-0">Expected</p></div></div></div>
+    <div class="col-md-3"><div class="card"><div class="card-body"><h5>{{ collection_rate }}%</h5><p class="text-secondary small mb-0">Collection Rate</p></div></div></div>
+    <div class="col-md-3"><div class="card"><div class="card-body"><a class="btn btn-primary btn-sm" href="{% url 'fees:pay' %}"><i class="bi bi-cash me-1"></i>Record Payment</a></div></div></div>
+</div>
+<div class="d-flex gap-2 flex-wrap mb-4">
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'fees:ageing_report' %}"><i class="bi bi-hourglass-split me-1"></i>Ageing Report</a>
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'fees:defaulters_report' %}"><i class="bi bi-exclamation-triangle me-1"></i>Defaulters</a>
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'fees:daily_collection' %}"><i class="bi bi-calendar-check me-1"></i>Daily Collection</a>
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'fees:export_transactions' %}"><i class="bi bi-download me-1"></i>Export CSV</a>
+</div>
+{% endif %}
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0 fw-bold">Fee Status</h5></div>
+    <div class="card-body p-0"><table class="table table-hover mb-0">
+        <thead><tr><th>Student</th><th>Class</th><th>Total</th><th>Paid</th><th>Balance</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>{% for s in students %}<tr>
+            <td>{{ s.full_name }}</td><td>{{ s.class_display }}</td><td>MK {{ s.fees_total }}</td><td>MK {{ s.fees_paid }}</td><td>MK {{ s.balance }}</td>
+            <td><span class="badge rounded-pill {% if s.fee_status == 'paid' %}bg-success-subtle text-success{% elif s.fee_status == 'due' %}bg-danger-subtle text-danger{% else %}bg-warning-subtle text-warning{% endif %}">{{ s.fee_status }}</span></td>
+            <td>
+                {% if current_role == 'admin' %}<a class="btn btn-sm btn-secondary" href="{% url 'fees:pay' %}?student={{ s.pk }}"><i class="bi bi-cash"></i></a>{% endif %}
+                {% if s.balance > 0 and current_role == 'parent' %}<a class="btn btn-sm btn-primary" href="{% url 'payments:initiate' s.pk %}"><i class="bi bi-credit-card me-1"></i>Pay Online</a>{% endif %}
+            </td>
+        </tr>{% endfor %}</tbody>
+    </table></div>
+</div>
+{% if current_role == 'admin' %}
+<div class="card">
+    <div class="card-header"><h5 class="mb-0 fw-bold">Recent Transactions</h5></div>
+    <div class="card-body p-0"><table class="table table-hover mb-0">
+        <thead><tr><th>Receipt</th><th>Student</th><th>Amount</th><th>Date</th><th>Method</th><th></th></tr></thead>
+        <tbody>{% for t in transactions %}<tr><td>{{ t.receipt_no }}</td><td>{{ t.student.full_name }}</td><td>MK {{ t.amount }}</td><td>{{ t.date }}</td><td>{{ t.method }}{% if t.gateway %} ({{ t.gateway|title }}){% endif %}</td><td><a class="btn btn-sm btn-outline-secondary" href="{% url 'fees:receipt' t.pk %}"><i class="bi bi-receipt"></i></a></td></tr>{% endfor %}</tbody>
+    </table></div>
+</div>
+{% endif %}
+{% endblock %}

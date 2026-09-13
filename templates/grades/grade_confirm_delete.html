@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block page_title %}Delete Grade{% endblock %}
+{% block content %}
+<div class="card"><div class="card-body">
+<p>Delete this grade record for <strong>{{ object.student.full_name }}</strong> ({{ object.subject }})?</p>
+<form method="post">{% csrf_token %}<button class="btn btn-danger" type="submit">Delete</button> <a class="btn btn-outline-secondary" href="{% url 'grades:list' %}">Cancel</a></form>
+</div></div>
+{% endblock %}

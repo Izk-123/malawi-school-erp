@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+<div class="row g-3 mb-4">
+    <div class="col-md-4"><div class="card"><div class="card-body"><h5>{{ classes|length }}</h5><p class="text-secondary small mb-0">Classes Assigned</p></div></div></div>
+    <div class="col-md-4"><div class="card"><div class="card-body"><h5>{{ today_periods|length }}</h5><p class="text-secondary small mb-0">Periods Today</p></div></div></div>
+    <div class="col-md-4"><div class="card"><div class="card-body"><a href="{% url 'attendance:mark' %}" class="btn btn-primary btn-sm">Mark Attendance</a></div></div></div>
+</div>
+<div class="card">
+    <div class="card-header"><h6 class="fw-bold">My Classes</h6></div>
+    <div class="card-body p-0"><table class="table table-hover mb-0">
+        <thead><tr><th>Class</th></tr></thead>
+        <tbody>{% for c in classes %}<tr><td>{{ c.0 }}{{ c.1 }}</td></tr>{% endfor %}</tbody>
+    </table></div>
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block page_title %}{{ subject.name }}{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb"><ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'syllabus:subject_list' %}">Syllabus</a></li>
+    <li class="breadcrumb-item active">{{ subject.code }}</li>
+</ol></nav>
+<h4>{{ subject.name }} <span class="badge bg-primary">{{ subject.code }}</span></h4>
+
+<h6 class="mt-4">Papers</h6>
+<div class="list-group mb-4">
+    {% for paper in papers %}
+    <a href="{% url 'syllabus:paper_detail' paper.pk %}" class="list-group-item list-group-item-action d-flex justify-content-between">
+        <span><strong>Paper {{ paper.number }}</strong> - {{ paper.get_paper_type_display }}</span>
+        <span class="text-secondary">{{ paper.duration_minutes }} min &middot; {{ paper.total_marks }} marks</span>
+    </a>
+    {% empty %}<p class="text-secondary">No papers recorded yet.</p>{% endfor %}
+</div>
+
+<h6>Topics</h6>
+{% for topic in topics %}
+<div class="card mb-2">
+    <div class="card-header"><strong>{{ topic.code }} {{ topic.title }}</strong></div>
+    {% if topic.objectives.all %}
+    <ul class="list-group list-group-flush">
+        {% for obj in topic.objectives.all %}<li class="list-group-item small">{{ obj.text }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+    {% for sub in topic.subtopics.all %}
+    <div class="card-body py-2 border-top">
+        <strong class="small">{{ sub.code }} {{ sub.title }}</strong>
+    </div>
+    {% endfor %}
+</div>
+{% empty %}<p class="text-secondary">No topics have been added for this subject yet.</p>{% endfor %}
+
+<h6 class="mt-4">Grade Descriptors</h6>
+<table class="table table-bordered">
+    <thead><tr><th>Band</th><th>Descriptor</th></tr></thead>
+    <tbody>
+    {% for d in descriptors %}
+    <tr><td><span class="badge {% if d.grade_band == 'distinction' %}bg-success{% elif d.grade_band == 'credit' %}bg-primary{% else %}bg-warning text-dark{% endif %}">{{ d.get_grade_band_display }}</span></td><td>{{ d.descriptor|linebreaks }}</td></tr>
+    {% empty %}<tr><td colspan="2">No descriptors recorded yet.</td></tr>{% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block page_title %}My Grades{% endblock %}
+{% block content %}
+<div class="card"><div class="card-header"><h5 class="mb-0 fw-bold">My Grades</h5></div>
+<div class="card-body p-0"><table class="table table-hover mb-0">
+<thead><tr><th>Subject</th><th>Exam</th><th>Score</th><th>Grade</th></tr></thead>
+<tbody>{% for g in grades %}<tr><td>{{ g.subject }}</td><td>{{ g.exam }}</td><td>{{ g.score }}%</td><td>{{ g.grade }}</td></tr>{% empty %}<tr><td colspan="4">No grades recorded</td></tr>{% endfor %}</tbody>
+</table></div></div>
+{% endblock %}

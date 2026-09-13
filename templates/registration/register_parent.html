@@ -1,0 +1,47 @@
+{% extends "registration/base_auth.html" %}
+
+{% block title %}Parent Registration - Malawi School ERP{% endblock %}
+
+{% block form_fields %}
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <label class="form-label fw-semibold">Username</label>
+        <input type="text" name="username" class="form-control" required autofocus>
+    </div>
+    <div class="col-md-6 mb-3">
+        <label class="form-label fw-semibold">Email</label>
+        <input type="email" name="email" class="form-control" required>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <label class="form-label fw-semibold">First name</label>
+        <input type="text" name="first_name" class="form-control" required>
+    </div>
+    <div class="col-md-6 mb-3">
+        <label class="form-label fw-semibold">Last name</label>
+        <input type="text" name="last_name" class="form-control" required>
+    </div>
+</div>
+<div class="mb-3">
+    <label class="form-label fw-semibold">Phone number</label>
+    <input type="text" name="phone_number" class="form-control" required>
+</div>
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <label class="form-label fw-semibold">Password</label>
+        <input type="password" name="password1" class="form-control" required>
+    </div>
+    <div class="col-md-6 mb-3">
+        <label class="form-label fw-semibold">Confirm password</label>
+        <input type="password" name="password2" class="form-control" required>
+    </div>
+</div>
+{% endblock %}
+
+{% block submit_label %}Register as Parent{% endblock %}
+
+{% block extra_links %}
+    Already have an account? <a href="{% url 'accounts:login' %}">Login here</a><br>
+    Are you a student? <a href="{% url 'accounts:register_student' %}">Register as student</a>
+{% endblock %}

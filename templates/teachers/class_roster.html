@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block page_title %}Class Roster{% endblock %}
+{% block content %}
+<div class="card"><div class="card-header"><h5 class="mb-0 fw-bold">{{ class_name }}{{ stream }} - Student Roster</h5></div>
+<div class="card-body p-0"><table class="table table-hover mb-0">
+<thead><tr><th>Name</th><th>Gender</th><th>Guardian</th><th>Guardian Phone</th></tr></thead>
+<tbody>{% for s in students %}<tr><td>{{ s.full_name }}</td><td>{{ s.gender }}</td><td>{{ s.guardian_name }}</td><td>{{ s.guardian_phone }}</td></tr>{% empty %}<tr><td colspan="4">No students in this class</td></tr>{% endfor %}</tbody>
+</table></div></div>
+{% endblock %}

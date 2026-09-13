@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block page_title %}Student Details{% endblock %}
+{% block content %}
+<div class="row g-4">
+<div class="col-lg-5">
+<div class="card"><div class="card-header d-flex justify-content-between">
+    <h5 class="mb-0 fw-bold">{{ student.full_name }}</h5>
+    <div>
+        {% if current_role == 'admin' %}
+        <a class="btn btn-sm btn-outline-secondary" href="{% url 'students:update' student.pk %}"><i class="bi bi-pencil"></i></a>
+        <button class="btn btn-sm btn-outline-secondary" onclick="window.print()"><i class="bi bi-printer"></i></button>
+        {% endif %}
+    </div>
+</div>
+<div class="card-body">
+    {% if student.photo %}<img src="{{ student.photo.url }}" class="rounded mb-3" style="max-width:120px;">{% endif %}
+    <p><strong>ID:</strong> {{ student.student_id }}</p>
+    <p><strong>Gender:</strong> {{ student.gender }}</p>
+    <p><strong>Class:</strong> {{ student.class_display }}</p>
+    <p><strong>DOB:</strong> {{ student.date_of_birth }}</p>
+    <p><strong>Guardian:</strong> {{ student.guardian_name }} ({{ student.guardian_phone }})</p>
+    <p><strong>Attendance:</strong> {{ student.attendance_percentage }}%</p>
+    <p><strong>Average Grade:</strong> {{ student.average_grade }}</p>
+    <p><strong>Fees Paid:</strong> MK {{ student.fees_paid }} ({{ student.fees_percentage }}%)</p>
+    <p><strong>Balance:</strong> MK {{ student.balance }}</p>
+    <p><strong>Status:</strong> <span class="badge {% if student.is_archived %}bg-secondary{% else %}bg-success{% endif %}">{{ student.get_status_display }}</span></p>
+    <p><strong>Enrolled Subjects:</strong>
+    {% for subject in student.enrolled_subjects.all %}<a href="{% url 'syllabus:subject_detail' subject.pk %}" class="badge bg-light text-dark border text-decoration-none">{{ subject.code }}</a>{% empty %}<span class="text-secondary">None recorded</span>{% endfor %}
+    </p>
+    {% if current_role == 'admin' %}
+    <form method="post" action="{% url 'students:archive' student.pk %}" class="d-flex gap-2 mt-2">
+        {% csrf_token %}
+        <select name="status" class="form-select form-select-sm">
+            {% for value, label in student.Status.choices %}<option value="{{ value }}" {% if value == student.status %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+        <button class="btn btn-sm btn-outline-primary" type="submit">Update Status</button>
+    </form>
+    {% endif %}
+</div></div>
+
+<div class="card mt-3"><div class="card-header d-flex justify-content-between">
+    <h6 class="mb-0 fw-bold">Guardian Contacts</h6>
+    {% if current_role == 'admin' %}<a class="btn btn-sm btn-outline-primary" href="{% url 'students:guardian_add' student.pk %}"><i class="bi bi-plus"></i></a>{% endif %}
+</div>
+<div class="card-body p-0"><table class="table table-sm mb-0">
+<thead><tr><th>Name</th><th>Relationship</th><th>Phone</th><th>Primary</th></tr></thead>
+<tbody>{% for g in guardian_contacts %}<tr><td>{{ g.name }}</td><td>{{ g.get_relationship_display }}</td><td>{{ g.phone_number }}</td><td>{% if g.is_primary %}<i class="bi bi-check-circle text-success"></i>{% endif %}</td></tr>{% empty %}<tr><td colspan="4">No additional contacts</td></tr>{% endfor %}</tbody>
+</table></div></div>
+</div>
+
+<div class="col-lg-7">
+<div class="card mb-3"><div class="card-header"><h6 class="mb-0 fw-bold">Recent Attendance</h6></div>
+<div class="card-body p-0"><table class="table table-sm mb-0"><thead><tr><th>Date</th><th>Status</th></tr></thead>
+<tbody>{% for a in recent_attendance %}<tr><td>{{ a.date }}</td><td>{{ a.get_status_display }}</td></tr>{% empty %}<tr><td colspan="2">No attendance recorded</td></tr>{% endfor %}</tbody></table></div></div>
+
+<div class="card mb-3"><div class="card-header"><h6 class="mb-0 fw-bold">Recent Grades</h6></div>
+<div class="card-body p-0"><table class="table table-sm mb-0"><thead><tr><th>Subject</th><th>Exam</th><th>Score</th><th>Grade</th></tr></thead>
+<tbody>{% for g in grades %}<tr><td>{{ g.subject }}</td><td>{{ g.exam }}</td><td>{{ g.score }}%</td><td>{{ g.grade }}</td></tr>{% empty %}<tr><td colspan="4">No grades recorded</td></tr>{% endfor %}</tbody></table></div></div>
+
+<div class="card"><div class="card-header"><h6 class="mb-0 fw-bold">Fee Payment History</h6></div>
+<div class="card-body p-0"><table class="table table-sm mb-0"><thead><tr><th>Receipt</th><th>Amount</th><th>Date</th><th>Method</th></tr></thead>
+<tbody>{% for t in transactions %}<tr><td>{{ t.receipt_no }}</td><td>MK {{ t.amount }}</td><td>{{ t.date }}</td><td>{{ t.method }}</td></tr>{% empty %}<tr><td colspan="4">No payments recorded</td></tr>{% endfor %}</tbody></table></div></div>
+</div>
+</div>
+{% endblock %}

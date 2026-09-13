@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block page_title %}Daily Collection Report{% endblock %}
+{% block content %}
+<form class="row g-2 mb-3" method="get">
+    <div class="col-md-3"><input type="date" class="form-control form-control-sm" name="date" value="{{ date|date:'Y-m-d' }}" onchange="this.form.submit()"></div>
+</form>
+<div class="row g-3 mb-4">
+{% for method, total in totals_by_method.items %}
+<div class="col-md-3"><div class="card"><div class="card-body"><h5>MK {{ total }}</h5><p class="text-secondary small mb-0">{{ method }}</p></div></div></div>
+{% endfor %}
+<div class="col-md-3"><div class="card border-primary"><div class="card-body"><h5>MK {{ grand_total }}</h5><p class="text-secondary small mb-0">Total ({{ date }})</p></div></div></div>
+</div>
+{% for method, txns in by_method.items %}
+<div class="card mb-3">
+    <div class="card-header"><h6 class="mb-0 fw-bold">{{ method }}</h6></div>
+    <div class="card-body p-0"><table class="table table-hover mb-0">
+    <thead><tr><th>Receipt</th><th>Student</th><th>Amount</th><th>Recorded By</th></tr></thead>
+    <tbody>{% for t in txns %}<tr><td><a href="{% url 'fees:receipt' t.pk %}">{{ t.receipt_no }}</a></td><td>{{ t.student.full_name }}</td><td>MK {{ t.amount }}</td><td>{{ t.recorded_by|default:"-" }}</td></tr>{% endfor %}</tbody>
+    </table></div>
+</div>
+{% empty %}<p class="text-secondary">No collections recorded for this date.</p>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+<div class="row g-3 mb-4">
+    <div class="col-md-4"><div class="card"><div class="card-body"><h5>{{ children|length }}</h5><p class="text-secondary small mb-0">Children Enrolled</p></div></div></div>
+    <div class="col-md-4"><div class="card"><div class="card-body"><h5>{{ avg_attendance }}%</h5><p class="text-secondary small mb-0">Average Attendance</p></div></div></div>
+    <div class="col-md-4"><div class="card"><div class="card-body"><h5>MK {{ total_balance }}</h5><p class="text-secondary small mb-0">Total Fee Balance</p></div></div></div>
+</div>
+<div class="card">
+    <div class="card-header"><h6 class="fw-bold">My Children</h6></div>
+    <div class="card-body p-0"><table class="table table-hover mb-0">
+        <thead><tr><th>Name</th><th>Class</th><th>Attendance</th><th>Balance</th></tr></thead>
+        <tbody>{% for c in children %}<tr><td>{{ c.full_name }}</td><td>{{ c.class_display }}</td><td>{{ c.attendance_percentage }}%</td><td>MK {{ c.balance }}</td></tr>{% empty %}<tr><td colspan="4">No children linked to your account yet.</td></tr>{% endfor %}</tbody>
+    </table></div>
+</div>
+{% endblock %}

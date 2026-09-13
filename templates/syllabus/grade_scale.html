@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block page_title %}MANEB Grade Scale{% endblock %}
+{% block content %}
+<div class="card"><div class="card-header"><h5 class="mb-0 fw-bold">MSCE Grade Scale (1-9)</h5></div>
+<div class="card-body p-0"><table class="table table-hover mb-0">
+<thead><tr><th>Grade</th><th>Band</th><th>GCE 'O' Level Equivalent</th><th>Description</th></tr></thead>
+<tbody>{% for g in grades %}<tr>
+<td><strong>{{ g.grade_number }}</strong></td>
+<td><span class="badge {% if g.label == 'Distinction' %}bg-success{% elif g.label == 'Credit' %}bg-primary{% elif g.label == 'Pass' %}bg-warning text-dark{% else %}bg-danger{% endif %}">{{ g.label }}</span></td>
+<td>{% if g.gce_equivalent %}<i class="bi bi-check-circle text-success"></i> Yes{% else %}<i class="bi bi-x-circle text-secondary"></i> No{% endif %}</td>
+<td>{{ g.description }}</td>
+</tr>{% endfor %}</tbody>
+</table></div></div>
+{% endblock %}

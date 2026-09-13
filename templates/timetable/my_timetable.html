@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block page_title %}My Timetable{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header"><h5 class="mb-0 fw-bold">My Timetable{% if student %} - {{ student.class_display }}{% endif %}</h5></div>
+    <div class="card-body p-0"><table class="table table-bordered mb-0">
+        <thead><tr><th>Day</th><th>Periods</th></tr></thead>
+        <tbody>{% for day in days %}<tr><td class="fw-bold">{{ day }}</td><td>{% for p in periods %}{% if p.day == day %}<span class="badge bg-light text-dark border me-1 mb-1">{{ p.time_range }} &middot; {{ p.subject }}</span>{% endif %}{% endfor %}</td></tr>{% endfor %}</tbody>
+    </table></div>
+</div>
+{% endblock %}

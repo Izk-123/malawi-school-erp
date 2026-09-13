@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block page_title %}Mark Attendance{% endblock %}
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card"><div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 fw-bold">Mark Attendance</h6>
+            <a class="btn btn-sm btn-outline-secondary" href="{% url 'attendance:export' %}?class_name={{ class_name }}&stream={{ stream }}"><i class="bi bi-download me-1"></i>Export CSV</a>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3 mb-3">
+                <div class="col-md-4"><label class="form-label">Class</label>
+                    <select class="form-select" name="class_name" onchange="this.form.submit()">
+                        {% for c in classes %}<option value="{{ c.0 }}" {% if c.0 == class_name %}selected{% endif %}>{{ c.0 }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4"><label class="form-label">Stream</label>
+                    <select class="form-select" name="stream" onchange="this.form.submit()">
+                        <option value="A" {% if stream == 'A' %}selected{% endif %}>A</option>
+                        <option value="B" {% if stream == 'B' %}selected{% endif %}>B</option>
+                    </select>
+                </div>
+                <div class="col-md-4"><label class="form-label">Date</label>
+                    <input type="date" class="form-control" name="date" value="{{ date }}" max="{% now 'Y-m-d' %}" onchange="this.form.submit()">
+                </div>
+            </form>
+
+            {% if is_future %}
+                <div class="alert alert-danger">Attendance can't be marked for a future date.</div>
+            {% elif not is_school_day %}
+                <div class="alert alert-warning">This date is a weekend or declared holiday - attendance is not normally taken.</div>
+            {% endif %}
+            <div class="alert alert-info small py-2">Records can be corrected within {{ edit_window_hours }} hours of being marked; admins can override this.</div>
+
+            <form method="post" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="class_name" value="{{ class_name }}">
+                <input type="hidden" name="stream" value="{{ stream }}">
+                <input type="hidden" name="date" value="{{ date }}">
+                <button type="submit" formaction="{% url 'attendance:mark_all_present' %}" class="btn btn-outline-success btn-sm mb-3" {% if is_future %}disabled{% endif %}>
+                    <i class="bi bi-check-all me-1"></i>Mark All Present
+                </button>
+            </form>
+            <form method="post" class="d-inline mb-3">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <button type="submit" formaction="{% url 'attendance:undo' %}" class="btn btn-outline-danger btn-sm">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Undo Last Save
+                </button>
+            </form>
+
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="class_name" value="{{ class_name }}">
+                <input type="hidden" name="stream" value="{{ stream }}">
+                <input type="hidden" name="date" value="{{ date }}">
+                {% for s in students %}
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                    <span>{{ s.full_name }}</span>
+                    <div class="btn-group" role="group">
+                        <label class="btn btn-outline-success btn-sm">
+                            <input type="radio" name="status_{{ s.pk }}" value="present" class="d-none" checked> Present
+                        </label>
+                        <label class="btn btn-outline-danger btn-sm">
+                            <input type="radio" name="status_{{ s.pk }}" value="absent" class="d-none"> Absent
+                        </label>
+                        <label class="btn btn-outline-warning btn-sm">
+                            <input type="radio" name="status_{{ s.pk }}" value="late" class="d-none"> Late
+                        </label>
+                    </div>
+                </div>
+                {% empty %}<p class="text-secondary">No students in this class{% if not classes %} - you have no class assignments yet{% endif %}.</p>
+                {% endfor %}
+                <button type="submit" class="btn btn-primary w-100 mt-3" {% if is_future %}disabled{% endif %}><i class="bi bi-check-circle me-1"></i>Save Attendance</button>
+            </form>
+        </div></div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card"><div class="card-header"><h6 class="mb-0 fw-bold">More</h6></div>
+        <div class="card-body d-grid gap-2">
+            {% if current_role == 'admin' %}
+            <a class="btn btn-outline-primary btn-sm" href="{% url 'attendance:admin_summary' %}"><i class="bi bi-bar-chart-steps me-1"></i>School-wide Summary</a>
+            {% endif %}
+            {% if current_role == 'teacher' %}
+            <a class="btn btn-outline-primary btn-sm" href="{% url 'attendance:history' %}"><i class="bi bi-clock-history me-1"></i>My Attendance History</a>
+            {% endif %}
+        </div></div>
+    </div>
+</div>
+{% endblock %}

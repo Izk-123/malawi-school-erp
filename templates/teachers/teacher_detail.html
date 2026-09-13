@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block page_title %}Teacher Details{% endblock %}
+{% block content %}
+<div class="row g-4">
+<div class="col-lg-5"><div class="card"><div class="card-body">
+{% if teacher.photo %}<img src="{{ teacher.photo.url }}" class="rounded mb-3" style="max-width:120px;">{% endif %}
+<p><strong>ID:</strong> {{ teacher.teacher_id }}</p>
+<p><strong>Name:</strong> {{ teacher.full_name }}</p>
+<p><strong>Primary Subject:</strong> {{ teacher.subject }}</p>
+<p><strong>Also Teaches:</strong> {% for s in teacher.subjects.all %}{{ s.name }}{% if not forloop.last %}, {% endif %}{% empty %}-{% endfor %}</p>
+<p><strong>Qualification:</strong> {{ teacher.qualification }}</p>
+<p><strong>Phone:</strong> {{ teacher.phone_number }}</p>
+<p><strong>Email:</strong> {{ teacher.email }}</p>
+<p><strong>Status:</strong> <span class="badge bg-success">{{ teacher.get_status_display }}</span></p>
+<p><strong>Classes:</strong> {% for a in teacher.assignments.all %}<a href="{% url 'teachers:class_roster' a.class_name a.stream %}">{{ a.class_display }}</a> ({{ a.subject }}){% if not forloop.last %}, {% endif %}{% empty %}Not assigned{% endfor %}</p>
+</div></div></div>
+<div class="col-lg-7"><div class="card"><div class="card-header"><h6 class="mb-0 fw-bold">Teaching Schedule (This Term)</h6></div>
+<div class="card-body p-0"><table class="table table-sm mb-0"><thead><tr><th>Day</th><th>Time</th><th>Subject</th><th>Class</th></tr></thead>
+<tbody>{% for p in schedule %}<tr><td>{{ p.day }}</td><td>{{ p.time_range }}</td><td>{{ p.subject }}</td><td>{{ p.class_display }}</td></tr>{% empty %}<tr><td colspan="4">No periods scheduled</td></tr>{% endfor %}</tbody></table></div></div></div>
+</div>
+{% endblock %}

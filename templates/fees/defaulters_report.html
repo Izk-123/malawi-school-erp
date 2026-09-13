@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block page_title %}Fee Defaulters{% endblock %}
+{% block content %}
+<form class="row g-2 mb-3" method="get">
+    <div class="col-md-3">
+        <select name="class_name" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">All classes</option>
+            {% for c in classes %}<option value="{{ c }}" {% if request.GET.class_name == c %}selected{% endif %}>{{ c }}</option>{% endfor %}
+        </select>
+    </div>
+</form>
+<div class="card"><div class="card-header"><h5 class="mb-0 fw-bold">Defaulters ({{ students|length }})</h5></div>
+<div class="card-body p-0"><table class="table table-hover mb-0">
+<thead><tr><th>Student</th><th>Class</th><th>Guardian Phone</th><th>Balance</th></tr></thead>
+<tbody>{% for s in students %}<tr><td>{{ s.full_name }}</td><td>{{ s.class_display }}</td><td>{{ s.guardian_phone }}</td><td>MK {{ s.balance }}</td></tr>{% empty %}<tr><td colspan="4">No defaulters found</td></tr>{% endfor %}</tbody>
+</table></div></div>
+{% endblock %}

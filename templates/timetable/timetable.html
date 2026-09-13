@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block page_title %}Timetable{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between flex-wrap gap-2">
+        <h5 class="mb-0 fw-bold">Weekly Timetable - {{ class_name }}{{ stream }}</h5>
+        <form class="d-flex gap-2" method="get">
+            <select name="class_name" class="form-select form-select-sm" onchange="this.form.submit()">
+                {% for c in classes %}<option value="{{ c.0 }}" {% if c.0 == class_name %}selected{% endif %}>{{ c.0 }}</option>{% endfor %}
+            </select>
+            <select name="stream" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="A" {% if stream == 'A' %}selected{% endif %}>A</option>
+                <option value="B" {% if stream == 'B' %}selected{% endif %}>B</option>
+            </select>
+        </form>
+    </div>
+    <div class="card-body p-0"><div class="table-responsive"><table class="table table-bordered mb-0">
+        <thead><tr><th>Day</th><th>Periods</th></tr></thead>
+        <tbody>
+        {% for day in days %}
+        <tr>
+            <td class="fw-bold">{{ day }}</td>
+            <td>
+                {% for p in periods %}{% if p.day == day %}
+                <span class="badge bg-light text-dark border me-1 mb-1">{{ p.time_range }} &middot; {{ p.subject }} ({{ p.teacher.full_name|default:"TBA" }})</span>
+                {% endif %}{% endfor %}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table></div></div>
+</div>
+{% endblock %}

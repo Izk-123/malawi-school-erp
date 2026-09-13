@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block page_title %}Grades & Exams{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between"><h5 class="mb-0 fw-bold">Grade Records</h5>
+        {% if current_role == 'admin' or current_role == 'teacher' %}<a href="{% url 'grades:create' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-circle me-1"></i>Add Grade</a>{% endif %}
+    </div>
+    <div class="card-body p-0"><table class="table table-hover mb-0">
+        <thead><tr><th>Student</th><th>Subject</th><th>Exam</th><th>Score</th><th>Grade</th><th>Actions</th></tr></thead>
+        <tbody>{% for g in grades %}<tr><td>{{ g.student.full_name }}</td><td>{{ g.subject }}</td><td>{{ g.exam }}</td><td>{{ g.score }}%</td><td><span class="badge rounded-pill {% if g.score >= 80 %}bg-success-subtle text-success{% elif g.score >= 60 %}bg-warning-subtle text-warning{% else %}bg-danger-subtle text-danger{% endif %}">{{ g.grade }}</span></td><td>{% if current_role == 'admin' or current_role == 'teacher' %}<a class="btn btn-sm btn-outline-danger" href="{% url 'grades:delete' g.pk %}"><i class="bi bi-trash"></i></a>{% endif %}</td></tr>{% empty %}<tr><td colspan="6" class="text-center">No grades recorded</td></tr>{% endfor %}</tbody>
+    </table></div>
+</div>
+{% endblock %}

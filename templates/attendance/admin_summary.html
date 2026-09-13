@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block page_title %}Attendance Summary{% endblock %}
+{% block content %}
+<div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="card"><div class="card-body"><h5>{{ todays_percentage|default:"N/A" }}{% if todays_percentage is not None %}%{% endif %}</h5><p class="text-secondary small mb-0">Today's Attendance</p></div></div></div>
+    <div class="col-md-3"><div class="card"><div class="card-body"><h5>{{ stats.total }}</h5><p class="text-secondary small mb-0">Records (filtered)</p></div></div></div>
+    <div class="col-md-3"><div class="card"><div class="card-body"><h5>{{ stats.percentage_present }}%</h5><p class="text-secondary small mb-0">Present Rate</p></div></div></div>
+    <div class="col-md-3"><div class="card"><div class="card-body"><h5>{{ stats.absent }}</h5><p class="text-secondary small mb-0">Absences</p></div></div></div>
+</div>
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <h5 class="mb-0 fw-bold">Attendance History</h5>
+        <a class="btn btn-sm btn-outline-secondary" href="{% url 'attendance:export' %}?{{ request.GET.urlencode }}"><i class="bi bi-download me-1"></i>Export CSV</a>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-2 mb-3">
+            <div class="col-md-3"><input type="date" class="form-control form-control-sm" name="date_from" value="{{ request.GET.date_from }}" placeholder="From"></div>
+            <div class="col-md-3"><input type="date" class="form-control form-control-sm" name="date_to" value="{{ request.GET.date_to }}" placeholder="To"></div>
+            <div class="col-md-2"><input type="text" class="form-control form-control-sm" name="class_name" value="{{ request.GET.class_name }}" placeholder="Class"></div>
+            <div class="col-md-2">
+                <select class="form-select form-select-sm" name="status">
+                    <option value="">All statuses</option>
+                    <option value="present" {% if request.GET.status == 'present' %}selected{% endif %}>Present</option>
+                    <option value="absent" {% if request.GET.status == 'absent' %}selected{% endif %}>Absent</option>
+                    <option value="late" {% if request.GET.status == 'late' %}selected{% endif %}>Late</option>
+                </select>
+            </div>
+            <div class="col-md-2"><button class="btn btn-sm btn-primary w-100" type="submit">Filter</button></div>
+        </form>
+        <div class="table-responsive"><table class="table table-hover mb-0">
+            <thead><tr><th>Date</th><th>Student</th><th>Class</th><th>Status</th><th>Marked By</th></tr></thead>
+            <tbody>{% for r in records %}<tr>
+                <td>{{ r.date }}</td><td>{{ r.student.full_name }}</td><td>{{ r.class_name_at_time }}{{ r.stream_at_time }}</td>
+                <td><span class="badge rounded-pill {% if r.status == 'present' %}bg-success-subtle text-success{% elif r.status == 'absent' %}bg-danger-subtle text-danger{% else %}bg-warning-subtle text-warning{% endif %}">{{ r.status }}</span></td>
+                <td>{{ r.marked_by|default:"-" }}</td>
+            </tr>{% empty %}<tr><td colspan="5" class="text-center">No records found</td></tr>{% endfor %}</tbody>
+        </table></div>
+    </div>
+</div>
+{% if is_paginated %}
+<nav class="mt-3"><ul class="pagination">
+    {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>{% endif %}
+    <li class="page-item active"><span class="page-link">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+    {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>{% endif %}
+</ul></nav>
+{% endif %}
+{% endblock %}

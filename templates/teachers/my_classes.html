@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block page_title %}My Classes{% endblock %}
+{% block content %}
+<div class="card"><div class="card-header"><h5 class="mb-0 fw-bold">My Classes</h5></div>
+<div class="card-body p-0"><table class="table table-hover mb-0">
+<thead><tr><th>Class</th><th>Subject</th><th>Students</th><th>Roster</th></tr></thead>
+<tbody>{% for a in assignments %}<tr><td>{{ a.class_display }}</td><td>{{ a.subject }}</td><td>{{ a.student_count }}</td><td><a class="btn btn-sm btn-outline-primary" href="{% url 'teachers:class_roster' a.class_name a.stream %}"><i class="bi bi-list-ul"></i></a></td></tr>{% empty %}<tr><td colspan="4">No classes assigned</td></tr>{% endfor %}</tbody>
+</table></div></div>
+{% endblock %}

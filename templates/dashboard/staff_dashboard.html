@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+<div class="row g-3 mb-4">
+    <div class="col-md-6"><div class="card"><div class="card-body"><h5>{{ staff_count }}</h5><p class="text-secondary small mb-0">Non-Teaching Staff</p></div></div></div>
+    <div class="col-md-6"><div class="card"><div class="card-body"><h5>{{ active_teachers }}</h5><p class="text-secondary small mb-0">Teaching Staff</p></div></div></div>
+</div>
+<div class="card">
+    <div class="card-header"><h6 class="fw-bold">Staff Directory</h6></div>
+    <div class="card-body p-0"><table class="table table-hover mb-0">
+        <thead><tr><th>Name</th><th>Position</th><th>Department</th></tr></thead>
+        <tbody>{% for s in staff_list %}<tr><td>{{ s.full_name }}</td><td>{{ s.position }}</td><td>{{ s.department }}</td></tr>{% endfor %}</tbody>
+    </table></div>
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block page_title %}Paper {{ paper.number }}{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb"><ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'syllabus:subject_list' %}">Syllabus</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'syllabus:subject_detail' paper.subject.pk %}">{{ paper.subject.code }}</a></li>
+    <li class="breadcrumb-item active">Paper {{ paper.number }}</li>
+</ol></nav>
+<div class="card"><div class="card-body">
+<h5>{{ paper.subject.name }} - Paper {{ paper.number }}</h5>
+<p><strong>Type:</strong> {{ paper.get_paper_type_display }} &middot; <strong>Duration:</strong> {{ paper.duration_minutes }} min &middot; <strong>Marks:</strong> {{ paper.total_marks }}</p>
+{% if paper.description %}<p class="text-secondary">{{ paper.description|linebreaks }}</p>{% endif %}
+</div></div>
+<h6 class="mt-4">Topics tested in this paper</h6>
+<div class="list-group">
+{% for topic in topics %}<div class="list-group-item"><strong>{{ topic.code }} {{ topic.title }}</strong>
+{% for obj in topic.objectives.all %}<div class="small text-secondary ms-3">- {{ obj.text }}</div>{% endfor %}
+</div>{% empty %}<p class="text-secondary">No topics linked to this paper yet.</p>{% endfor %}
+</div>
+{% endblock %}

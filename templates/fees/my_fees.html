@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block page_title %}My Fees{% endblock %}
+{% block content %}
+{% if student %}
+<div class="row g-3 mb-4">
+    <div class="col-md-4"><div class="card"><div class="card-body"><h5>MK {{ student.fees_total }}</h5><p class="text-secondary small mb-0">Total Fees</p></div></div></div>
+    <div class="col-md-4"><div class="card"><div class="card-body"><h5>MK {{ student.fees_paid }}</h5><p class="text-secondary small mb-0">Paid</p></div></div></div>
+    <div class="col-md-4"><div class="card"><div class="card-body"><h5>MK {{ student.balance }}</h5><p class="text-secondary small mb-0">Balance</p></div></div></div>
+</div>
+<div class="card"><div class="card-header"><h6>Payment Progress</h6></div><div class="card-body">
+<div class="progress" style="height:20px;"><div class="progress-bar bg-success" style="width:{{ student.fees_percentage }}%">{{ student.fees_percentage }}%</div></div>
+</div></div>
+<div class="card mt-3"><div class="card-header"><h6>Transaction History</h6></div>
+<div class="card-body p-0"><table class="table mb-0"><thead><tr><th>Receipt</th><th>Amount</th><th>Date</th><th>Method</th></tr></thead>
+<tbody>{% for t in transactions %}<tr><td>{{ t.receipt_no }}</td><td>MK {{ t.amount }}</td><td>{{ t.date }}</td><td>{{ t.method }}</td></tr>{% endfor %}</tbody></table></div></div>
+{% else %}
+<div class="alert alert-warning">No student profile linked to your account.</div>
+{% endif %}
+{% endblock %}
