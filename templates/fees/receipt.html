@@ -10,13 +10,14 @@
         <hr>
         <p><strong>Receipt No:</strong> {{ txn.receipt_no }}</p>
         <p><strong>Student:</strong> {{ txn.student.full_name }} ({{ txn.student.student_id }})</p>
-        <p><strong>Amount:</strong> MK {{ txn.amount }}</p>
+        <p><strong>Amount:</strong> {{ txn.amount }}</p>
         <p><strong>Date:</strong> {{ txn.date }}</p>
         <p><strong>Method:</strong> {{ txn.get_method_display }}{% if txn.gateway %} via {{ txn.gateway|title }}{% endif %}</p>
         {% if txn.is_reversed %}<div class="alert alert-danger">This payment was reversed on {{ txn.reversed_at|date:"Y-m-d H:i" }}. Reason: {{ txn.reversal_reason|default:"-" }}</div>{% endif %}
         <hr>
         <div class="d-flex gap-2">
             <button class="btn btn-outline-secondary btn-sm" onclick="window.print()"><i class="bi bi-printer me-1"></i>Print</button>
+            <a class="btn btn-outline-secondary btn-sm" href="{% url 'fees:receipt_pdf' txn.pk %}" target="_blank"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
             {% if current_role == 'admin' and not txn.is_reversed %}
             <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#reverseModal">Reverse</button>
             {% endif %}

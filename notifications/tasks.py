@@ -64,6 +64,24 @@ def notify_absence(student_id, date):
 
 
 @shared_task
+def notify_sickbay_referral(visit_id):
+    """STF-47: notify parents when a student is referred from sick bay."""
+    from staff.models import SickBayVisit
+    try:
+        visit = SickBayVisit.objects.select_related('student').get(id=visit_id)
+    except SickBayVisit.DoesNotExist:
+        return
+    student = visit.student
+    message = (
+        f'{student.full_name} was seen at the sick bay and referred for further care. '
+        f'Notes: {visit.referral_notes or "See school nurse for details."}'
+    )
+    _send_sms_stub(student.guardian_phone, message)
+    for guardian in student.guardians.all():
+        push_notification(guardian, message, Notification.NotificationType.ANNOUNCEMENT)
+
+
+@shared_task
 def notify_low_attendance(student_id):
     from students.models import Student
     try:

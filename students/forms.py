@@ -2,6 +2,7 @@ from django import forms
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit, Row, Column
 from .models import Student, GuardianContact
+from common.forms import enable_dropzone
 
 
 class StudentForm(forms.ModelForm):
@@ -22,6 +23,7 @@ class StudentForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        enable_dropzone(self)
         self.helper = FormHelper()
         self.helper.form_method = 'post'
         self.helper.add_input(Submit('submit', 'Save Student'))

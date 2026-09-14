@@ -1,11 +1,12 @@
 from django.db import models
+from djmoney.models.fields import MoneyField
 
 
 class FeeStructure(models.Model):
     class_name = models.CharField(max_length=10)
     stream = models.CharField(max_length=1, choices=[('A', 'A'), ('B', 'B')])
     term = models.CharField(max_length=30, default='Term 1')
-    total_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    total_amount = MoneyField(max_digits=12, decimal_places=2, default_currency='MWK')
 
     class Meta:
         unique_together = ('class_name', 'stream', 'term')
@@ -60,7 +61,7 @@ class FeeTransaction(models.Model):
         ONLINE = 'Online', 'Online (Card/Mobile via gateway)'
 
     student = models.ForeignKey('students.Student', on_delete=models.CASCADE, related_name='transactions')
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount = MoneyField(max_digits=12, decimal_places=2, default_currency='MWK')
     date = models.DateField()
     method = models.CharField(max_length=20, choices=Method.choices, default=Method.MOBILE_MONEY)
     receipt_no = models.CharField(max_length=30, unique=True)

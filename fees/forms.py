@@ -23,7 +23,7 @@ class RecordPaymentForm(forms.ModelForm):
         cleaned = super().clean()
         student = cleaned.get('student')
         amount = cleaned.get('amount')
-        if student and amount and amount > student.balance:
+        if student and amount and amount.amount > student.balance:
             raise forms.ValidationError(
                 f'Amount exceeds outstanding balance (MK {student.balance:,.2f}).'
             )

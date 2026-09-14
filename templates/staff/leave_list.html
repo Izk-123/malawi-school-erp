@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block page_title %}Leave Requests{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between mb-3"><h5>Leave Requests</h5><a class="btn btn-primary btn-sm" href="{% url 'staff:leave_create' %}">Request Leave</a></div>
+<div class="card"><div class="card-body p-0"><table class="table table-hover mb-0">
+<thead><tr><th>Staff</th><th>Type</th><th>Dates</th><th>Days</th><th>Status</th><th></th></tr></thead>
+<tbody>{% for l in leave_requests %}<tr>
+<td>{{ l.staff.full_name }}</td><td>{{ l.get_leave_type_display }}</td><td>{{ l.start_date }} - {{ l.end_date }}</td><td>{{ l.days }}</td>
+<td><span class="badge bg-{% if l.status == 'approved' %}success{% elif l.status == 'rejected' %}danger{% else %}warning text-dark{% endif %}">{{ l.get_status_display }}</span></td>
+<td>{% if l.status == 'pending' %}
+<form method="post" action="{% url 'staff:leave_decide' l.pk %}" class="d-inline">{% csrf_token %}<button name="decision" value="approved" class="btn btn-sm btn-outline-success">Approve</button> <button name="decision" value="rejected" class="btn btn-sm btn-outline-danger">Reject</button></form>
+{% endif %}</td>
+</tr>{% empty %}<tr><td colspan="6">No leave requests</td></tr>{% endfor %}</tbody>
+</table></div></div>
+{% endblock %}

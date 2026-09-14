@@ -12,11 +12,16 @@ from .forms import StudentForm, GuardianContactForm, PromoteStudentsForm
 from .filters import StudentFilter
 
 
-class StudentListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
+from django_tables2 import SingleTableMixin
+from .tables import StudentTable
+
+
+class StudentListView(LoginRequiredMixin, RoleRequiredMixin, SingleTableMixin, ListView):
     model = Student
+    table_class = StudentTable
+    table_pagination = {'per_page': 20}
     template_name = 'students/student_list.html'
     context_object_name = 'students'
-    paginate_by = 20  # ST-17
     allowed_roles = ['admin', 'teacher']
 
     def get_queryset(self):
@@ -36,6 +41,13 @@ class StudentListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
                 qs = qs.none()
         self.filterset = StudentFilter(self.request.GET, queryset=qs)
         return self.filterset.qs
+
+    def get_table_data(self):
+        data = list(super().get_table_data())
+        is_admin = self.request.user.is_superuser or self.request.user.role == 'admin'
+        for s in data:
+            s.can_edit_flag = is_admin
+        return data
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)

@@ -42,7 +42,7 @@ def apply_confirmed_payment(payment_transaction_id):
         pt.fee_transaction = fee_txn
         pt.save(update_fields=['fee_transaction'])
         student = pt.student
-        student.fees_paid = student.fees_paid + pt.amount
+        student.fees_paid = student.fees_paid + pt.amount.amount
         student.save(update_fields=['fees_paid'])
 
     if pt.student.balance > 0:

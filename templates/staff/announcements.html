@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block page_title %}Staff Announcements{% endblock %}
+{% block content %}
+{% if current_role == 'admin' %}<a href="{% url 'staff:post_announcement' %}" class="btn btn-primary btn-sm mb-3">Post Announcement</a>{% endif %}
+{% for a in announcements %}
+<div class="card mb-2"><div class="card-body">
+<h6>{{ a.title }} {% if a.pinned %}<span class="badge bg-warning text-dark">Pinned</span>{% endif %}</h6>
+<p class="text-secondary mb-1">{{ a.body }}</p>
+<small class="text-secondary">{{ a.posted_by }} - {{ a.posted_at|date:"Y-m-d H:i" }}</small>
+</div></div>
+{% empty %}<p class="text-secondary">No announcements yet.</p>{% endfor %}
+{% endblock %}

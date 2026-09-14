@@ -13,3 +13,7 @@ Pillow>=10.3
 django-axes>=6.5
 django-filter>=24.2
 requests>=2.31
+django-money>=3.5
+reportlab>=4.2
+django-mptt>=0.16
+django-tables2>=2.7

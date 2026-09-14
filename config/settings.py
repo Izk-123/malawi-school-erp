@@ -39,6 +39,9 @@ INSTALLED_APPS = [
     'simple_history',
     'django_filters',
     'axes',
+    'djmoney',
+    'mptt',
+    'django_tables2',
 
     # Local apps
     'accounts',
@@ -157,6 +160,20 @@ PASSWORD_RESET_TIMEOUT = config('PASSWORD_RESET_TIMEOUT', default=60 * 60 * 24, 
 ATTENDANCE_EDIT_WINDOW_HOURS = config('ATTENDANCE_EDIT_WINDOW_HOURS', default=24, cast=int)
 ATTENDANCE_PAST_LIMIT_DAYS = config('ATTENDANCE_PAST_LIMIT_DAYS', default=7, cast=int)
 ATTENDANCE_LOW_THRESHOLD = config('ATTENDANCE_LOW_THRESHOLD', default=80, cast=int)
+
+# --------------------------------------------------------------------------
+# django-money: multi-currency support, defaulting to Malawian Kwacha.
+# Fee/payment monetary fields use MoneyField instead of DecimalField so a
+# school billing in USD (e.g. international MSCE candidates) or accepting
+# a foreign-currency bursary is a currency choice, not a schema change.
+# --------------------------------------------------------------------------
+DEFAULT_CURRENCY = 'MWK'
+CURRENCIES = ('MWK', 'USD', 'GBP', 'ZAR')
+CURRENCY_CHOICES = [('MWK', 'Malawian Kwacha'), ('USD', 'US Dollar'), ('GBP', 'British Pound'), ('ZAR', 'South African Rand')]
+
+# django-tables2: default to the Bootstrap 5 template so tables match the
+# rest of the UI without specifying template_name on every Table class.
+DJANGO_TABLES2_TEMPLATE = 'django_tables2/bootstrap5.html'
 
 # --------------------------------------------------------------------------
 # Payment gateways (FP-17/26): pluggable, PayChangu enabled by default.

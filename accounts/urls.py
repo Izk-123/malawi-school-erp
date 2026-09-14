@@ -4,10 +4,20 @@ from . import views
 app_name = 'accounts'
 
 urlpatterns = [
+    # Dashboard & auth
     path('', views.dashboard, name='dashboard'),
     path('login/', views.SchoolLoginView.as_view(), name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('signup/', views.SignUpView.as_view(), name='signup'),
+
+    # Email verification (AC-07c/e)
+    path('verify-email/pending/', views.verify_email_pending, name='verify_email_pending'),
+    path('verify-email/resend/', views.resend_email, name='resend_email'),
+    path('verify-email/<str:token>/', views.verify_email, name='verify_email'),
+
+    # Phone verification (AC-07c/e)
+    path('phone/request/', views.phone_request, name='phone_request'),
+    path('phone/confirm/', views.phone_confirm, name='phone_confirm'),
 
     # Password change (logged in) & reset (forgotten password)
     path('password/change/', views.PasswordChangeView.as_view(), name='password_change'),
@@ -19,6 +29,7 @@ urlpatterns = [
 
     # Self-service profile
     path('profile/', views.ProfileView.as_view(), name='profile'),
+    path('profile/edit/', views.ProfileEditView.as_view(), name='profile_edit'),
 
     # Admin user management
     path('users/', views.UserListView.as_view(), name='user_list'),

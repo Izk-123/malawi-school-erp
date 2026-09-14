@@ -1,6 +1,290 @@
 {% extends "base.html" %}
-{% load crispy_forms_tags %}
-{% block page_title %}{% if object %}Edit User{% else %}Add User{% endif %}{% endblock %}
+{% load static %}
+
+{% block title %}{% if object %}Edit user{% else %}Add user{% endif %}{% endblock %}
+{% block page_title %}{% if object %}Edit user{% else %}Add user{% endif %}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/auth.css' %}">
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock %}
+
 {% block content %}
-<div class="card"><div class="card-body">{% crispy form %}</div></div>
+<div class="profile-page">
+
+    {# ───────── Hero ───────── #}
+    <div class="profile-hero" style="padding-top:16px;">
+        <div class="profile-avatar-wrap">
+            <div class="profile-avatar">
+                {% if form.instance.profile_picture %}
+                    <img src="{{ form.instance.profile_picture.url }}" alt="">
+                {% else %}
+                    <span aria-hidden="true">
+                        {{ form.instance.first_name|first|default:form.instance.username|first|upper }}{{ form.instance.last_name|first }}
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+        <h1 class="profile-name">
+            {% if object %}{{ object.get_full_name|default:object.username }}{% else %}New account{% endif %}
+        </h1>
+        <p class="profile-email">
+            {% if object %}Update account details{% else %}Create a new user account{% endif %}
+        </p>
+    </div>
+
+    <div class="profile-content">
+        <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger" role="alert">
+                <i class="bi bi-exclamation-triangle"></i>
+                <div>{{ form.non_field_errors.0 }}</div>
+            </div>
+            {% endif %}
+
+            {# ───────── Identity ───────── #}
+            <section class="profile-section">
+                <div class="profile-section-head" style="cursor:default;">
+                    <h2 class="profile-section-title">Identity</h2>
+                </div>
+                <div class="profile-section-body">
+
+                    <div class="field">
+                        <label class="field-label" for="{{ form.username.id_for_label }}">Username</label>
+                        <input type="text"
+                               name="{{ form.username.name }}"
+                               id="{{ form.username.id_for_label }}"
+                               class="field-input"
+                               value="{{ form.username.value|default:'' }}"
+                               autocomplete="username"
+                               autocapitalize="none"
+                               autocorrect="off"
+                               spellcheck="false"
+                               {% if not object %}autofocus{% endif %}
+                               required>
+                        {% if form.username.errors %}
+                        <p class="field-error" role="alert">
+                            <i class="bi bi-exclamation-circle"></i> {{ form.username.errors.0 }}
+                        </p>
+                        {% endif %}
+                        {% if form.username.help_text %}
+                        <p class="field-help">{{ form.username.help_text }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="field">
+                        <label class="field-label" for="{{ form.first_name.id_for_label }}">First name</label>
+                        <input type="text"
+                               name="{{ form.first_name.name }}"
+                               id="{{ form.first_name.id_for_label }}"
+                               class="field-input"
+                               value="{{ form.first_name.value|default:'' }}"
+                               autocomplete="given-name">
+                        {% if form.first_name.errors %}
+                        <p class="field-error" role="alert">
+                            <i class="bi bi-exclamation-circle"></i> {{ form.first_name.errors.0 }}
+                        </p>
+                        {% endif %}
+                    </div>
+
+                    <div class="field">
+                        <label class="field-label" for="{{ form.last_name.id_for_label }}">Last name</label>
+                        <input type="text"
+                               name="{{ form.last_name.name }}"
+                               id="{{ form.last_name.id_for_label }}"
+                               class="field-input"
+                               value="{{ form.last_name.value|default:'' }}"
+                               autocomplete="family-name">
+                        {% if form.last_name.errors %}
+                        <p class="field-error" role="alert">
+                            <i class="bi bi-exclamation-circle"></i> {{ form.last_name.errors.0 }}
+                        </p>
+                        {% endif %}
+                    </div>
+
+                </div>
+            </section>
+
+            {# ───────── Contact ───────── #}
+            <section class="profile-section">
+                <div class="profile-section-head" style="cursor:default;">
+                    <h2 class="profile-section-title">Contact</h2>
+                </div>
+                <div class="profile-section-body">
+
+                    <div class="field">
+                        <label class="field-label" for="{{ form.email.id_for_label }}">Email</label>
+                        <input type="email"
+                               name="{{ form.email.name }}"
+                               id="{{ form.email.id_for_label }}"
+                               class="field-input"
+                               value="{{ form.email.value|default:'' }}"
+                               autocomplete="email"
+                               inputmode="email">
+                        {% if form.email.errors %}
+                        <p class="field-error" role="alert">
+                            <i class="bi bi-exclamation-circle"></i> {{ form.email.errors.0 }}
+                        </p>
+                        {% endif %}
+                    </div>
+
+                    <div class="field">
+                        <label class="field-label" for="{{ form.phone_number.id_for_label }}">Phone</label>
+                        <input type="tel"
+                               name="{{ form.phone_number.name }}"
+                               id="{{ form.phone_number.id_for_label }}"
+                               class="field-input"
+                               value="{{ form.phone_number.value|default:'' }}"
+                               placeholder="+265991234567"
+                               autocomplete="tel"
+                               inputmode="tel">
+                        <p class="field-help">Format: +265XXXXXXXXX (spaces allowed)</p>
+                        {% if form.phone_number.errors %}
+                        <p class="field-error" role="alert">
+                            <i class="bi bi-exclamation-circle"></i> {{ form.phone_number.errors.0 }}
+                        </p>
+                        {% endif %}
+                    </div>
+
+                </div>
+            </section>
+
+            {# ───────── Role & access ───────── #}
+            <section class="profile-section">
+                <div class="profile-section-head" style="cursor:default;">
+                    <h2 class="profile-section-title">Role &amp; access</h2>
+                </div>
+                <div class="profile-section-body">
+
+                    <div class="field">
+                        <label class="field-label" for="{{ form.role.id_for_label }}">Role</label>
+                        <select name="{{ form.role.name }}"
+                                id="{{ form.role.id_for_label }}"
+                                class="field-input">
+                            {% for value, label in form.fields.role.choices %}
+                            <option value="{{ value }}" {% if form.role.value == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% if form.role.errors %}
+                        <p class="field-error" role="alert">
+                            <i class="bi bi-exclamation-circle"></i> {{ form.role.errors.0 }}
+                        </p>
+                        {% endif %}
+                    </div>
+
+                    {% if 'is_active' in form.fields %}
+                    <div class="field" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                        <div>
+                            <div class="field-label" style="margin-bottom:2px;">Account active</div>
+                            <div class="field-help" style="margin-top:0;">Inactive users cannot log in.</div>
+                        </div>
+                        <label class="switch" aria-label="Account active">
+                            <input type="checkbox"
+                                   name="{{ form.is_active.name }}"
+                                   {% if form.is_active.value %}checked{% endif %}>
+                            <span class="switch-track"><span class="switch-thumb"></span></span>
+                        </label>
+                    </div>
+                    {% endif %}
+
+                    {% if 'profile_picture' in form.fields %}
+                    <div class="field">
+                        <label class="field-label" for="{{ form.profile_picture.id_for_label }}">Profile picture</label>
+                        <input type="file"
+                               name="{{ form.profile_picture.name }}"
+                               id="{{ form.profile_picture.id_for_label }}"
+                               class="field-input"
+                               accept="image/*">
+                        {% if form.profile_picture.errors %}
+                        <p class="field-error" role="alert">
+                            <i class="bi bi-exclamation-circle"></i> {{ form.profile_picture.errors.0 }}
+                        </p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                </div>
+            </section>
+
+            {# ───────── Password (create only) ───────── #}
+            {% if 'password1' in form.fields %}
+            <section class="profile-section">
+                <div class="profile-section-head" style="cursor:default;">
+                    <h2 class="profile-section-title">Password</h2>
+                </div>
+                <div class="profile-section-body">
+
+                    <div class="field">
+                        <label class="field-label" for="{{ form.password1.id_for_label }}">Password</label>
+                        <div class="field-password">
+                            <input type="password"
+                                   name="{{ form.password1.name }}"
+                                   id="{{ form.password1.id_for_label }}"
+                                   class="field-input"
+                                   autocomplete="new-password"
+                                   required>
+                            <button type="button"
+                                    class="field-eye"
+                                    data-pwd-toggle="{{ form.password1.id_for_label }}"
+                                    aria-label="Show password">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                        <div class="password-strength"
+                             data-strength-target="{{ form.password1.id_for_label }}"></div>
+                        <p class="field-help">At least 8 characters, mixing letters and numbers.</p>
+                        {% if form.password1.errors %}
+                        <p class="field-error" role="alert">
+                            <i class="bi bi-exclamation-circle"></i> {{ form.password1.errors.0 }}
+                        </p>
+                        {% endif %}
+                    </div>
+
+                    <div class="field">
+                        <label class="field-label" for="{{ form.password2.id_for_label }}">Confirm password</label>
+                        <div class="field-password">
+                            <input type="password"
+                                   name="{{ form.password2.name }}"
+                                   id="{{ form.password2.id_for_label }}"
+                                   class="field-input"
+                                   autocomplete="new-password"
+                                   required>
+                            <button type="button"
+                                    class="field-eye"
+                                    data-pwd-toggle="{{ form.password2.id_for_label }}"
+                                    aria-label="Show password">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                        {% if form.password2.errors %}
+                        <p class="field-error" role="alert">
+                            <i class="bi bi-exclamation-circle"></i> {{ form.password2.errors.0 }}
+                        </p>
+                        {% endif %}
+                    </div>
+
+                </div>
+            </section>
+            {% endif %}
+
+            {# ───────── Sticky action bar ───────── #}
+            <div class="profile-actions-bar">
+                <a href="{% url 'accounts:user_list' %}" class="btn btn-outline">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    {% if object %}Save changes{% else %}Create user{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <section class="profile-danger"></section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/auth.js' %}" defer></script>
 {% endblock %}

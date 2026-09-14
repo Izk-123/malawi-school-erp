@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Component Gallery — Malawi School ERP{% endblock %}
+{% block page_title %}Component Gallery{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h4 fw-bold mb-1">Component Gallery</h1>
+            <p class="text-secondary small mb-0">
+                Resize the window to watch each component enhance from the mobile baseline.
+            </p>
+        </div>
+        <button class="btn btn-secondary btn-sm" data-theme-toggle aria-label="Toggle theme">
+            <i class="bi bi-moon-stars"></i>
+        </button>
+    </div>
+
+    {# ─────────── Buttons ─────────── #}
+    <section class="gallery-section">
+        <h2 class="text-uppercase text-secondary mb-3" style="font-size:11px;letter-spacing:.06em;">Buttons</h2>
+        <div class="gallery-grid mb-3">
+            <button class="btn btn-primary btn-block">Primary (block on mobile)</button>
+            <button class="btn btn-secondary">Secondary</button>
+            <button class="btn btn-ghost">Ghost</button>
+            <button class="btn btn-danger">Danger</button>
+        </div>
+        <div class="gallery-grid">
+            <button class="btn btn-primary btn-sm">Small</button>
+            <button class="btn btn-primary">Default</button>
+            <button class="btn btn-primary btn-lg">Large</button>
+            <button class="btn btn-secondary btn-icon" aria-label="Add"><i class="bi bi-plus"></i></button>
+        </div>
+    </section>
+
+    {# ─────────── Badges & avatars ─────────── #}
+    <section class="gallery-section">
+        <h2 class="text-uppercase text-secondary mb-3" style="font-size:11px;letter-spacing:.06em;">Badges &amp; identity</h2>
+        <div class="gallery-grid">
+            <span class="badge badge-success"><span class="badge-dot"></span>Paid</span>
+            <span class="badge badge-warning"><span class="badge-dot"></span>Partial</span>
+            <span class="badge badge-danger"><span class="badge-dot"></span>Due</span>
+            <span class="badge badge-info"><span class="badge-dot"></span>Info</span>
+            <span class="avatar avatar-sm">CB</span>
+            <span class="avatar">CB</span>
+            <span class="avatar avatar-lg">CB</span>
+            <span class="user-chip"><span class="avatar avatar-sm">TP</span> Thandiwe Phiri</span>
+        </div>
+    </section>
+
+    {# ─────────── Inputs ─────────── #}
+    <section class="gallery-section">
+        <h2 class="text-uppercase text-secondary mb-3" style="font-size:11px;letter-spacing:.06em;">Inputs</h2>
+        <div class="stack-sm" style="max-width:640px;">
+            <input class="input" placeholder="Standard input">
+            <input class="input input-search" placeholder="Search students…">
+        </div>
+        <div class="mt-4" style="max-width:640px;">
+            <div class="form-row">
+                <label class="form-label">First name</label>
+                <input class="input" value="Chikondi">
+            </div>
+            <div class="form-row">
+                <label class="form-label">Class</label>
+                <input class="input" value="Form 3A">
+            </div>
+        </div>
+    </section>
+
+    {# ─────────── Tabs ─────────── #}
+    <section class="gallery-section">
+        <h2 class="text-uppercase text-secondary mb-3" style="font-size:11px;letter-spacing:.06em;">Tabs</h2>
+        <div class="tabs" style="max-width:640px;">
+            <button class="tab active">Overview</button>
+            <button class="tab">Fees</button>
+            <button class="tab">Grades</button>
+            <button class="tab">Attendance</button>
+            <button class="tab">Documents</button>
+        </div>
+    </section>
+
+    {# ─────────── Cards ─────────── #}
+    <section class="gallery-section">
+        <h2 class="text-uppercase text-secondary mb-3" style="font-size:11px;letter-spacing:.06em;">Cards</h2>
+        <div class="card-grid">
+            <div class="card card-hover">
+                <div class="card-body">
+                    <div class="text-muted-sm mb-1">Active Students</div>
+                    <div class="h3 fw-bold mb-0 tabular-nums">124</div>
+                </div>
+            </div>
+            <div class="card card-hover">
+                <div class="card-body">
+                    <div class="text-muted-sm mb-1">Fees Collected</div>
+                    <div class="h3 fw-bold mb-0 tabular-nums">MK 1.24M</div>
+                </div>
+            </div>
+            <div class="card card-hover">
+                <div class="card-body">
+                    <div class="text-muted-sm mb-1">Avg Attendance</div>
+                    <div class="h3 fw-bold mb-0 tabular-nums">88%</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {# ─────────── Data table — cards on mobile, table on desktop ─────────── #}
+    <section class="gallery-section">
+        <h2 class="text-uppercase text-secondary mb-3" style="font-size:11px;letter-spacing:.06em;">
+            Data table — resize to switch card ⇄ table
+        </h2>
+        <div class="card" style="padding:0;overflow:hidden;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th data-sort>Name</th>
+                        <th data-sort>Class</th>
+                        <th data-sort>Status</th>
+                        <th data-sort style="text-align:right;">Balance</th>
+                        <th style="width:120px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td data-label="Name">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="avatar avatar-sm">CB</span> Chikondi Banda
+                            </div>
+                        </td>
+                        <td data-label="Class">Form 3A</td>
+                        <td data-label="Status"><span class="badge badge-success"><span class="badge-dot"></span>Active</span></td>
+                        <td data-label="Balance" class="tabular-nums" style="text-align:right;">MK 75,000</td>
+                        <td><button class="btn btn-secondary btn-sm">Pay</button></td>
+                    </tr>
+                    <tr>
+                        <td data-label="Name">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="avatar avatar-sm">TP</span> Thandiwe Phiri
+                            </div>
+                        </td>
+                        <td data-label="Class">Form 3A</td>
+                        <td data-label="Status"><span class="badge badge-warning"><span class="badge-dot"></span>Partial</span></td>
+                        <td data-label="Balance" class="tabular-nums" style="text-align:right;">MK 40,000</td>
+                        <td><button class="btn btn-secondary btn-sm">Pay</button></td>
+                    </tr>
+                    <tr>
+                        <td data-label="Name">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="avatar avatar-sm">MC</span> Mphatso Chirwa
+                            </div>
+                        </td>
+                        <td data-label="Class">Form 4B</td>
+                        <td data-label="Status"><span class="badge badge-danger"><span class="badge-dot"></span>Due</span></td>
+                        <td data-label="Balance" class="tabular-nums" style="text-align:right;">MK 0</td>
+                        <td><button class="btn btn-secondary btn-sm">Pay</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    {# ─────────── Empty state ─────────── #}
+    <section class="gallery-section">
+        <h2 class="text-uppercase text-secondary mb-3" style="font-size:11px;letter-spacing:.06em;">Empty state</h2>
+        <div class="card">
+            <div class="empty-state">
+                <div class="empty-icon"><i class="bi bi-people"></i></div>
+                <h3>No students yet</h3>
+                <p>Add your first student to get started.</p>
+                <button class="btn btn-primary"><i class="bi bi-plus"></i> Add student</button>
+            </div>
+        </div>
+    </section>
+
+    {# ─────────── Skeletons ─────────── #}
+    <section class="gallery-section">
+        <h2 class="text-uppercase text-secondary mb-3" style="font-size:11px;letter-spacing:.06em;">Loading skeletons</h2>
+        <div class="card">
+            <div class="skeleton-row">
+                <div class="skeleton skeleton-avatar"></div>
+                <div style="flex:1;">
+                    <div class="skeleton skeleton-text mb-2"></div>
+                    <div class="skeleton skeleton-text short"></div>
+                </div>
+            </div>
+            <div class="skeleton-row">
+                <div class="skeleton skeleton-avatar"></div>
+                <div style="flex:1;">
+                    <div class="skeleton skeleton-text mb-2"></div>
+                    <div class="skeleton skeleton-text short"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {# ─────────── FAB (mobile only) / toolbar button (desktop) ─────────── #}
+    <button class="fab" aria-label="Add student"><i class="bi bi-plus"></i></button>
+</div>
+{% endblock %}

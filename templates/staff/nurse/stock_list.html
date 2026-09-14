@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block page_title %}Medication Stock{% endblock %}
+{% block content %}
+<a href="{% url 'staff:medication_stock_create' %}" class="btn btn-primary btn-sm mb-3">Add Stock Item</a>
+<div class="card"><div class="card-body p-0"><table class="table table-hover mb-0">
+<thead><tr><th>Name</th><th>Quantity</th><th>Reorder Level</th><th>Expiry</th><th>Status</th></tr></thead>
+<tbody>{% for m in stock_items %}<tr><td>{{ m.name }}</td><td>{{ m.quantity }}</td><td>{{ m.reorder_level }}</td><td>{{ m.expiry_date|default:"-" }}</td><td>{% if m.needs_reorder %}<span class="badge bg-danger">Reorder</span>{% else %}<span class="badge bg-success">OK</span>{% endif %}</td></tr>{% empty %}<tr><td colspan="5">No stock recorded.</td></tr>{% endfor %}</tbody>
+</table></div></div>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block page_title %}My Leave{% endblock %}
+{% block content %}
+<a href="{% url 'staff:request_leave' %}" class="btn btn-primary btn-sm mb-3">Request Leave</a>
+<div class="card"><div class="card-body p-0"><table class="table table-hover mb-0">
+<thead><tr><th>Type</th><th>Dates</th><th>Days</th><th>Status</th></tr></thead>
+<tbody>{% for l in leave_requests %}<tr><td>{{ l.get_leave_type_display }}</td><td>{{ l.start_date }} to {{ l.end_date }}</td><td>{{ l.days }}</td><td><span class="badge {% if l.status == 'approved' %}bg-success{% elif l.status == 'rejected' %}bg-danger{% else %}bg-warning text-dark{% endif %}">{{ l.get_status_display }}</span></td></tr>{% empty %}<tr><td colspan="4">No leave requests yet.</td></tr>{% endfor %}</tbody>
+</table></div></div>
+{% endblock %}

@@ -1,6 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
+from mptt.models import MPTTModel, TreeForeignKey
 from simple_history.models import HistoricalRecords
 
 
@@ -85,8 +86,17 @@ class Paper(models.Model):
         return f'{self.subject.code} Paper {self.number} ({self.paper_type})'
 
 
-class SyllabusTopic(models.Model):
-    """SY-10/11/12/13/14: hierarchical topic tree per subject."""
+class SyllabusTopic(MPTTModel):
+    """
+    SY-10/11/12/13/14: hierarchical topic tree per subject.
+
+    Uses django-mptt (rather than the plain self-FK this started as) so
+    "give me this topic and every descendant" or "show the whole tree for
+    a subject in document order" are O(1) range queries
+    (get_descendants(), get_ancestors()) instead of N recursive queries -
+    the NFR calls out topic trees with 100+ nodes needing to render in
+    under 2 seconds, which plain adjacency-list recursion won't scale to.
+    """
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='topics')
     paper = models.ForeignKey(
         Paper, on_delete=models.SET_NULL, null=True, blank=True, related_name='topics',
@@ -95,16 +105,22 @@ class SyllabusTopic(models.Model):
     core_element = models.CharField(max_length=150, blank=True, help_text="e.g., 'Functions and Graphs'")
     code = models.CharField(max_length=20, blank=True, db_index=True, help_text="Syllabus code like '3.3.1.1'")
     title = models.CharField(max_length=200)
-    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='subtopics')
+    parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='subtopics')
     order = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True)
-    history = HistoricalRecords()
+    # Note: no HistoricalRecords() here - django-simple-history and
+    # django-mptt don't compose (the auto-generated historical model
+    # doesn't get MPTT's lft/rght/tree_id/level fields, so every save
+    # raises TypeError). Soft-archiving via `is_active` covers SY-13's
+    # "don't delete historical grade data" requirement; full audit
+    # history stays on Subject (which isn't an MPTT model) instead.
+
+    class MPTTMeta:
+        order_insertion_by = ['order', 'title']
 
     class Meta:
-        ordering = ['subject', 'order', 'title']
         indexes = [
             models.Index(fields=['subject', 'is_active']),
-            models.Index(fields=['parent']),
         ]
 
     def __str__(self):

@@ -1,17 +1,17 @@
 {% extends "registration/base_auth.html" %}
+{% block title %}Account locked{% endblock %}
 
-{% block title %}Account Locked - Malawi School ERP{% endblock %}
-
-{% block form_fields %}
-<div class="text-center">
-    <i class="bi bi-lock-fill text-danger fs-1"></i>
-    <p class="mt-3">Your account is temporarily locked due to too many failed login attempts.</p>
-    <p class="text-secondary small">Please wait a few minutes and try again.</p>
+{% block content %}
+<div class="auth-state">
+    <div class="auth-state-icon danger"><i class="bi bi-lock-fill"></i></div>
+    <h1 class="auth-state-title">Account temporarily locked</h1>
+    <p class="auth-state-body">
+        Too many failed login attempts. Please wait <strong>15 minutes</strong>
+        and try again, or call the school office for help.
+    </p>
+    <a href="{% url 'accounts:login' %}" class="btn btn-primary btn-auth">Back to login</a>
+    <div class="auth-state-help">
+        Need help? Call <a href="tel:+265888800800">0888 800 800</a>
+    </div>
 </div>
-{% endblock %}
-
-{% block submit_label %}Back to Login{% endblock %}
-
-{% block extra_links %}
-    <a href="{% url 'accounts:login' %}">Login page</a>
 {% endblock %}

@@ -1,7 +1,14 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.utils import timezone
+import datetime
 import re
+import secrets
+
+
+def generate_verification_token():
+    return secrets.token_urlsafe(32)
 
 
 def malawi_phone_validator(value):
@@ -32,6 +39,12 @@ class User(AbstractUser):
         choices=[('en', 'English'), ('ny', 'Chichewa')],
         default='en',
     )
+    # AC-07c: verified email/phone, tracked per account. Defaults to True
+    # so admin-created accounts and seed data aren't retroactively locked
+    # out; only the self-registration flow (AC-02) sets these False and
+    # actually walks a person through verification.
+    email_verified = models.BooleanField(default=True)
+    phone_verified = models.BooleanField(default=True)
 
     def __str__(self):
         return f'{self.get_full_name() or self.username} ({self.get_role_display()})'
@@ -98,3 +111,38 @@ class AuditLog(models.Model):
     def __str__(self):
         who = self.user or self.username_attempted or 'unknown'
         return f'{who} - {self.action} - {self.created_at:%Y-%m-%d %H:%M}'
+
+
+class EmailVerificationToken(models.Model):
+    """AC-07c/e: single-use email verification link, expires in 24h."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='email_verification_tokens')
+    token = models.CharField(max_length=64, unique=True, default=generate_verification_token)
+    created_at = models.DateTimeField(default=timezone.now)
+    used = models.BooleanField(default=False)
+
+    def is_valid(self):
+        return not self.used and (timezone.now() - self.created_at) < datetime.timedelta(hours=24)
+
+    def __str__(self):
+        return f'Email token for {self.user} ({"used" if self.used else "active"})'
+
+
+class PhoneOTP(models.Model):
+    """AC-07c/e: 6-digit phone OTP, expires in 10 minutes, max 5 attempts."""
+    MAX_ATTEMPTS = 5
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='phone_otps')
+    phone_number = models.CharField(max_length=20)
+    otp_code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(default=timezone.now)
+    used = models.BooleanField(default=False)
+    attempts = models.PositiveSmallIntegerField(default=0)
+
+    def is_valid(self):
+        return (
+            not self.used and self.attempts < self.MAX_ATTEMPTS
+            and (timezone.now() - self.created_at) < datetime.timedelta(minutes=10)
+        )
+
+    def __str__(self):
+        return f'OTP for {self.user} -> {self.phone_number}'

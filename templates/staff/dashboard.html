@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block page_title %}Staff Dashboard{% endblock %}
+{% block content %}
+{% if not staff %}
+<div class="alert alert-warning">No staff profile linked to your account.</div>
+{% else %}
+<div class="row g-3 mb-4">
+    <div class="col-md-4"><div class="card"><div class="card-body">
+        <p class="text-secondary small mb-1">My Roles</p>
+        {% for r in roles %}<span class="badge bg-light text-dark border me-1">{{ r }}</span>{% empty %}<span class="text-secondary">None assigned</span>{% endfor %}
+    </div></div></div>
+    <div class="col-md-4"><div class="card"><div class="card-body">
+        <form method="post" action="{% url 'staff:clock' %}">{% csrf_token %}<button class="btn btn-primary btn-sm w-100"><i class="bi bi-clock me-1"></i>Clock In / Out</button></form>
+    </div></div></div>
+    <div class="col-md-4"><div class="card"><div class="card-body"><h5>{{ pending_leave }}</h5><p class="text-secondary small mb-0">My Pending Leave Requests</p></div></div></div>
+</div>
+
+{% if 'librarian' in roles %}
+<div class="card mb-3"><div class="card-header"><h6 class="mb-0 fw-bold">Librarian</h6></div>
+<div class="card-body"><div class="row g-3">
+    <div class="col-md-4"><h5>{{ overdue_loans }}</h5><p class="text-secondary small">Overdue Books</p></div>
+    <div class="col-md-4"><h5>{{ due_today }}</h5><p class="text-secondary small">Due Today</p></div>
+    <div class="col-md-4"><a class="btn btn-outline-primary btn-sm" href="{% url 'staff:book_list' %}">Open Catalogue</a></div>
+</div></div></div>
+{% endif %}
+
+{% if 'security' in roles %}
+<div class="card mb-3"><div class="card-header"><h6 class="mb-0 fw-bold">Security</h6></div>
+<div class="card-body"><div class="row g-3">
+    <div class="col-md-4"><h5>{{ active_gate_passes }}</h5><p class="text-secondary small">Active Gate Passes</p></div>
+    <div class="col-md-4"><h5>{{ visitors_today }}</h5><p class="text-secondary small">Visitors Today</p></div>
+    <div class="col-md-4"><a class="btn btn-outline-primary btn-sm" href="{% url 'staff:visitor_log' %}">Visitor Log</a></div>
+</div></div></div>
+{% endif %}
+
+{% if 'nurse' in roles %}
+<div class="card mb-3"><div class="card-header"><h6 class="mb-0 fw-bold">Nurse / Matron</h6></div>
+<div class="card-body"><div class="row g-3">
+    <div class="col-md-4"><h5>{{ visits_today }}</h5><p class="text-secondary small">Sick Bay Visits Today</p></div>
+    <div class="col-md-4"><h5>{{ low_stock|length }}</h5><p class="text-secondary small">Medications Needing Reorder</p></div>
+    <div class="col-md-4"><a class="btn btn-outline-primary btn-sm" href="{% url 'staff:sickbay_list' %}">Sick Bay Log</a></div>
+</div></div></div>
+{% endif %}
+
+{% if open_tickets is not None %}
+<div class="card mb-3"><div class="card-header"><h6 class="mb-0 fw-bold">Tickets</h6></div>
+<div class="card-body"><h5>{{ open_tickets }}</h5><p class="text-secondary small">Open Tickets</p><a class="btn btn-outline-primary btn-sm" href="{% url 'staff:ticket_list' %}">View Tickets</a></div></div>
+{% endif %}
+
+<div class="card"><div class="card-header d-flex justify-content-between"><h6 class="mb-0 fw-bold">Announcements</h6><a class="btn btn-sm btn-outline-secondary" href="{% url 'staff:announcements' %}">View All</a></div>
+<div class="card-body">{% for a in announcements %}<p class="mb-1"><strong>{{ a.title }}</strong> - {{ a.body|truncatewords:15 }}</p>{% empty %}<p class="text-secondary">No announcements.</p>{% endfor %}</div></div>
+{% endif %}
+{% endblock %}

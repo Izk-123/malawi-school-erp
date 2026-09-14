@@ -1,13 +1,364 @@
 {% extends "base.html" %}
-{% load crispy_forms_tags %}
-{% block page_title %}My Profile{% endblock %}
+{% load static %}
+
+{% block title %}My profile{% endblock %}
+{% block page_title %}My profile{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock %}
+
 {% block content %}
-<div class="row"><div class="col-lg-6">
-<div class="card"><div class="card-body">
-{% crispy form %}
-</div></div>
-<div class="mt-3">
-    <a href="{% url 'accounts:password_change' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-key me-1"></i>Change Password</a>
+<div class="profile-page">
+
+    {# ───────── Hero ───────── #}
+    <section class="profile-hero">
+        <div class="profile-avatar-wrap">
+            <div class="profile-avatar">
+                {% if user.profile_picture %}
+                    <img src="{{ user.profile_picture.url }}"
+                         alt="{{ user.get_full_name|default:user.username }}">
+                {% else %}
+                    <span aria-hidden="true">
+                        {{ user.first_name|first|default:user.username|first }}{{ user.last_name|first }}
+                    </span>
+                {% endif %}
+            </div>
+            <button type="button"
+                    class="avatar-edit"
+                    data-open-photo-sheet
+                    aria-label="Change profile photo">
+                <i class="bi bi-camera"></i>
+            </button>
+        </div>
+
+        <h1 class="profile-name">{{ user.get_full_name|default:user.username }}</h1>
+        <p class="profile-email">{{ user.email|default:"—" }}</p>
+
+        <ul class="profile-roles" role="list" aria-label="Roles">
+            <li class="role-pill role-{{ user.role }}">
+                <i class="bi {{ role_meta.icon }}"></i> {{ user.get_role_display }}
+            </li>
+            {% if user.is_superuser %}
+            <li class="role-pill role-admin">
+                <i class="bi bi-shield-fill-check"></i> Superuser
+            </li>
+            {% endif %}
+        </ul>
+
+        <a href="{% url 'accounts:profile_edit' %}" class="btn btn-primary">
+            <i class="bi bi-pencil"></i> Edit profile
+        </a>
+    </section>
+
+    {# ───────── Content column ───────── #}
+    <div class="profile-content">
+
+        {# Quick stats #}
+        {% if stats %}
+        <section class="stat-strip" aria-label="Quick stats">
+            {% for stat in stats %}
+            <div class="stat-strip-item">
+                <span class="stat-strip-value">{{ stat.value }}</span>
+                <span class="stat-strip-label">{{ stat.label }}</span>
+            </div>
+            {% endfor %}
+        </section>
+        {% endif %}
+
+        {# Personal information #}
+        <section class="profile-section"
+                 data-section="personal"
+                 data-default-open="true">
+            <button class="profile-section-head" type="button">
+                <h2 class="profile-section-title">Personal information</h2>
+                <i class="bi bi-chevron-down" aria-hidden="true"></i>
+            </button>
+            <div class="profile-section-body" id="section-personal">
+                <dl class="profile-fields">
+                    <div class="profile-field">
+                        <dt>First name</dt>
+                        <dd>{{ user.first_name|default:"—" }}</dd>
+                    </div>
+                    <div class="profile-field">
+                        <dt>Last name</dt>
+                        <dd>{{ user.last_name|default:"—" }}</dd>
+                    </div>
+                    <div class="profile-field">
+                        <dt>Username</dt>
+                        <dd>{{ user.username }}</dd>
+                    </div>
+                    <div class="profile-field">
+                        <dt>Role</dt>
+                        <dd>{{ user.get_role_display }}</dd>
+                    </div>
+                </dl>
+            </div>
+        </section>
+
+        {# Contact details #}
+        <section class="profile-section" data-section="contact">
+            <button class="profile-section-head" type="button">
+                <h2 class="profile-section-title">Contact details</h2>
+                <i class="bi bi-chevron-down" aria-hidden="true"></i>
+            </button>
+            <div class="profile-section-body" id="section-contact">
+                <dl class="profile-fields">
+
+                    <div class="profile-field">
+                        <dt>Email</dt>
+                        <dd>
+                            <span>{{ user.email|default:"—" }}</span>
+                            {% if user.email %}
+                                {% if user.email_verified %}
+                                <span class="verify-badge verify-ok">
+                                    <i class="bi bi-patch-check-fill"></i> Verified
+                                </span>
+                                {% else %}
+                                <span class="verify-badge verify-pending">
+                                    <i class="bi bi-exclamation-circle"></i> Unverified
+                                </span>
+                                <form method="post"
+                                      action="{% url 'accounts:resend_email' %}"
+                                      style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="field-action"
+                                            style="background:none; border:0; padding:4px 8px;">
+                                        Resend
+                                    </button>
+                                </form>
+                                {% endif %}
+                            {% endif %}
+                        </dd>
+                    </div>
+
+                    <div class="profile-field">
+                        <dt>Phone</dt>
+                        <dd>
+                            <span>{{ user.phone_number|default:"—" }}</span>
+                            {% if user.phone_number %}
+                                {% if user.phone_verified %}
+                                <span class="verify-badge verify-ok">
+                                    <i class="bi bi-patch-check-fill"></i> Verified
+                                </span>
+                                {% else %}
+                                <span class="verify-badge verify-pending">
+                                    <i class="bi bi-exclamation-circle"></i> Unverified
+                                </span>
+                                <a href="{% url 'accounts:phone_request' %}" class="field-action">Verify</a>
+                                {% endif %}
+                            {% else %}
+                                <a href="{% url 'accounts:phone_request' %}" class="field-action">Add phone</a>
+                            {% endif %}
+                        </dd>
+                    </div>
+
+                    <div class="profile-field">
+                        <dt>Preferred language</dt>
+                        <dd>{{ user.get_preferred_language_display }}</dd>
+                    </div>
+
+                </dl>
+            </div>
+        </section>
+
+        {# Roles & portals #}
+        <section class="profile-section" data-section="roles">
+            <button class="profile-section-head" type="button">
+                <h2 class="profile-section-title">Roles &amp; portals</h2>
+                <i class="bi bi-chevron-down" aria-hidden="true"></i>
+            </button>
+            <div class="profile-section-body" id="section-roles">
+                <ul class="role-list">
+                    <li class="role-card">
+                        <span class="role-card-icon role-icon-{{ user.role }}">
+                            <i class="bi {{ role_meta.icon }}"></i>
+                        </span>
+                        <div class="role-card-info">
+                            <span class="role-card-title">{{ user.get_role_display }}</span>
+                            <span class="role-card-desc">{{ role_meta.description }}</span>
+                        </div>
+                        <span class="verify-badge verify-ok">
+                            <i class="bi bi-check-circle-fill"></i> Current
+                        </span>
+                    </li>
+                    {% if user.is_superuser %}
+                    <li class="role-card">
+                        <span class="role-card-icon role-icon-admin">
+                            <i class="bi bi-shield-fill-check"></i>
+                        </span>
+                        <div class="role-card-info">
+                            <span class="role-card-title">Administrator</span>
+                            <span class="role-card-desc">Full system access</span>
+                        </div>
+                        <a href="/admin/" class="btn btn-sm btn-outline">Open admin</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </section>
+
+        {# Security #}
+        <section class="profile-section" data-section="security">
+            <button class="profile-section-head" type="button">
+                <h2 class="profile-section-title">Security</h2>
+                <i class="bi bi-chevron-down" aria-hidden="true"></i>
+            </button>
+            <div class="profile-section-body" id="section-security">
+                <dl class="profile-fields">
+                    <div class="profile-field">
+                        <dt>Password</dt>
+                        <dd>
+                            <span class="muted">Click to set a new password</span>
+                            <a href="{% url 'accounts:password_change' %}" class="field-action">Change</a>
+                        </dd>
+                    </div>
+                    <div class="profile-field">
+                        <dt>Account created</dt>
+                        <dd>{{ user.date_joined|date:"j M Y" }}</dd>
+                    </div>
+                    <div class="profile-field">
+                        <dt>Last login</dt>
+                        <dd>
+                            {% if user.last_login %}
+                                {{ user.last_login|date:"j M Y, H:i" }}
+                            {% else %}
+                                <span class="muted">Never</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+        </section>
+
+        {# Preferences #}
+        <section class="profile-section" data-section="preferences">
+            <button class="profile-section-head" type="button">
+                <h2 class="profile-section-title">Preferences</h2>
+                <i class="bi bi-chevron-down" aria-hidden="true"></i>
+            </button>
+            <div class="profile-section-body" id="section-preferences">
+                <dl class="profile-fields">
+
+                    <div class="profile-field">
+                        <dt>Theme</dt>
+                        <dd>
+                            <div class="segmented" role="radiogroup" aria-label="Theme">
+                                <button type="button" class="segmented-item" data-theme-option="light">
+                                    <i class="bi bi-sun"></i> Light
+                                </button>
+                                <button type="button" class="segmented-item" data-theme-option="dark">
+                                    <i class="bi bi-moon-stars"></i> Dark
+                                </button>
+                                <button type="button" class="segmented-item" data-theme-option="auto">
+                                    <i class="bi bi-circle-half"></i> Auto
+                                </button>
+                            </div>
+                        </dd>
+                    </div>
+
+                    <div class="profile-field">
+                        <dt>SMS alerts</dt>
+                        <dd>
+                            <label class="switch" aria-label="Enable SMS alerts">
+                                <input type="checkbox"
+                                       data-pref-key="sms_alerts"
+                                       {% if user.role == 'parent' or user.role == 'student' %}checked{% endif %}>
+                                <span class="switch-track"><span class="switch-thumb"></span></span>
+                            </label>
+                        </dd>
+                    </div>
+
+                    <div class="profile-field">
+                        <dt>Email notifications</dt>
+                        <dd>
+                            <label class="switch" aria-label="Enable email notifications">
+                                <input type="checkbox"
+                                       data-pref-key="email_notifications"
+                                       checked>
+                                <span class="switch-track"><span class="switch-thumb"></span></span>
+                            </label>
+                        </dd>
+                    </div>
+
+                </dl>
+            </div>
+        </section>
+    </div>
+
+    {# ───────── Danger zone ───────── #}
+    <section class="profile-danger">
+        <form method="post" action="{% url 'accounts:logout' %}" style="width:100%;">
+            {% csrf_token %}
+            <button class="btn btn-outline" type="submit" style="width:100%;">
+                <i class="bi bi-box-arrow-right"></i> Log out
+            </button>
+        </form>
+
+        <button class="btn-link-danger" type="button" data-delete-account>
+            Delete my account
+        </button>
+        <form id="deleteAccountForm"
+              method="post"
+              action="{% url 'accounts:profile' %}"
+              style="display:none;">
+            {% csrf_token %}
+            <input type="hidden" name="delete" value="1">
+        </form>
+    </section>
 </div>
-</div></div>
+
+{# ───────── Photo sheet ───────── #}
+<div class="photo-sheet" id="photoSheet" role="dialog" aria-modal="true"
+     aria-label="Profile photo options">
+    <div class="photo-sheet-backdrop" data-close-photo-sheet></div>
+    <div class="photo-sheet-content">
+        <div class="sheet-handle"></div>
+        <h3>Profile photo</h3>
+        <div class="photo-options">
+            <button type="button" class="photo-option" data-photo-source="camera">
+                <i class="bi bi-camera"></i>
+                <span>Take a photo</span>
+            </button>
+            <button type="button" class="photo-option" data-photo-source="gallery">
+                <i class="bi bi-image"></i>
+                <span>Choose from gallery</span>
+            </button>
+            {% if user.profile_picture %}
+            <button type="button"
+                    class="photo-option danger"
+                    onclick="document.getElementById('removePhotoForm').submit();">
+                <i class="bi bi-trash"></i>
+                <span>Remove photo</span>
+            </button>
+            {% endif %}
+        </div>
+
+        <form id="photoUploadForm"
+              method="post"
+              action="{% url 'accounts:profile' %}"
+              enctype="multipart/form-data">
+            {% csrf_token %}
+            <input id="photoFileInput"
+                   class="photo-file-input"
+                   type="file"
+                   name="profile_picture"
+                   accept="image/*">
+        </form>
+
+        {% if user.profile_picture %}
+        <form id="removePhotoForm"
+              method="post"
+              action="{% url 'accounts:profile' %}"
+              style="display:none;">
+            {% csrf_token %}
+            <input type="hidden" name="remove_picture" value="1">
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/profile.js' %}" defer></script>
 {% endblock %}

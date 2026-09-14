@@ -47,11 +47,18 @@ ROLE_MENUS = {
         {'url': 'accounts:profile', 'icon': 'bi-person-circle', 'label': 'My Profile'},
     ],
     'staff': [
-        {'url': 'accounts:dashboard', 'icon': 'bi-speedometer2', 'label': 'Dashboard'},
+        {'url': 'staff:dashboard', 'icon': 'bi-speedometer2', 'label': 'My Dashboard'},
         {'url': 'staff:list', 'icon': 'bi-people', 'label': 'Staff Directory'},
+        {'url': 'staff:my_leave', 'icon': 'bi-calendar-x', 'label': 'Leave'},
+        {'url': 'staff:announcements', 'icon': 'bi-megaphone', 'label': 'Announcements'},
+        {'url': 'staff:tickets', 'icon': 'bi-ticket-perforated', 'label': 'Tickets'},
+        {'url': 'staff:book_list', 'icon': 'bi-book', 'label': 'Library'},
+        {'url': 'staff:visitor_list', 'icon': 'bi-door-open', 'label': 'Visitor Log'},
+        {'url': 'staff:gate_pass_list', 'icon': 'bi-card-checklist', 'label': 'Gate Passes'},
+        {'url': 'staff:sickbay_list', 'icon': 'bi-heart-pulse', 'label': 'Sick Bay'},
         {'url': 'timetable:list', 'icon': 'bi-calendar-week', 'label': 'Timetable'},
         {'url': 'reports:index', 'icon': 'bi-graph-up', 'label': 'Reports'},
-        {'url': 'accounts:profile', 'icon': 'bi-person-circle', 'label': 'My Profile'},
+        {'url': 'staff:my_profile', 'icon': 'bi-person-circle', 'label': 'My Profile'},
     ],
 }
 

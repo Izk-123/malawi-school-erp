@@ -1,15 +1,15 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Malawi School ERP{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'css/custom.css' %}">
-</head>
-<body>
-<div class="login-container"><div class="login-card">
-    {% block auth_content %}{% endblock %}
-</div></div>
-</body>
-</html>
+{% extends "registration/base_auth.html" %}
+{% comment %}
+    Compatibility shim.
+
+    Older auth templates extended `registration/_auth_page.html` and
+    filled the `auth_content` block:
+
+        {% extends "registration/_auth_page.html" %}
+        {% block auth_content %}...{% endblock %}
+
+    The new `registration/base_auth.html` provides the modern mobile-first
+    shell and supports both `content` and `auth_content` block names, so
+    existing templates keep working unchanged. New templates should extend
+    `base_auth.html` directly and use the `content` block.
+{% endcomment %}

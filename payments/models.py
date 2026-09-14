@@ -2,6 +2,7 @@ import uuid
 
 from django.conf import settings as dj_settings
 from django.db import models
+from djmoney.models.fields import MoneyField
 
 
 def generate_reference():
@@ -29,8 +30,7 @@ class PaymentTransaction(models.Model):
     gateway_reference = models.CharField(max_length=100, blank=True)
     student = models.ForeignKey('students.Student', on_delete=models.CASCADE, related_name='payment_transactions')
     initiated_by = models.ForeignKey(dj_settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
-    currency = models.CharField(max_length=3, default='MWK')
+    amount = MoneyField(max_digits=12, decimal_places=2, default_currency='MWK')
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
     checkout_url = models.URLField(blank=True)
     raw_initiation_response = models.JSONField(null=True, blank=True)

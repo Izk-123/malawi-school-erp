@@ -1,28 +1,142 @@
 {% extends "base.html" %}
-{% block page_title %}User Management{% endblock %}
+{% load static %}
+
+{% block title %}User management{% endblock %}
+{% block page_title %}User management{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock %}
+
 {% block content %}
-<div class="card">
-    <div class="card-header d-flex justify-content-between flex-wrap gap-2">
-        <h5 class="mb-0 fw-bold">Users ({{ users.paginator.count }})</h5>
-        <div class="d-flex gap-2">
-            <form class="d-flex gap-2" method="get">
-                <input type="text" name="q" class="form-control form-control-sm" placeholder="Search username..." value="{{ request.GET.q }}">
-                <select name="role" class="form-select form-select-sm" onchange="this.form.submit()">
-                    <option value="">All Roles</option>
-                    {% for value, label in roles %}<option value="{{ value }}" {% if request.GET.role == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
-                </select>
-                <button class="btn btn-sm btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
-            </form>
-            <a href="{% url 'accounts:user_create' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-circle me-1"></i>Add User</a>
-        </div>
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Users</h1>
+        <p class="text-muted-sm mb-0">{{ users.paginator.count }} total</p>
     </div>
-    <div class="card-body p-0"><table class="table table-hover mb-0">
-        <thead><tr><th>Username</th><th>Name</th><th>Role</th><th>Email</th><th>Status</th><th>Actions</th></tr></thead>
-        <tbody>{% for u in users %}<tr>
-            <td>{{ u.username }}</td><td>{{ u.get_full_name }}</td><td>{{ u.get_role_display }}</td><td>{{ u.email }}</td>
-            <td><span class="badge rounded-pill {% if u.is_active %}bg-success-subtle text-success{% else %}bg-danger-subtle text-danger{% endif %}">{% if u.is_active %}Active{% else %}Inactive{% endif %}</span></td>
-            <td><a class="btn btn-sm btn-outline-primary" href="{% url 'accounts:user_detail' u.pk %}"><i class="bi bi-eye"></i></a></td>
-        </tr>{% empty %}<tr><td colspan="6" class="text-center">No users found</td></tr>{% endfor %}</tbody>
-    </table></div>
+
+    <div class="toolbar">
+        <form method="get" class="d-flex flex-wrap gap-2" role="search">
+            <input type="search"
+                   name="q"
+                   class="input input-search"
+                   placeholder="Search username…"
+                   value="{{ request.GET.q }}"
+                   style="flex:1; min-width:180px;">
+            <select name="role" class="input" onchange="this.form.submit()" style="min-width:150px;">
+                <option value="">All roles</option>
+                {% for value, label in roles %}
+                <option value="{{ value }}" {% if request.GET.role == value %}selected{% endif %}>
+                    {{ label }}
+                </option>
+                {% endfor %}
+            </select>
+            <button class="btn btn-secondary" type="submit" aria-label="Search">
+                <i class="bi bi-search"></i>
+            </button>
+        </form>
+
+        <a href="{% url 'accounts:user_create' %}" class="btn btn-primary toolbar-add">
+            <i class="bi bi-plus-lg"></i> Add user
+        </a>
+    </div>
 </div>
+
+<div class="card" style="padding:0; overflow:hidden;">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>User</th>
+                <th>Role</th>
+                <th>Email</th>
+                <th>Status</th>
+                <th style="width:96px;"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in users %}
+            <tr>
+                <td data-label="User">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="avatar avatar-sm" aria-hidden="true">
+                            {{ u.first_name|first|default:u.username|first|upper }}
+                        </span>
+                        <div style="min-width:0;">
+                            <div class="fw-medium" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                {{ u.get_full_name|default:u.username }}
+                            </div>
+                            <div class="text-muted-sm">@{{ u.username }}</div>
+                        </div>
+                    </div>
+                </td>
+                <td data-label="Role">
+                    <span class="role-pill role-{{ u.role }}">{{ u.get_role_display }}</span>
+                </td>
+                <td data-label="Email">{{ u.email|default:"—" }}</td>
+                <td data-label="Status">
+                    {% if u.is_active %}
+                    <span class="badge badge-success">
+                        <span class="badge-dot"></span> Active
+                    </span>
+                    {% else %}
+                    <span class="badge badge-danger">
+                        <span class="badge-dot"></span> Inactive
+                    </span>
+                    {% endif %}
+                </td>
+                <td class="actions">
+                    <a class="btn btn-ghost btn-sm btn-icon"
+                       href="{% url 'accounts:user_detail' u.pk %}"
+                       aria-label="View {{ u.username }}">
+                        <i class="bi bi-eye"></i>
+                    </a>
+                    <a class="btn btn-ghost btn-sm btn-icon"
+                       href="{% url 'accounts:user_update' u.pk %}"
+                       aria-label="Edit {{ u.username }}">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" style="padding:0;">
+                    <div class="empty-state">
+                        <div class="empty-icon"><i class="bi bi-person-gear"></i></div>
+                        <h3>No users found</h3>
+                        <p>Try a different search, or create the first account.</p>
+                        <a href="{% url 'accounts:user_create' %}" class="btn btn-primary">
+                            <i class="bi bi-plus-lg"></i> Add user
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if users.has_other_pages %}
+<nav class="d-flex align-items-center justify-content-center gap-3 mt-4" aria-label="Pagination">
+    {% if users.has_previous %}
+    <a class="btn btn-secondary btn-sm"
+       href="?page={{ users.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q|urlencode }}{% endif %}{% if request.GET.role %}&role={{ request.GET.role }}{% endif %}">
+        <i class="bi bi-chevron-left"></i> Previous
+    </a>
+    {% endif %}
+    <span class="text-muted-sm">
+        Page {{ users.number }} of {{ users.paginator.num_pages }}
+    </span>
+    {% if users.has_next %}
+    <a class="btn btn-secondary btn-sm"
+       href="?page={{ users.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q|urlencode }}{% endif %}{% if request.GET.role %}&role={{ request.GET.role }}{% endif %}">
+        Next <i class="bi bi-chevron-right"></i>
+    </a>
+    {% endif %}
+</nav>
+{% endif %}
+
+{# FAB (mobile only — the toolbar button appears at ≥ 840px) #}
+<a href="{% url 'accounts:user_create' %}" class="fab" aria-label="Add user">
+    <i class="bi bi-plus-lg"></i>
+</a>
 {% endblock %}

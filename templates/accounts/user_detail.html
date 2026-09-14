@@ -1,37 +1,224 @@
 {% extends "base.html" %}
-{% block page_title %}User Details{% endblock %}
+{% load static %}
+
+{% block title %}{{ account.username }}{% endblock %}
+{% block page_title %}User details{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock %}
+
 {% block content %}
-<div class="row g-4">
-<div class="col-lg-6">
-<div class="card"><div class="card-header"><h5 class="mb-0 fw-bold">{{ account.username }}</h5></div>
-<div class="card-body">
-    <p><strong>Name:</strong> {{ account.get_full_name }}</p>
-    <p><strong>Role:</strong> {{ account.get_role_display }}</p>
-    <p><strong>Email:</strong> {{ account.email }}</p>
-    <p><strong>Phone:</strong> {{ account.phone_number }}</p>
-    <p><strong>Status:</strong> <span class="badge {% if account.is_active %}bg-success{% else %}bg-danger{% endif %}">{% if account.is_active %}Active{% else %}Inactive{% endif %}</span></p>
-    {% if is_locked %}<p><span class="badge bg-warning text-dark">Locked (too many failed logins)</span></p>{% endif %}
-    <div class="d-flex gap-2 mt-3">
-        <a class="btn btn-sm btn-outline-secondary" href="{% url 'accounts:user_update' account.pk %}"><i class="bi bi-pencil me-1"></i>Edit</a>
-        <form method="post" action="{% url 'accounts:user_toggle_active' account.pk %}">{% csrf_token %}
-            <button class="btn btn-sm {% if account.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}" type="submit">
-                {% if account.is_active %}Deactivate{% else %}Activate{% endif %}
+<div style="max-width:880px; margin:0 auto; padding:0 16px 96px;">
+
+    {# ───────── Top bar: back · actions ───────── #}
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3"
+         style="margin-top:4px;">
+        <a href="{% url 'accounts:user_list' %}" class="btn btn-ghost btn-sm">
+            <i class="bi bi-arrow-left"></i> Back to users
+        </a>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-secondary btn-sm"
+               href="{% url 'accounts:user_update' account.pk %}">
+                <i class="bi bi-pencil"></i> Edit
+            </a>
+
+            <form method="post"
+                  action="{% url 'accounts:user_toggle_active' account.pk %}"
+                  style="display:inline;">
+                {% csrf_token %}
+                <button class="btn btn-sm {% if account.is_active %}btn-danger{% else %}btn-primary{% endif %}"
+                        type="submit">
+                    {% if account.is_active %}
+                        <i class="bi bi-slash-circle"></i> Deactivate
+                    {% else %}
+                        <i class="bi bi-check-circle"></i> Activate
+                    {% endif %}
+                </button>
+            </form>
+
+            {% if is_locked %}
+            <form method="post"
+                  action="{% url 'accounts:user_unlock' account.pk %}"
+                  style="display:inline;">
+                {% csrf_token %}
+                <button class="btn btn-secondary btn-sm" type="submit">
+                    <i class="bi bi-unlock"></i> Unlock
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    {# ───────── Identity card ───────── #}
+    <div class="card mb-3" style="padding:0; overflow:hidden;">
+        <div class="profile-hero" style="padding:24px 20px 20px;">
+            <div class="profile-avatar-wrap">
+                <div class="profile-avatar">
+                    {% if account.profile_picture %}
+                        <img src="{{ account.profile_picture.url }}" alt="">
+                    {% else %}
+                        <span aria-hidden="true">
+                            {{ account.first_name|first|default:account.username|first|upper }}{{ account.last_name|first }}
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <h1 class="profile-name">{{ account.get_full_name|default:account.username }}</h1>
+            <p class="profile-email">{{ account.email|default:"—" }}</p>
+
+            <ul class="profile-roles" role="list" aria-label="Roles and status">
+                <li class="role-pill role-{{ account.role }}">
+                    {{ account.get_role_display }}
+                </li>
+                {% if account.is_superuser %}
+                <li class="role-pill role-admin">
+                    <i class="bi bi-shield-fill-check"></i> Superuser
+                </li>
+                {% endif %}
+                {% if account.is_active %}
+                <li class="role-pill" style="background: var(--status-success-bg); color: var(--status-success-fg);">
+                    <i class="bi bi-circle-fill" style="font-size:6px;"></i> Active
+                </li>
+                {% else %}
+                <li class="role-pill" style="background: var(--status-danger-bg); color: var(--status-danger-fg);">
+                    <i class="bi bi-circle-fill" style="font-size:6px;"></i> Inactive
+                </li>
+                {% endif %}
+                {% if is_locked %}
+                <li class="role-pill" style="background: var(--status-warning-bg); color: var(--status-warning-fg);">
+                    <i class="bi bi-lock-fill"></i> Locked
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+
+    {# ───────── Account details ───────── #}
+    <section class="profile-section">
+        <div class="profile-section-head" style="cursor:default;">
+            <h2 class="profile-section-title">Account</h2>
+        </div>
+        <div class="profile-section-body">
+            <dl class="profile-fields">
+                <div class="profile-field">
+                    <dt>Username</dt>
+                    <dd>{{ account.username }}</dd>
+                </div>
+                <div class="profile-field">
+                    <dt>Email</dt>
+                    <dd>
+                        <span>{{ account.email|default:"—" }}</span>
+                        {% if account.email %}
+                            {% if account.email_verified %}
+                            <span class="verify-badge verify-ok">
+                                <i class="bi bi-patch-check-fill"></i> Verified
+                            </span>
+                            {% else %}
+                            <span class="verify-badge verify-pending">
+                                <i class="bi bi-exclamation-circle"></i> Unverified
+                            </span>
+                            {% endif %}
+                        {% endif %}
+                    </dd>
+                </div>
+                <div class="profile-field">
+                    <dt>Phone</dt>
+                    <dd>
+                        <span>{{ account.phone_number|default:"—" }}</span>
+                        {% if account.phone_number %}
+                            {% if account.phone_verified %}
+                            <span class="verify-badge verify-ok">
+                                <i class="bi bi-patch-check-fill"></i> Verified
+                            </span>
+                            {% else %}
+                            <span class="verify-badge verify-pending">
+                                <i class="bi bi-exclamation-circle"></i> Unverified
+                            </span>
+                            {% endif %}
+                        {% endif %}
+                    </dd>
+                </div>
+                <div class="profile-field">
+                    <dt>Role</dt>
+                    <dd>{{ account.get_role_display }}</dd>
+                </div>
+                <div class="profile-field">
+                    <dt>Preferred language</dt>
+                    <dd>{{ account.get_preferred_language_display }}</dd>
+                </div>
+                <div class="profile-field">
+                    <dt>Joined</dt>
+                    <dd>{{ account.date_joined|date:"j M Y, H:i" }}</dd>
+                </div>
+                <div class="profile-field">
+                    <dt>Last login</dt>
+                    <dd>
+                        {% if account.last_login %}
+                            {{ account.last_login|date:"j M Y, H:i" }}
+                            <span class="muted">({{ account.last_login|timesince }} ago)</span>
+                        {% else %}
+                            <span class="muted">Never</span>
+                        {% endif %}
+                    </dd>
+                </div>
+            </dl>
+        </div>
+    </section>
+
+    {# ───────── Recent activity ───────── #}
+    <section class="profile-section">
+        <div class="profile-section-head" style="cursor:default;">
+            <h2 class="profile-section-title">Recent activity</h2>
+        </div>
+        <div class="profile-section-body" style="padding:0;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>When</th>
+                        <th>Action</th>
+                        <th>IP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in audit_logs %}
+                    <tr>
+                        <td data-label="When">{{ log.created_at|date:"j M Y, H:i" }}</td>
+                        <td data-label="Action">{{ log.get_action_display }}</td>
+                        <td data-label="IP">{{ log.ip_address|default:"—" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" style="padding:0;">
+                            <div class="empty-state" style="padding:32px 16px;">
+                                <div class="empty-icon">
+                                    <i class="bi bi-clock-history"></i>
+                                </div>
+                                <p class="mb-0">No activity recorded yet.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    {# ───────── Danger zone ───────── #}
+    <section class="profile-danger">
+        <form method="post"
+              action="{% url 'accounts:user_toggle_active' account.pk %}"
+              style="width:100%; max-width:320px;">
+            {% csrf_token %}
+            <button class="btn btn-outline" type="submit" style="width:100%;">
+                {% if account.is_active %}
+                    <i class="bi bi-slash-circle"></i> Deactivate account
+                {% else %}
+                    <i class="bi bi-check-circle"></i> Activate account
+                {% endif %}
             </button>
         </form>
-        {% if is_locked %}
-        <form method="post" action="{% url 'accounts:user_unlock' account.pk %}">{% csrf_token %}
-            <button class="btn btn-sm btn-outline-warning" type="submit">Unlock</button>
-        </form>
-        {% endif %}
-    </div>
-</div></div>
-</div>
-<div class="col-lg-6">
-<div class="card"><div class="card-header"><h6 class="mb-0 fw-bold">Recent Activity</h6></div>
-<div class="card-body p-0"><table class="table table-hover mb-0">
-<thead><tr><th>When</th><th>Action</th><th>IP</th></tr></thead>
-<tbody>{% for log in audit_logs %}<tr><td>{{ log.created_at }}</td><td>{{ log.get_action_display }}</td><td>{{ log.ip_address|default:"-" }}</td></tr>{% empty %}<tr><td colspan="3">No activity recorded yet</td></tr>{% endfor %}</tbody>
-</table></div></div>
-</div>
+    </section>
 </div>
 {% endblock %}

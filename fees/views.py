@@ -57,11 +57,11 @@ class RecordPaymentView(LoginRequiredMixin, RoleRequiredMixin, CreateView):
         form.instance.recorded_by = self.request.user
         response = super().form_valid(form)
         student = form.instance.student
-        student.fees_paid += form.instance.amount
+        student.fees_paid += form.instance.amount.amount
         student.save(update_fields=['fees_paid'])
         if student.balance > 0:
             send_fee_reminder.delay(student.id)
-        messages.success(self.request, f'Payment of MK {form.instance.amount:,.2f} recorded. Receipt {form.instance.receipt_no}.')
+        messages.success(self.request, f'Payment of {form.instance.amount} recorded. Receipt {form.instance.receipt_no}.')
         return response
 
 
@@ -78,6 +78,38 @@ class ReceiptView(LoginRequiredMixin, RoleRequiredMixin, View):
             messages.error(request, "That receipt isn't linked to your account.")
             return redirect('fees:my_fees')
         return render(request, 'fees/receipt.html', {'txn': txn})
+
+
+class ReceiptPDFView(LoginRequiredMixin, RoleRequiredMixin, View):
+    """FP-20 / STF-12: printable receipt as a downloadable PDF."""
+    allowed_roles = ['admin', 'parent', 'student']
+
+    def get(self, request, pk):
+        from common.pdf import render_simple_document
+        txn = get_object_or_404(FeeTransaction, pk=pk)
+        if request.user.role == 'parent' and not txn.student.guardians.filter(pk=request.user.pk).exists():
+            messages.error(request, "That receipt isn't linked to your account.")
+            return redirect('fees:list')
+        if request.user.role == 'student' and txn.student.user_id != request.user.id:
+            messages.error(request, "That receipt isn't linked to your account.")
+            return redirect('fees:my_fees')
+
+        lines = [
+            ('Receipt No', txn.receipt_no),
+            ('Student', f'{txn.student.full_name} ({txn.student.student_id})'),
+            ('Amount', f'{txn.amount}'),
+            ('Date', txn.date),
+            ('Method', txn.get_method_display() + (f' via {txn.gateway.title()}' if txn.gateway else '')),
+        ]
+        if txn.is_reversed:
+            lines.append(('Status', f'REVERSED on {txn.reversed_at:%Y-%m-%d} - {txn.reversal_reason or "-"}'))
+        pdf_bytes = render_simple_document(
+            title='Official Receipt', subtitle=None, lines=lines,
+            footer='This is a computer-generated receipt.',
+        )
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="{txn.receipt_no}.pdf"'
+        return response
 
 
 class ReversePaymentView(LoginRequiredMixin, RoleRequiredMixin, View):

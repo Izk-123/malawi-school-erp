@@ -1,49 +1,56 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Malawi School ERP{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#1a5632">
+    <title>{% block title %}Sign in{% endblock %} · Malawi School ERP</title>
+
+    {# Theme bootstrap — respects OS preference unless overridden #}
+    <script>
+    (function () {
+        var saved = localStorage.getItem('mse.theme');
+        var prefersDark = window.matchMedia &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var theme = saved || (prefersDark ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.setAttribute('data-bs-theme', theme);
+    })();
+    </script>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'css/custom.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&family=Roboto+Mono:wght@500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/theme.css' %}">
+    <link rel="stylesheet" href="{% static 'css/_dark.css' %}">
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    {% block extra_css %}{% endblock %}
 </head>
-<body>
-<div class="login-container">
-    <div class="login-card">
-        <div class="text-center mb-4">
-            <div class="rounded-circle bg-primary d-inline-flex align-items-center justify-content-center" style="width:64px;height:64px;">
-                <i class="bi bi-mortarboard-fill text-white fs-2"></i>
+<body class="auth-shell">
+
+    <div class="auth-hero">
+        <div class="auth-brand">
+            <div class="auth-brand-mark">
+                <i class="bi bi-mortarboard-fill"></i>
             </div>
-            <h4 class="mt-3 fw-bold" style="color:#1a5632;">Malawi School ERP</h4>
-            <p class="text-secondary">Maphunziro Athu &bull; Our Education</p>
-        </div>
-
-        {% if form.errors %}
-            <div class="alert alert-danger">
-                {% if form.errors.items|length == 1 %}
-                    Please correct the error below.
-                {% else %}
-                    Please correct the errors below.
-                {% endif %}
+            <div>
+                <div class="auth-brand-name">Malawi School ERP</div>
+                <div class="auth-brand-tagline">Maphunziro Athu &middot; Our Education</div>
             </div>
-        {% endif %}
-
-        <form method="post" novalidate>
-            {% csrf_token %}
-            {% block form_fields %}{% endblock %}
-            <input type="hidden" name="next" value="{{ next }}">
-            <button type="submit" class="btn btn-primary w-100 py-2">
-                {% block submit_label %}Submit{% endblock %}
-                <i class="bi bi-arrow-right ms-1"></i>
-            </button>
-        </form>
-
-        <div class="text-center mt-3 small">
-            {% block extra_links %}{% endblock %}
         </div>
+        {% block hero_blurb %}{% endblock %}
     </div>
-</div>
+
+    <main class="auth-content">
+        {% block content %}{% block auth_content %}{% endblock %}{% endblock %}
+    </main>
+
+    <footer class="auth-footer">
+        Need help? Call <a href="tel:+265888800800">0888 800 800</a>
+        {% block footer_extra %}{% endblock %}
+    </footer>
+
+    <script src="{% static 'js/auth.js' %}" defer></script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

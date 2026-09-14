@@ -65,7 +65,7 @@ class SubtopicInline(TabularInline):
 
 
 @admin.register(SyllabusTopic)
-class SyllabusTopicAdmin(ImportExportModelAdmin, SimpleHistoryAdmin, ModelAdmin):
+class SyllabusTopicAdmin(ImportExportModelAdmin, ModelAdmin):
     resource_class = SyllabusTopicResource
     list_display = ('code', 'title', 'subject', 'parent', 'order', 'is_active', 'usage_count')
     list_filter = ('subject', 'is_active')

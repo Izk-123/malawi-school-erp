@@ -1,0 +1,673 @@
+/* ==========================================================================
+   Profile — mobile-first
+   --------------------------------------------------------------------------
+   Base targets 360 px. Enhancements at 600 / 840 / 1024 px at the bottom.
+   Loaded after theme.css so all --md-* tokens are available.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Page frame
+   -------------------------------------------------------------------------- */
+.profile-page {
+    padding-bottom: 96px;   /* room for the sticky action bar */
+}
+
+/* --------------------------------------------------------------------------
+   2. Hero — avatar + name + roles
+   -------------------------------------------------------------------------- */
+.profile-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+    padding: 16px 20px 20px;
+}
+
+.profile-avatar-wrap { position: relative; margin-bottom: 8px; }
+
+.profile-avatar {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    background: linear-gradient(135deg,
+        color-mix(in srgb, var(--md-primary) 20%, transparent) 0%,
+        var(--md-primary) 100%);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    overflow: hidden;
+    border: 3px solid var(--md-surface);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10);
+}
+.profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.profile-avatar span { color: #fff; }
+
+.avatar-edit {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--md-primary);
+    color: #fff;
+    border: 3px solid var(--md-surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: transform 0.12s;
+}
+.avatar-edit:active { transform: scale(0.92); }
+
+.profile-name {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 8px 0 0;
+    color: var(--md-on-surface);
+}
+.profile-email {
+    font-size: 14px;
+    color: var(--md-on-surface-variant);
+    margin: 0;
+    word-break: break-word;
+}
+
+.profile-roles {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    margin: 12px 0 16px;
+    padding: 0;
+    list-style: none;
+}
+.role-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    background: var(--md-surface-bright);
+    color: var(--md-on-surface-variant);
+}
+.role-pill.role-teacher { background: #e3f2fd; color: #1565c0; }
+.role-pill.role-parent  { background: #fff3e0; color: #e65100; }
+.role-pill.role-student { background: #e8f5e9; color: #2e7d32; }
+.role-pill.role-admin   { background: #f3e5f5; color: #6a1b9a; }
+.role-pill.role-staff   { background: #e0f2f1; color: #00695c; }
+
+[data-theme="dark"] .role-pill.role-teacher { background: #0d2a44; color: #90caf9; }
+[data-theme="dark"] .role-pill.role-parent  { background: #3a2a00; color: #ffb74d; }
+[data-theme="dark"] .role-pill.role-student { background: #1b3a1b; color: #81c784; }
+[data-theme="dark"] .role-pill.role-admin   { background: #2a1a3a; color: #ce93d8; }
+[data-theme="dark"] .role-pill.role-staff   { background: #003a33; color: #4db6ac; }
+
+/* --------------------------------------------------------------------------
+   3. Stat strip
+   -------------------------------------------------------------------------- */
+.stat-strip {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    background: var(--md-outline-variant);
+    border-radius: var(--md-radius-lg);
+    overflow: hidden;
+    margin: 0 20px 16px;
+    border: 1px solid var(--md-outline-variant);
+}
+.stat-strip-item {
+    background: var(--md-surface);
+    padding: 14px 12px;
+    text-align: center;
+}
+.stat-strip-value {
+    display: block;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--md-on-surface);
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+}
+.stat-strip-label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    color: var(--md-on-surface-variant);
+    margin-top: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   4. Collapsible section
+   -------------------------------------------------------------------------- */
+.profile-section {
+    background: var(--md-surface);
+    border: 1px solid var(--md-outline-variant);
+    border-radius: var(--md-radius-lg);
+    margin: 0 20px 12px;
+    overflow: hidden;
+    transition: border-color 0.12s;
+}
+.profile-section:hover { border-color: var(--md-outline); }
+
+.profile-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 16px;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    text-align: left;
+    color: inherit;
+    min-height: 48px;
+}
+.profile-section-head:disabled { cursor: default; }
+
+.profile-section-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--md-on-surface-variant);
+    margin: 0;
+}
+.profile-section-head > i {
+    color: var(--md-on-surface-variant);
+    font-size: 14px;
+    transition: transform 0.2s;
+}
+.profile-section-head[aria-expanded="true"] > i { transform: rotate(180deg); }
+
+.profile-section-body {
+    padding: 12px 16px 16px;
+    border-top: 1px solid var(--md-outline-variant);
+}
+
+/* --------------------------------------------------------------------------
+   5. Profile fields
+   -------------------------------------------------------------------------- */
+.profile-fields { margin: 0; }
+.profile-field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--md-outline-variant);
+}
+.profile-field:first-child { padding-top: 0; }
+.profile-field:last-child  { border-bottom: 0; padding-bottom: 0; }
+
+.profile-field dt {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--md-on-surface-variant);
+}
+.profile-field dd {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--md-on-surface);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    word-break: break-word;
+}
+
+.profile-field dd .muted {
+    font-weight: 400;
+    color: var(--md-on-surface-variant);
+    font-size: 13px;
+}
+
+/* --------------------------------------------------------------------------
+   6. Verification badges
+   -------------------------------------------------------------------------- */
+.verify-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+}
+.verify-ok {
+    background: var(--status-success-bg);
+    color: var(--status-success-fg);
+}
+.verify-pending {
+    background: var(--status-warning-bg);
+    color: var(--status-warning-fg);
+}
+.field-action {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--md-primary);
+    text-decoration: none;
+    padding: 4px 8px;
+    border-radius: var(--md-radius-sm);
+}
+.field-action:hover {
+    text-decoration: underline;
+    background: color-mix(in srgb, var(--md-primary) 6%, transparent);
+}
+.field-action.danger { color: var(--md-error); }
+
+/* --------------------------------------------------------------------------
+   7. Roles & portals
+   -------------------------------------------------------------------------- */
+.role-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.role-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--md-surface-bright);
+    border-radius: var(--md-radius);
+}
+.role-card-icon {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    background: color-mix(in srgb, var(--md-primary) 14%, transparent);
+    color: var(--md-primary);
+}
+.role-icon-parent  { background: #fff3e0; color: #e65100; }
+.role-icon-teacher { background: #e3f2fd; color: #1565c0; }
+.role-icon-student { background: #e8f5e9; color: #2e7d32; }
+.role-icon-admin   { background: #f3e5f5; color: #6a1b9a; }
+.role-icon-staff   { background: #e0f2f1; color: #00695c; }
+[data-theme="dark"] .role-icon-parent  { background: #3a2a00; color: #ffb74d; }
+[data-theme="dark"] .role-icon-teacher { background: #0d2a44; color: #90caf9; }
+[data-theme="dark"] .role-icon-student { background: #1b3a1b; color: #81c784; }
+[data-theme="dark"] .role-icon-admin   { background: #2a1a3a; color: #ce93d8; }
+[data-theme="dark"] .role-icon-staff   { background: #003a33; color: #4db6ac; }
+
+.role-card-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+.role-card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--md-on-surface);
+}
+.role-card-desc {
+    font-size: 12px;
+    color: var(--md-on-surface-variant);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   8. Segmented control (theme / language)
+   -------------------------------------------------------------------------- */
+.segmented {
+    display: inline-flex;
+    padding: 3px;
+    background: var(--md-surface-bright);
+    border-radius: 999px;
+    gap: 2px;
+    border: 1px solid var(--md-outline-variant);
+}
+.segmented-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border: 0;
+    background: transparent;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--md-on-surface-variant);
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+    min-height: 32px;
+}
+.segmented-item.active {
+    background: var(--md-primary);
+    color: #fff;
+    font-weight: 600;
+}
+.segmented-item:hover:not(.active) {
+    background: var(--md-outline-variant);
+    color: var(--md-on-surface);
+}
+
+/* --------------------------------------------------------------------------
+   9. Switch
+   -------------------------------------------------------------------------- */
+.switch {
+    display: inline-flex;
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+}
+.switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+
+.switch-track {
+    width: 52px;
+    height: 32px;
+    border-radius: 999px;
+    background: var(--md-surface-2);
+    position: relative;
+    transition: background 0.2s, border-color 0.2s;
+    border: 2px solid var(--md-outline);
+}
+.switch-thumb {
+    position: absolute;
+    top: 50%;
+    left: 4px;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--md-outline);
+    transition: transform 0.2s, background 0.2s, width 0.2s, height 0.2s;
+}
+.switch input:checked + .switch-track {
+    background: var(--md-primary);
+    border-color: var(--md-primary);
+}
+.switch input:checked + .switch-track .switch-thumb {
+    transform: translate(24px, -50%);
+    background: #fff;
+    width: 24px;
+    height: 24px;
+}
+.switch input:focus-visible + .switch-track {
+    box-shadow: 0 0 0 3px rgba(26, 86, 50, 0.14);
+}
+
+/* --------------------------------------------------------------------------
+   10. Danger zone
+   -------------------------------------------------------------------------- */
+.profile-danger {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 24px 20px 40px;
+}
+.btn-link-danger {
+    background: none;
+    border: 0;
+    color: var(--md-error);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: var(--md-radius);
+}
+.btn-link-danger:hover { background: var(--status-danger-bg); }
+
+/* --------------------------------------------------------------------------
+   11. Edit mode — sticky action bar
+   -------------------------------------------------------------------------- */
+.profile-actions-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    background: var(--md-surface);
+    border-top: 1px solid var(--md-outline-variant);
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
+    z-index: 40;
+}
+.profile-actions-bar .btn {
+    flex: 1;
+    height: 48px;
+    border-radius: var(--md-radius-lg);
+}
+
+/* --------------------------------------------------------------------------
+   12. Photo sheet
+   -------------------------------------------------------------------------- */
+.photo-sheet {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: none;
+}
+.photo-sheet.open { display: block; }
+.photo-sheet-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+}
+.photo-sheet-content {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--md-surface);
+    border-radius: 20px 20px 0 0;
+    padding: 8px 16px calc(16px + env(safe-area-inset-bottom));
+    animation: photo-sheet-up 0.25s cubic-bezier(0.2, 0, 0, 1);
+}
+@keyframes photo-sheet-up {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+}
+.sheet-handle {
+    width: 32px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--md-outline-variant);
+    margin: 4px auto 12px;
+}
+.photo-sheet-content h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 8px;
+}
+.photo-options {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 12px;
+}
+.photo-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 12px;
+    background: none;
+    border: 0;
+    border-radius: var(--md-radius);
+    font-size: 15px;
+    color: var(--md-on-surface);
+    cursor: pointer;
+    text-align: left;
+    min-height: 48px;
+    width: 100%;
+}
+.photo-option:hover { background: var(--md-surface-bright); }
+.photo-option i { font-size: 20px; color: var(--md-on-surface-variant); }
+.photo-option.danger { color: var(--md-error); }
+.photo-option.danger i { color: var(--md-error); }
+
+/* Hidden file input */
+.photo-file-input { display: none; }
+
+/* --------------------------------------------------------------------------
+   13. Dark mode tweaks
+   -------------------------------------------------------------------------- */
+[data-theme="dark"] .profile-section,
+[data-bs-theme="dark"] .profile-section { background: var(--md-surface-1); }
+[data-theme="dark"] .stat-strip-item,
+[data-bs-theme="dark"] .stat-strip-item { background: var(--md-surface-1); }
+[data-theme="dark"] .role-card,
+[data-bs-theme="dark"] .role-card { background: var(--md-surface-2); }
+[data-theme="dark"] .segmented,
+[data-bs-theme="dark"] .segmented { background: var(--md-surface-2); }
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .profile-section-head > i,
+    .photo-sheet-content,
+    .avatar-edit,
+    .switch-thumb { transition: none; animation: none; }
+}
+
+/* ==========================================================================
+   ENHANCEMENTS — all min-width media queries
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   600 px — center the page, lay hero out horizontally
+   -------------------------------------------------------------------------- */
+@media (min-width: 600px) {
+    .profile-page {
+        max-width: 720px;
+        margin: 0 auto;
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .profile-hero { padding: 32px 24px 24px; }
+    .profile-avatar { width: 112px; height: 112px; font-size: 38px; }
+    .profile-name { font-size: 28px; }
+
+    .stat-strip {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        margin: 0 0 24px;
+    }
+    .profile-section { margin: 0 0 16px; }
+    .profile-section-head { padding: 18px 20px; }
+    .profile-section-body { padding: 16px 20px 20px; }
+
+    .profile-danger { padding: 24px 0 40px; }
+
+    .profile-actions-bar {
+        position: sticky;
+        bottom: 0;
+        margin: 24px 0 0;
+        border-radius: var(--md-radius-lg);
+        border: 1px solid var(--md-outline-variant);
+        justify-content: flex-end;
+        padding: 12px 16px;
+    }
+    .profile-actions-bar .btn {
+        flex: 0 0 auto;
+        min-width: 140px;
+        height: 40px;
+    }
+
+    /* Photo sheet becomes a centered dialog */
+    .photo-sheet.open { display: flex; align-items: center; justify-content: center; }
+    .photo-sheet-content {
+        position: static;
+        max-width: 400px;
+        margin: auto;
+        border-radius: var(--md-radius-xl);
+        padding: 20px;
+        animation: photo-modal-in 0.2s ease;
+    }
+    @keyframes photo-modal-in {
+        from { opacity: 0; transform: scale(0.98); }
+        to   { opacity: 1; transform: scale(1); }
+    }
+    .sheet-handle { display: none; }
+}
+
+/* --------------------------------------------------------------------------
+   840 px — inline field labels, wider canvas
+   -------------------------------------------------------------------------- */
+@media (min-width: 840px) {
+    .profile-page { max-width: 880px; }
+
+    .profile-field {
+        flex-direction: row;
+        align-items: center;
+        gap: 24px;
+        padding: 12px 0;
+    }
+    .profile-field dt {
+        flex: 0 0 180px;
+        font-size: 13px;
+        text-transform: none;
+        letter-spacing: 0;
+        font-weight: 500;
+        color: var(--md-on-surface-variant);
+    }
+    .profile-field dd {
+        flex: 1;
+        font-size: 14px;
+        font-weight: 500;
+    }
+    .profile-field dt { padding-top: 0; }
+}
+
+/* --------------------------------------------------------------------------
+   1024 px — two columns: hero on left, sections on right
+   -------------------------------------------------------------------------- */
+@media (min-width: 1024px) {
+    .profile-page {
+        max-width: 1100px;
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        grid-template-areas:
+            "hero content"
+            "danger content";
+        gap: 32px;
+        align-items: start;
+        padding-top: 32px;
+    }
+    .profile-hero {
+        grid-area: hero;
+        position: sticky;
+        top: 24px;
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-radius-xl);
+        padding: 32px 24px;
+        margin: 0;
+    }
+    .profile-content { grid-area: content; min-width: 0; }
+    .profile-danger {
+        grid-area: danger;
+        padding: 0 24px;
+    }
+    .profile-danger .btn-outline { width: 100%; }
+
+    /* Sections no longer need internal margins — the grid provides them */
+    .profile-section { margin: 0 0 16px; }
+}

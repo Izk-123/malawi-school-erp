@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block page_title %}Overdue Books{% endblock %}
+{% block content %}
+<div class="card"><div class="card-header"><h5 class="mb-0 fw-bold">Overdue Books ({{ loans|length }})</h5></div>
+<div class="card-body p-0"><table class="table table-hover mb-0">
+<thead><tr><th>Book</th><th>Borrower</th><th>Due Date</th><th>Days Overdue</th><th>Fine (MK)</th><th></th></tr></thead>
+<tbody>{% for l in loans %}<tr><td>{{ l.book.title }}</td><td>{{ l.borrower_name }}</td><td>{{ l.due_date }}</td><td>{{ l.days_overdue }}</td><td>{{ l.fine_amount }}</td>
+<td><form method="post" action="{% url 'staff:return_book' l.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-success">Mark Returned</button></form></td>
+</tr>{% empty %}<tr><td colspan="6">No overdue books. 🎉</td></tr>{% endfor %}</tbody>
+</table></div></div>
+{% endblock %}

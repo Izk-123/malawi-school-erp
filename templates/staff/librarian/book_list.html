@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block page_title %}Book Catalogue{% endblock %}
+{% block content %}
+<a href="{% url 'staff:book_create' %}" class="btn btn-primary btn-sm mb-3">Add Book</a>
+<a href="{% url 'staff:issue_book' %}" class="btn btn-outline-primary btn-sm mb-3">Issue Book</a>
+<a href="{% url 'staff:loan_list' %}" class="btn btn-outline-secondary btn-sm mb-3">View Loans</a>
+<div class="card"><div class="card-body p-0"><table class="table table-hover mb-0">
+<thead><tr><th>Title</th><th>Author</th><th>Subject</th><th>Copies</th><th>Available</th></tr></thead>
+<tbody>{% for b in books %}<tr><td>{{ b.title }}</td><td>{{ b.author }}</td><td>{{ b.subject }}</td><td>{{ b.total_copies }}</td><td>{{ b.copies_available }}</td></tr>{% empty %}<tr><td colspan="5">No books catalogued yet.</td></tr>{% endfor %}</tbody>
+</table></div></div>
+{% endblock %}

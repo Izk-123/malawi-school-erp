@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block page_title %}Medication Stock{% endblock %}
+{% block content %}
+<div class="card"><div class="card-header"><h5 class="mb-0 fw-bold">Medication Stock</h5></div>
+<div class="card-body p-0"><table class="table table-hover mb-0">
+<thead><tr><th>Name</th><th>Quantity</th><th>Reorder Level</th><th>Expiry</th><th>Status</th></tr></thead>
+<tbody>{% for m in stock %}<tr><td>{{ m.name }}</td><td>{{ m.quantity }}</td><td>{{ m.reorder_level }}</td><td>{{ m.expiry_date|default:"-" }}</td>
+<td>{% if m.needs_reorder %}<span class="badge bg-danger">Reorder</span>{% else %}<span class="badge bg-success">OK</span>{% endif %}</td>
+</tr>{% empty %}<tr><td colspan="5">No stock recorded yet.</td></tr>{% endfor %}</tbody>
+</table></div></div>
+{% endblock %}

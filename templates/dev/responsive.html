@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Responsive Check — Malawi School ERP{% endblock %}
+{% block page_title %}Responsive Check{% endblock %}
+
+{% block extra_head %}
+<style>
+    .rb-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+    .rb-frame {
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-radius-lg);
+        overflow: hidden;
+        background: var(--md-surface);
+        box-shadow: var(--shadow-md);
+    }
+    .rb-label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 12px;
+        background: var(--md-surface-1);
+        border-bottom: 1px solid var(--md-outline-variant);
+        font-size: 13px;
+        font-weight: 500;
+    }
+    .rb-label .rb-size { font-family: var(--font-mono); font-size: 11px; color: var(--md-on-surface-variant); }
+    .rb-frame iframe { display: block; border: 0; background: var(--md-surface-bright); }
+    @media (min-width: 840px) {
+        .rb-wrap { flex-direction: row; flex-wrap: wrap; align-items: flex-start; }
+        .rb-frame { flex: 0 0 auto; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="h4 fw-bold mb-1">Responsive Check</h1>
+    <p class="text-secondary small mb-4">
+        The same components rendered at every breakpoint.
+        Each frame loads <code>/dev/components/</code> at a fixed width.
+    </p>
+
+    <div class="rb-wrap">
+        <div class="rb-frame">
+            <div class="rb-label"><span>Compact · phone</span><span class="rb-size">360 × 720</span></div>
+            <iframe src="/dev/components/" width="360" height="720" loading="lazy"></iframe>
+        </div>
+
+        <div class="rb-frame">
+            <div class="rb-label"><span>Medium · landscape phone</span><span class="rb-size">600 × 720</span></div>
+            <iframe src="/dev/components/" width="600" height="720" loading="lazy"></iframe>
+        </div>
+
+        <div class="rb-frame">
+            <div class="rb-label"><span>Expanded · tablet</span><span class="rb-size">840 × 720</span></div>
+            <iframe src="/dev/components/" width="840" height="720" loading="lazy"></iframe>
+        </div>
+
+        <div class="rb-frame">
+            <div class="rb-label"><span>Large · laptop</span><span class="rb-size">1200 × 720</span></div>
+            <iframe src="/dev/components/" width="1200" height="720" loading="lazy"></iframe>
+        </div>
+    </div>
+</div>
+{% endblock %}

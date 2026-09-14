@@ -14,7 +14,10 @@ from django.core.management.base import BaseCommand
 from accounts.models import User
 from students.models import Student
 from teachers.models import Teacher, ClassAssignment
-from staff.models import StaffMember
+from staff.models import (
+    StaffMember, LeaveRequest, StaffAttendance, StaffAnnouncement, StaffTicket, Payslip,
+    Book, BookLoan, VisitorLog, GatePass, PatrolLog, MedicalRecord, SickBayVisit, MedicationStock,
+)
 from attendance.models import AttendanceRecord
 from grades.models import GradeRecord
 from fees.models import FeeStructure, FeeTransaction, Discount
@@ -51,6 +54,19 @@ ROLE_PERMISSIONS = {
         GradeDescriptor: ['add', 'change', 'delete', 'view'],
         ManebGradeScale: ['add', 'change', 'delete', 'view'],
         TopicCoverage: ['view'],
+        LeaveRequest: ['add', 'change', 'delete', 'view'],
+        StaffAttendance: ['add', 'change', 'delete', 'view'],
+        StaffAnnouncement: ['add', 'change', 'delete', 'view'],
+        StaffTicket: ['add', 'change', 'delete', 'view'],
+        Payslip: ['add', 'change', 'delete', 'view'],
+        Book: ['add', 'change', 'delete', 'view'],
+        BookLoan: ['add', 'change', 'delete', 'view'],
+        VisitorLog: ['add', 'change', 'delete', 'view'],
+        GatePass: ['add', 'change', 'delete', 'view'],
+        PatrolLog: ['add', 'change', 'delete', 'view'],
+        MedicalRecord: ['add', 'change', 'delete', 'view'],
+        SickBayVisit: ['add', 'change', 'delete', 'view'],
+        MedicationStock: ['add', 'change', 'delete', 'view'],
     },
     User.Role.TEACHER: {
         Student: ['view'],
@@ -90,7 +106,20 @@ ROLE_PERMISSIONS = {
         ManebGradeScale: ['view'],
     },
     User.Role.STAFF: {
-        StaffMember: ['view'],
+        StaffMember: ['change', 'view'],
+        LeaveRequest: ['add', 'change', 'view'],
+        StaffAttendance: ['add', 'change', 'view'],
+        StaffAnnouncement: ['add', 'view'],
+        StaffTicket: ['add', 'change', 'view'],
+        Payslip: ['view'],
+        Book: ['add', 'change', 'view'],
+        BookLoan: ['add', 'change', 'view'],
+        VisitorLog: ['add', 'change', 'view'],
+        GatePass: ['add', 'change', 'view'],
+        PatrolLog: ['add', 'view'],
+        MedicalRecord: ['add', 'change', 'view'],
+        SickBayVisit: ['add', 'view'],
+        MedicationStock: ['add', 'change', 'view'],
         TimetablePeriod: ['view'],
         Notification: ['view'],
         Subject: ['view'],

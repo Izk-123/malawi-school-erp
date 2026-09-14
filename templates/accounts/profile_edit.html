@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Edit profile{% endblock %}
+{% block page_title %}Edit profile{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="profile-page">
+
+    <div class="profile-hero" style="padding-top:16px;">
+        <div class="profile-avatar-wrap">
+            <div class="profile-avatar">
+                {% if user.profile_picture %}
+                    <img src="{{ user.profile_picture.url }}" alt="{{ user.get_full_name }}">
+                {% else %}
+                    <span aria-hidden="true">
+                        {{ user.first_name|first|default:user.username|first }}{{ user.last_name|first }}
+                    </span>
+                {% endif %}
+            </div>
+            <button type="button" class="avatar-edit" data-open-photo-sheet
+                    aria-label="Change profile photo">
+                <i class="bi bi-camera"></i>
+            </button>
+        </div>
+        <h1 class="profile-name">Edit profile</h1>
+        <p class="profile-email">Update your personal details below</p>
+    </div>
+
+    <div class="profile-content">
+        <form method="post" enctype="multipart/form-data" id="profileEditForm">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger" role="alert">
+                <i class="bi bi-exclamation-triangle"></i>
+                <div>{{ form.non_field_errors.0 }}</div>
+            </div>
+            {% endif %}
+
+            {# ---------- Personal information ---------- #}
+            <section class="profile-section">
+                <div class="profile-section-head" style="cursor:default;">
+                    <h2 class="profile-section-title">Personal information</h2>
+                </div>
+                <div class="profile-section-body">
+                    <div class="field">
+                        <label class="field-label" for="id_first_name">First name</label>
+                        <input id="id_first_name" name="first_name" class="field-input"
+                               value="{{ form.first_name.value|default:'' }}"
+                               autocomplete="given-name">
+                        {% if form.first_name.errors %}
+                        <p class="field-error" role="alert">
+                            <i class="bi bi-exclamation-circle"></i> {{ form.first_name.errors.0 }}
+                        </p>
+                        {% endif %}
+                    </div>
+
+                    <div class="field">
+                        <label class="field-label" for="id_last_name">Last name</label>
+                        <input id="id_last_name" name="last_name" class="field-input"
+                               value="{{ form.last_name.value|default:'' }}"
+                               autocomplete="family-name">
+                        {% if form.last_name.errors %}
+                        <p class="field-error" role="alert">
+                            <i class="bi bi-exclamation-circle"></i> {{ form.last_name.errors.0 }}
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </section>
+
+            {# ---------- Contact details ---------- #}
+            <section class="profile-section">
+                <div class="profile-section-head" style="cursor:default;">
+                    <h2 class="profile-section-title">Contact details</h2>
+                </div>
+                <div class="profile-section-body">
+                    <div class="field">
+                        <label class="field-label" for="id_email">Email</label>
+                        <input id="id_email" name="email" type="email" class="field-input"
+                               value="{{ form.email.value|default:'' }}"
+                               autocomplete="email" inputmode="email">
+                        {% if form.email.errors %}
+                        <p class="field-error" role="alert">
+                            <i class="bi bi-exclamation-circle"></i> {{ form.email.errors.0 }}
+                        </p>
+                        {% endif %}
+                    </div>
+
+                    <div class="field">
+                        <label class="field-label" for="id_phone_number">Phone number</label>
+                        <input id="id_phone_number" name="phone_number" type="tel"
+                               class="field-input"
+                               value="{{ form.phone_number.value|default:'' }}"
+                               placeholder="+265991234567"
+                               autocomplete="tel">
+                        {% if form.phone_number.errors %}
+                        <p class="field-error" role="alert">
+                            <i class="bi bi-exclamation-circle"></i> {{ form.phone_number.errors.0 }}
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </section>
+
+            {# ---------- Preferences ---------- #}
+            <section class="profile-section">
+                <div class="profile-section-head" style="cursor:default;">
+                    <h2 class="profile-section-title">Preferences</h2>
+                </div>
+                <div class="profile-section-body">
+                    <div class="field">
+                        <label class="field-label" for="id_preferred_language">Language</label>
+                        <select id="id_preferred_language" name="preferred_language"
+                                class="field-input">
+                            <option value="en" {% if form.preferred_language.value == 'en' %}selected{% endif %}>
+                                English
+                            </option>
+                            <option value="ny" {% if form.preferred_language.value == 'ny' %}selected{% endif %}>
+                                Chichewa
+                            </option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            {# ---------- Save bar ---------- #}
+            <div class="profile-actions-bar">
+                <a href="{% url 'accounts:profile' %}" class="btn btn-outline">Cancel</a>
+                <button type="submit" class="btn btn-primary">Save changes</button>
+            </div>
+        </form>
+    </div>
+
+    <section class="profile-danger"></section>
+</div>
+
+{# ───────── Photo sheet (reused) ───────── #}
+<div class="photo-sheet" id="photoSheet" role="dialog" aria-modal="true"
+     aria-label="Profile photo options">
+    <div class="photo-sheet-backdrop" data-close-photo-sheet></div>
+    <div class="photo-sheet-content">
+        <div class="sheet-handle"></div>
+        <h3>Profile photo</h3>
+        <div class="photo-options">
+            <button type="button" class="photo-option" data-photo-source="camera">
+                <i class="bi bi-camera"></i> <span>Take a photo</span>
+            </button>
+            <button type="button" class="photo-option" data-photo-source="gallery">
+                <i class="bi bi-image"></i> <span>Choose from gallery</span>
+            </button>
+        </div>
+
+        <form id="photoUploadForm" method="post"
+              action="{% url 'accounts:profile_edit' %}"
+              enctype="multipart/form-data">
+            {% csrf_token %}
+            <input id="photoFileInput" class="photo-file-input" type="file"
+                   name="profile_picture" accept="image/*">
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/profile.js' %}" defer></script>
+{% endblock %}

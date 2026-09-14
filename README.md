@@ -414,3 +414,114 @@ module-level named function instead. Caught immediately because
 `makemigrations` is part of the standard verification pass for every
 round in this project, not skipped for a "quick" change.
 
+
+## 13. Staff app (15-role taxonomy) + new packages
+
+**Scope decision, stated plainly:** rather than building 15 fully bespoke
+role portals (a multi-week project on its own), this round built:
+common infrastructure every role gets (multi-role support via
+`StaffRoleAssignment`, leave request/approval, clock in/out,
+announcements board, self-service profile, payslip stub), **three fully
+realized portals** with real domain models (Librarian: book catalogue +
+loans + overdue fines; Security: visitor log + gate passes; Nurse: sick
+bay visits + medical records + medication stock, with automatic parent
+notification on referral), and a shared `StaffTicket` model covering the
+remaining maintenance/ICT/lab-safety-style reports instead of four more
+near-identical bespoke models. Bursar reuses the existing `fees` app
+rather than duplicating it. The other roles (Secretary, Cook, Boarding
+Master, Sports Master, Chaplain, HR beyond leave approval, Procurement,
+Driver) get the common framework and a dashboard widget slot, but no
+bespoke models yet - same "scope and flag it" pattern as the deferred
+finance module.
+
+**New packages, each wired into a real feature, not just installed:**
+- **django-mptt**: `SyllabusTopic`'s tree is now `MPTTModel`/
+  `TreeForeignKey` instead of a plain self-FK, for O(1) tree queries
+  instead of N recursive ones. Caught a real incompatibility:
+  django-simple-history's auto-generated historical model doesn't get
+  MPTT's `lft`/`rght`/`tree_id`/`level` fields, so every save raised
+  `TypeError` - fixed by dropping history tracking from just this model
+  (soft-archiving via `is_active` still satisfies SY-13).
+- **django-money**: `FeeStructure.total_amount`, `FeeTransaction.amount`,
+  and `PaymentTransaction.amount` are `MoneyField`s defaulting to MWK.
+  Deliberately **not** applied to `Student.fees_total`/`fees_paid` -
+  those are read in dozens of already-verified templates/reports, and
+  converting them was a much larger blast radius for the same benefit.
+  Fixed two real bugs this surfaced: Money-vs-Decimal arithmetic in
+  `fees/forms.py`/`fees/views.py`/`payments/tasks.py`, and an f-string
+  numeric format spec (`f'{amount:,.2f}'`) that `Money.__format__`
+  doesn't support.
+- **reportlab**: `common/pdf.py` is a shared letterhead-style PDF
+  builder, reused by fee receipts today (`/fees/receipt/<id>/pdf/`) and
+  staff payslips - one layout helper instead of every app reinventing
+  PDF generation.
+- **django-tables2**: the Student list is now a sortable, paginated
+  `StudentTable` instead of a hand-rolled `<table>`. Caught a subtlety
+  before it shipped: `TemplateColumn` doesn't automatically receive
+  page-level context (like `current_role`), so the edit/delete buttons
+  are gated by a `can_edit_flag` annotated onto each row in the view
+  instead.
+
+## 14. Credential-only login, verification, multi-role - partially scaffolded, not wired up
+
+Two more large docs arrived requesting: (a) removing the role dropdown
+from login entirely, deriving role server-side, with email/phone OTP
+verification and duplicate-account prevention, and (b) full multi-role
+support (one person = teacher + parent, say) with a portal chooser,
+session-based active-role switching, strict per-portal data isolation
+retrofitted onto every view, and conflict-of-interest detection.
+
+**What actually exists:** `EmailVerificationToken` and `PhoneOTP` models
+in `accounts/models.py` (found two real bugs while verifying them - a
+missing `timezone` import and another lambda-as-migration-default issue,
+both fixed). They are currently **unused scaffolding**: no views, URLs,
+Celery tasks, or login-gating middleware consume them yet.
+
+**What was deliberately not attempted this round:** retrofitting
+session-based `active_role` checks onto the ~30 already-built,
+repeatedly-verified views in this codebase, replacing the current
+role-select login, or building the portal-chooser UI. That is a genuine
+architecture change - not a feature addition - and doing it carelessly
+under time pressure is exactly how a working, tested system gets quietly
+broken. The existing parent-scoped views (fees, attendance, grades) already
+filter by the real `guardians` relationship on `Student`, which *is*
+genuine data isolation independent of any session state - a teacher who
+is also a guardian already only sees their own child's data in the
+parent-facing views today, they just reach it via the same login as
+everyone else rather than a dedicated portal switcher.
+
+If you want to proceed with this, it's substantial enough to warrant its
+own focused pass (ideally after confirming: should role-select login be
+removed entirely and *replaced* with server-derived role, given the
+existing login already validates the selected role against the account
+and rejects a mismatch? Or should multi-role/portal-switching be added
+*alongside* the current login?) rather than merged into an already very
+large round.
+
+## 15. Drag-and-drop file/image uploads
+
+`static/js/dropzone.js` progressively enhances any `<input type="file"
+class="dropzone-input">` with a drag-and-drop zone, live image preview,
+file-size display, and a remove button - no new dependencies (no
+Alpine.js/HTMX needed for this). `common/forms.py`'s `enable_dropzone()`
+helper applies it automatically to every FileField/ImageField on a form
+with one line in `__init__`, including showing "current file: ..." when
+editing a record that already has one.
+
+Wired into every real upload point already in the app: student photos,
+teacher photos, staff ticket photos, and profile pictures (self-service
+and admin-edited). Verified end-to-end, not just rendered: uploaded a
+real PNG through the student edit form, confirmed it saved to disk and
+the model field updated, then confirmed the edit form correctly showed
+the existing filename on reload.
+
+**Scope note:** the two UI/UX docs that prompted this also specified a
+full Material Design 3 redesign (dark/light mode, bottom nav, MD3 color
+tokens) plus swapping in five new libraries (django-cotton,
+django-slick-reporting, django-notifications-community, HTMX, Alpine.js)
+across every template in the app. That's a ground-up UI rewrite, not a
+feature addition, and doing it would mean re-touching and re-verifying
+every one of the ~80 templates built across sixteen rounds of this
+project. Scoped this round to the concrete, explicitly-requested feature
+(drag-and-drop upload) rather than the full redesign; happy to tackle
+the design system as its own dedicated pass if wanted.

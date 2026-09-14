@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block page_title %}My Payslips{% endblock %}
+{% block content %}
+<div class="card"><div class="card-body p-0"><table class="table table-hover mb-0">
+<thead><tr><th>Period</th><th>Gross</th><th>Deductions</th><th>Net</th><th></th></tr></thead>
+<tbody>{% for p in payslips %}<tr><td>{{ p.month }}/{{ p.year }}</td><td>MK {{ p.gross_pay }}</td><td>MK {{ p.deductions }}</td><td>MK {{ p.net_pay }}</td>
+<td><a class="btn btn-sm btn-outline-secondary" href="{% url 'staff:payslip_pdf' p.pk %}" target="_blank"><i class="bi bi-file-earmark-pdf"></i></a></td></tr>{% empty %}<tr><td colspan="5">No payslips yet.</td></tr>{% endfor %}</tbody>
+</table></div></div>
+{% endblock %}
