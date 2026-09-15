@@ -1,28 +1,24 @@
 """
-Django settings for the Malawi School ERP project — PRODUCTION.
+Django settings for the Malawi School ERP project.
 
-This file assumes:
-  - PostgreSQL database (required, no sqlite fallback)
-  - Redis for Channels + Celery broker (required)
-  - Behind Nginx terminating TLS, forwarding to Daphne over HTTP
-  - .env is present and populated; missing required vars raise an error
+Development defaults target Windows 10 + SQLite + in-memory Channels layer
+(no Redis required to get started). Flip the env vars in `.env` to move
+towards a production-like setup (PostgreSQL, Redis, Celery worker, etc).
 """
 from pathlib import Path
 from decouple import config, Csv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# --------------------------------------------------------------------------
-# Core — all REQUIRED, no insecure defaults
-# --------------------------------------------------------------------------
-SECRET_KEY = config('SECRET_KEY')           # raises if missing
-DEBUG = False                               # hardcoded — never True in prod
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv())
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-me-in-production')
+DEBUG = config('DEBUG', default=True, cast=bool)
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='127.0.0.1,localhost', cast=Csv())
 
 # --------------------------------------------------------------------------
 # Applications
 # --------------------------------------------------------------------------
 INSTALLED_APPS = [
+    # Unfold must come before django.contrib.admin
     'unfold',
     'unfold.contrib.filters',
     'unfold.contrib.import_export',
@@ -35,6 +31,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.humanize',
 
+    # Third-party
     'channels',
     'crispy_forms',
     'crispy_bootstrap5',
@@ -46,6 +43,7 @@ INSTALLED_APPS = [
     'mptt',
     'django_tables2',
 
+    # Local apps
     'accounts',
     'students',
     'teachers',
@@ -69,10 +67,12 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'simple_history.middleware.HistoryRequestMiddleware',
+    # Must be the last middleware (AC-25/26: lockout after failed logins).
     'axes.middleware.AxesMiddleware',
 ]
 
 AUTHENTICATION_BACKENDS = [
+    # AxesBackend must be first so it can block a login before ModelBackend runs.
     'axes.backends.AxesBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
@@ -100,87 +100,68 @@ WSGI_APPLICATION = 'config.wsgi.application'
 ASGI_APPLICATION = 'config.asgi.application'
 
 # --------------------------------------------------------------------------
-# Database — PostgreSQL only
+# Database - SQLite for development. Swap to Postgres via env vars for prod.
 # --------------------------------------------------------------------------
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME'),
-        'USER': config('DB_USER'),
-        'PASSWORD': config('DB_PASSWORD'),
-        'HOST': config('DB_HOST', default='127.0.0.1'),
-        'PORT': config('DB_PORT', default='5432'),
-        'CONN_MAX_AGE': 60,
-        'OPTIONS': {
-            'connect_timeout': 10,
-        },
+if config('DB_ENGINE', default='sqlite') == 'postgres':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': config('DB_NAME', default='malawi_school_erp'),
+            'USER': config('DB_USER', default='postgres'),
+            'PASSWORD': config('DB_PASSWORD', default=''),
+            'HOST': config('DB_HOST', default='localhost'),
+            'PORT': config('DB_PORT', default='5432'),
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # --------------------------------------------------------------------------
-# Custom user model + auth redirects
+# Custom user model with roles
 # --------------------------------------------------------------------------
 AUTH_USER_MODEL = 'accounts.User'
 LOGIN_URL = 'accounts:login'
 LOGIN_REDIRECT_URL = 'accounts:dashboard'
 LOGOUT_REDIRECT_URL = 'accounts:login'
 
-# --------------------------------------------------------------------------
-# Sessions & cookies — full production hardening
-# --------------------------------------------------------------------------
+# AC: session security - 30 min inactivity timeout, HttpOnly always,
+# Secure cookies once served over HTTPS in production.
 SESSION_COOKIE_AGE = 60 * 30
 SESSION_SAVE_EVERY_REQUEST = True
 SESSION_COOKIE_HTTPONLY = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
-SESSION_COOKIE_SECURE = True
-SESSION_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SECURE = config('SESSION_COOKIE_SECURE', default=False, cast=bool)
+CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=False, cast=bool)
 
-CSRF_COOKIE_SECURE = True
-CSRF_COOKIE_HTTPONLY = False         # must stay False so JS can read it if needed
-CSRF_COOKIE_SAMESITE = 'Lax'
-CSRF_COOKIE_DOMAIN = config('CSRF_COOKIE_DOMAIN', default=None) or None
-CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', cast=Csv())
-
-# --------------------------------------------------------------------------
-# HTTPS / proxy — THIS is what fixes the "CSRF verification failed" 403
-# behind Nginx: Nginx terminates TLS and forwards HTTP to Daphne, but
-# sends X-Forwarded-Proto: https. Without this setting Django thinks the
-# request is plain HTTP, request.is_secure() is False, and CSRF fails.
-# --------------------------------------------------------------------------
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-
-SECURE_SSL_REDIRECT = False          # Nginx already redirects HTTP→HTTPS; leave False here
-SECURE_HSTS_SECONDS = 31536000       # 1 year
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_HSTS_PRELOAD = True
-SECURE_CONTENT_TYPE_NOSNIFF = True
-SECURE_REFERRER_POLICY = 'same-origin'
-SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
-X_FRAME_OPTIONS = 'DENY'
-
-# --------------------------------------------------------------------------
-# Password policy
-# --------------------------------------------------------------------------
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    # AC-13: minimum length 8, mix of letters and numbers.
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', 'OPTIONS': {'min_length': 8}},
     {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
     {'NAME': 'accounts.validators.LetterAndNumberValidator'},
+    # AC-15: prevent reuse of the last 3 passwords.
     {'NAME': 'accounts.validators.PasswordHistoryValidator', 'OPTIONS': {'history_size': 3}},
 ]
 
-ENABLE_SELF_REGISTRATION = config('ENABLE_SELF_REGISTRATION', default=False, cast=bool)
+# AC-02: allow Students/Parents to self-register (Admin creates Teacher/Staff accounts).
+ENABLE_SELF_REGISTRATION = config('ENABLE_SELF_REGISTRATION', default=True, cast=bool)
+
+# AC-14: password reset links expire after 24 hours (Django default is 3 days).
 PASSWORD_RESET_TIMEOUT = config('PASSWORD_RESET_TIMEOUT', default=60 * 60 * 24, cast=int)
 
 # --------------------------------------------------------------------------
-# Attendance
+# Attendance (AT-04/AT-16/AT-19): edit windows and alert threshold.
 # --------------------------------------------------------------------------
 ATTENDANCE_EDIT_WINDOW_HOURS = config('ATTENDANCE_EDIT_WINDOW_HOURS', default=24, cast=int)
 ATTENDANCE_PAST_LIMIT_DAYS = config('ATTENDANCE_PAST_LIMIT_DAYS', default=7, cast=int)
 ATTENDANCE_LOW_THRESHOLD = config('ATTENDANCE_LOW_THRESHOLD', default=80, cast=int)
 
 # --------------------------------------------------------------------------
-<<<<<<< HEAD
 # django-money: multi-currency support, defaulting to Malawian Kwacha.
 # Fee/payment monetary fields use MoneyField instead of DecimalField so a
 # school billing in USD (e.g. international MSCE candidates) or accepting
@@ -200,9 +181,6 @@ DJANGO_TABLES2_TEMPLATE = 'django_tables2/bootstrap5.html'
 # class implementing PaymentGateway, registering it in
 # payments/registry.py, and adding its own block here - no other code
 # needs to change.
-=======
-# Payment gateways
->>>>>>> 25f846ebbdae8b235709d68c4e6c205b47256c0c
 # --------------------------------------------------------------------------
 DEFAULT_PAYMENT_GATEWAY = config('DEFAULT_PAYMENT_GATEWAY', default='paychangu')
 PAYMENT_GATEWAYS = {
@@ -214,12 +192,10 @@ PAYMENT_GATEWAYS = {
         'timeout': config('PAYCHANGU_TIMEOUT', default=15, cast=int),
     },
 }
-
-# --------------------------------------------------------------------------
-# django-axes (login throttling / lockout)
+# and provide the throttling asked for in the non-functional requirements.
 # --------------------------------------------------------------------------
 AXES_FAILURE_LIMIT = 5
-AXES_COOLOFF_TIME = 0.25
+AXES_COOLOFF_TIME = 0.25  # 15 minutes
 AXES_LOCKOUT_PARAMETERS = [['username', 'ip_address']]
 AXES_RESET_COOL_OFF_ON_FAILURE_DURING_LOCKOUT = False
 
@@ -232,13 +208,13 @@ USE_I18N = True
 USE_TZ = True
 
 # --------------------------------------------------------------------------
-# Static & media
+# Static & media files
 # --------------------------------------------------------------------------
-STATIC_URL = '/static/'
+STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-MEDIA_URL = '/media/'
+MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -250,30 +226,43 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap5'
 CRISPY_TEMPLATE_PACK = 'bootstrap5'
 
 # --------------------------------------------------------------------------
-# Channels — Redis only (Daphne and Celery run in separate processes)
+# Channels
+# In-memory layer is enough for a single-process dev server: no Redis
+# needed to get started. Set CHANNEL_LAYER_BACKEND=redis (and REDIS_URL)
+# once you need multi-process / multi-worker fan-out (e.g. behind Daphne
+# with several instances, or once Celery workers need to push events too).
 # --------------------------------------------------------------------------
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            'hosts': [config('REDIS_URL')],
+if config('CHANNEL_LAYER_BACKEND', default='memory') == 'redis':
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {
+                'hosts': [config('REDIS_URL', default='redis://127.0.0.1:6379/0')],
+            },
         },
-    },
-}
+    }
+else:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        },
+    }
 
 # --------------------------------------------------------------------------
-# Celery — real broker, no eager mode
+# Celery
+# Defaults to "eager" mode for development on Windows: tasks run
+# synchronously in-process, so no broker/worker is required at all.
+# Set CELERY_ALWAYS_EAGER=False and provide a REDIS_URL to run a real
+# `celery -A config worker --pool=solo` worker.
 # --------------------------------------------------------------------------
-CELERY_TASK_ALWAYS_EAGER = False
-CELERY_TASK_EAGER_PROPAGATES = False
-CELERY_BROKER_URL = config('REDIS_URL')
-CELERY_RESULT_BACKEND = config('REDIS_URL')
+CELERY_TASK_ALWAYS_EAGER = config('CELERY_ALWAYS_EAGER', default=True, cast=bool)
+CELERY_TASK_EAGER_PROPAGATES = True
+CELERY_BROKER_URL = config('REDIS_URL', default='redis://127.0.0.1:6379/0')
+CELERY_RESULT_BACKEND = config('REDIS_URL', default='redis://127.0.0.1:6379/0')
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
-CELERY_TASK_ACKS_LATE = True
-CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 
 # --------------------------------------------------------------------------
 # Import/Export
@@ -291,57 +280,18 @@ UNFOLD = {
 }
 
 # --------------------------------------------------------------------------
-# Email — SMTP (no console fallback)
+# Email (console backend for dev; swap to SMTP/Africa's Talking in prod)
 # --------------------------------------------------------------------------
-EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
-EMAIL_HOST = config('EMAIL_HOST', default='')
-EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
-EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
-EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
-EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='no-reply@school.pritechmw.com')
-SERVER_EMAIL = DEFAULT_FROM_EMAIL
+EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='no-reply@mzuzusec.mw')
 
-AFRICASTALKING_USERNAME = config('AFRICASTALKING_USERNAME', default='')
+# SMS gateway placeholders (Africa's Talking / Twilio) - used by notifications.tasks
+AFRICASTALKING_USERNAME = config('AFRICASTALKING_USERNAME', default='sandbox')
 AFRICASTALKING_API_KEY = config('AFRICASTALKING_API_KEY', default='')
-
-# --------------------------------------------------------------------------
-# Logging — file + console (Nginx/systemd capture console)
-# --------------------------------------------------------------------------
-LOG_DIR = BASE_DIR / 'logs'
-LOG_DIR.mkdir(exist_ok=True)
 
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '[{asctime}] {levelname} {name} {message}',
-            'style': '{',
-        },
-    },
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
-        },
-        'file': {
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': str(LOG_DIR / 'django.log'),
-            'maxBytes': 10 * 1024 * 1024,
-            'backupCount': 5,
-            'formatter': 'verbose',
-        },
-    },
-    'root': {
-        'handlers': ['console', 'file'],
-        'level': 'INFO',
-    },
-    'loggers': {
-        'django.request': {
-            'handlers': ['console', 'file'],
-            'level': 'ERROR',
-            'propagate': False,
-        },
-    },
+    'handlers': {'console': {'class': 'logging.StreamHandler'}},
+    'root': {'handlers': ['console'], 'level': 'INFO'},
 }

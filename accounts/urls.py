@@ -10,6 +10,9 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('signup/', views.SignUpView.as_view(), name='signup'),
 
+    # Live-validation endpoints (used by profile edit)
+    path('api/check-email/', views.check_email, name='check_email'),
+
     # Email verification (AC-07c/e)
     path('verify-email/pending/', views.verify_email_pending, name='verify_email_pending'),
     path('verify-email/resend/', views.resend_email, name='resend_email'),

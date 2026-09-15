@@ -6,10 +6,11 @@ Covers:
   - Self-registration (Student/Parent) with email + phone verification kickoff
   - Email verification (token-based) and phone verification (OTP)
   - Password change & reset (Django built-ins, styled)
-  - Self-service profile (read + edit, inline avatar actions)
+  - Self-service profile (read + edit, inline avatar actions, live email check)
   - Admin user management (list, detail, create, update, activate, unlock)
 """
 import random
+import re
 
 from django.conf import settings
 from django.contrib import messages
@@ -25,6 +26,7 @@ from django.contrib.auth.views import (
     PasswordResetCompleteView,
 )
 from django.core.mail import send_mail
+from django.http import JsonResponse
 from django.shortcuts import redirect, render, get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, UpdateView, ListView, DetailView, View
@@ -58,7 +60,7 @@ from .signals import record_password_history
 
 
 # ---------------------------------------------------------------------------
-# Role metadata for the profile page + stat strip helpers
+# Role metadata for the profile page
 # ---------------------------------------------------------------------------
 ROLE_META = {
     'admin':   {'icon': 'bi-shield-fill-check',
@@ -592,6 +594,43 @@ class ProfileEditView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         messages.success(self.request, 'Profile updated.')
         return super().form_valid(form)
+
+
+# ---------------------------------------------------------------------------
+# Live-validation endpoint for the profile edit form
+# ---------------------------------------------------------------------------
+@login_required
+def check_email(request):
+    """
+    GET ?email=<value>
+    Returns {"available": true} if the email is free, or
+    {"available": false, "error": "..."} with a human message.
+    Used by the profile-edit form's debounced async check.
+    """
+    email = (request.GET.get('email') or '').strip().lower()
+    if not email:
+        return JsonResponse(
+            {'available': False, 'error': 'Email is required.'},
+            status=400,
+        )
+
+    # Cheap format guard before hitting the DB
+    if not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]{2,}$', email):
+        return JsonResponse(
+            {'available': False, 'error': 'Enter a valid email address.'},
+        )
+
+    taken = (
+        User.objects
+        .filter(email__iexact=email)
+        .exclude(pk=request.user.pk)
+        .exists()
+    )
+    if taken:
+        return JsonResponse(
+            {'available': False, 'error': 'This email is already in use.'},
+        )
+    return JsonResponse({'available': True})
 
 
 # ---------------------------------------------------------------------------
