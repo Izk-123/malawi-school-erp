@@ -20,9 +20,27 @@ BRANCH="main"
 DOMAIN="school.pritechmw.com"
 DB_NAME="malawi_erp_db"
 DB_USER="malawi_erp_user"
-DB_PASS="$(openssl rand -base64 24 | tr -d '/+=' | cut -c1-24)"
-DJANGO_SECRET="$(openssl rand -base64 48 | tr -d '/+=' | cut -c1-50)"
 DAPHNE_PORT=8010
+
+# ----------------------------------------------------------------------------
+# Credentials — reuse from existing .env if present, else generate.
+#
+# CRITICAL: never regenerate DB_PASS on every run. The role's password is set
+# via ALTER ROLE below; if .env keeps the old value while ALTER ROLE rotates
+# the role, Django fails with "password authentication failed". Reading both
+# values back from .env makes every subsequent run idempotent.
+# ----------------------------------------------------------------------------
+if [ -f "${PROJECT_DIR}/.env" ] && grep -qE '^DB_PASSWORD=' "${PROJECT_DIR}/.env"; then
+    DB_PASS="$(grep -E '^DB_PASSWORD=' "${PROJECT_DIR}/.env" | head -1 | cut -d= -f2-)"
+else
+    DB_PASS="$(openssl rand -base64 24 | tr -d '/+=' | cut -c1-24)"
+fi
+
+if [ -f "${PROJECT_DIR}/.env" ] && grep -qE '^SECRET_KEY=' "${PROJECT_DIR}/.env"; then
+    DJANGO_SECRET="$(grep -E '^SECRET_KEY=' "${PROJECT_DIR}/.env" | head -1 | cut -d= -f2-)"
+else
+    DJANGO_SECRET="$(openssl rand -base64 48 | tr -d '/+=' | cut -c1-50)"
+fi
 
 RESET_DB=0
 if [ "${1:-}" = "--reset-db" ]; then
@@ -34,18 +52,36 @@ echo " Deploying Malawi School ERP"
 echo "   Domain    : ${DOMAIN}"
 echo "   Directory : ${PROJECT_DIR}"
 echo "   DB        : ${DB_NAME} / ${DB_USER}"
-echo "   DB pass   : ${DB_PASS}   (save this!)"
+echo "   DB pass   : ${DB_PASS}   (must match .env — do not rotate)"
 echo "   Reset DB? : ${RESET_DB}"
 echo "======================================================="
 sleep 2
 
 # ----------------------------------------------------------------------------
-# 0. Helper — append a key to .env only if it isn't already defined.
-#    Lets us add new required settings without clobbering existing values.
+# Helpers
+#
+# ensure_env_var  — append key only if not present. Use for new settings that
+#                   must not clobber an operator's existing value.
+# force_env_var   — overwrite existing key or append. Use for values that must
+#                   match a known-safe production setting (e.g. disabling
+#                   self-registration on a live system).
 # ----------------------------------------------------------------------------
 ensure_env_var() {
     local key="$1" val="$2"
     if ! grep -qE "^${key}=" "${PROJECT_DIR}/.env"; then
+        printf '%s=%s\n' "${key}" "${val}" >> "${PROJECT_DIR}/.env"
+        echo "    + added ${key}"
+    fi
+}
+
+force_env_var() {
+    local key="$1" val="$2"
+    if grep -qE "^${key}=" "${PROJECT_DIR}/.env"; then
+        if ! grep -qE "^${key}=${val}$" "${PROJECT_DIR}/.env"; then
+            sed -i "s|^${key}=.*|${key}=${val}|" "${PROJECT_DIR}/.env"
+            echo "    ~ corrected ${key} → ${val}"
+        fi
+    else
         printf '%s=%s\n' "${key}" "${val}" >> "${PROJECT_DIR}/.env"
         echo "    + added ${key}"
     fi
@@ -76,12 +112,10 @@ fi
 source "${VENV_DIR}/bin/activate"
 pip install --upgrade pip wheel
 pip install -r requirements.txt
-pip install gunicorn psycopg2-binary   # gunicorn kept for utility; Daphne serves HTTP
+pip install gunicorn psycopg2-binary
 
 # ----------------------------------------------------------------------------
-# 3. .env — create on first deploy, then top up missing keys on every run.
-#    NOTE: ENABLE_SELF_REGISTRATION defaults OFF in production. Flip to True
-#    only after a deliberate decision (see settings.py governance block).
+# 3. .env — create on first deploy, then top up / correct on every run.
 # ----------------------------------------------------------------------------
 if [ ! -f "${PROJECT_DIR}/.env" ]; then
     echo ">>> Writing .env (first-time)"
@@ -127,7 +161,7 @@ EMAIL_HOST_PASSWORD=
 AFRICASTALKING_USERNAME=sandbox
 AFRICASTALKING_API_KEY=
 
-# --- Payments (fill in when you have PayChangu credentials) ---------------
+# --- Payments -------------------------------------------------------------
 DEFAULT_PAYMENT_GATEWAY=paychangu
 PAYCHANGU_ENABLED=True
 PAYCHANGU_BASE_URL=https://api.paychangu.com
@@ -149,24 +183,33 @@ ATTENDANCE_LOW_THRESHOLD=80
 EOF
     chmod 600 "${PROJECT_DIR}/.env"
 else
-    echo ">>> .env exists — topping up any missing required keys"
+    echo ">>> .env exists — topping up / correcting required keys"
 fi
 
-# Top up keys the new settings.py requires with no default. Makes the script
-# idempotent across settings-file changes — never clobbers existing values.
+# Add missing keys (never clobber operator values).
 ensure_env_var SITE_URL                        "https://${DOMAIN}"
 ensure_env_var CSRF_TRUSTED_ORIGINS            "https://${DOMAIN}"
 ensure_env_var CSRF_COOKIE_DOMAIN              "${DOMAIN}"
-ensure_env_var ENABLE_SELF_REGISTRATION        "False"
 ensure_env_var SELF_REGISTRATION_ALLOWED_ROLES "parent"
 ensure_env_var INVITATION_TOKEN_VALIDITY_DAYS  "7"
 ensure_env_var HIGH_PRIVILEGE_COOLOFF_HOURS    "24"
 ensure_env_var PASSWORD_RESET_TIMEOUT          "86400"
+
+# Force production-safe values. These must not remain in the looser state a
+# previous run may have written (ENABLE_SELF_REGISTRATION=True was the old
+# default; the new settings.py wants it off on a live system).
+force_env_var ENABLE_SELF_REGISTRATION "False"
+
+# Re-read DB_PASS after env edits in case .env already had a different value
+# (e.g. because someone edited it by hand). Keep .env as the source of truth.
+DB_PASS="$(grep -E '^DB_PASSWORD=' "${PROJECT_DIR}/.env" | head -1 | cut -d= -f2-)"
+
 chmod 600 "${PROJECT_DIR}/.env"
 
 # ----------------------------------------------------------------------------
 # 4. PostgreSQL role + database
 # ----------------------------------------------------------------------------
+echo ">>> Ensuring role ${DB_USER} matches DB_PASSWORD from .env"
 sudo -u postgres psql <<SQL
 DO \$\$
 BEGIN
@@ -182,12 +225,10 @@ SQL
 if [ "${RESET_DB}" -eq 1 ]; then
     echo ">>> --reset-db: stopping services and dropping ${DB_NAME}"
 
-    # Stop anything holding a connection to the DB before dropdb.
     sudo systemctl stop daphne-${PROJECT_NAME} \
                       celery-worker-${PROJECT_NAME} \
                       celery-beat-${PROJECT_NAME} 2>/dev/null || true
 
-    # Force-terminate any lingering backends on the target DB.
     sudo -u postgres psql -c \
       "SELECT pg_terminate_backend(pid) FROM pg_stat_activity
         WHERE datname = '${DB_NAME}' AND pid <> pg_backend_pid();" > /dev/null
@@ -202,7 +243,39 @@ sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_US
 sudo -u postgres psql -d "${DB_NAME}" -c "GRANT ALL ON SCHEMA public TO ${DB_USER};"
 
 # ----------------------------------------------------------------------------
-# 5. Migrate  (with recovery briefing if the migration graph is out of sync)
+# 4b. Verify the app can actually authenticate to the DB. This is the guard
+#     that catches "role password vs .env drifted apart" before migrate runs
+#     and produces an unrecoverable-looking stack trace.
+# ----------------------------------------------------------------------------
+echo ">>> Verifying DB authentication as ${DB_USER}"
+if ! PGPASSWORD="${DB_PASS}" psql -h 127.0.0.1 -U "${DB_USER}" -d "${DB_NAME}" -c "SELECT 1;" > /dev/null 2>&1; then
+    echo "    !! Authentication failed — re-syncing role password once and retrying"
+    sudo -u postgres psql -c "ALTER ROLE ${DB_USER} WITH PASSWORD '${DB_PASS}';" > /dev/null
+
+    if ! PGPASSWORD="${DB_PASS}" psql -h 127.0.0.1 -U "${DB_USER}" -d "${DB_NAME}" -c "SELECT 1;" > /dev/null 2>&1; then
+        echo ""
+        echo "======================================================="
+        echo " DB AUTH STILL FAILING AFTER RE-SYNC"
+        echo "======================================================="
+        echo "Investigate manually:"
+        echo "  grep '^DB_PASSWORD=' ${PROJECT_DIR}/.env"
+        echo "  sudo -u postgres psql -c \"\\du ${DB_USER}\""
+        echo "  PGPASSWORD='<value from .env>' psql -h 127.0.0.1 -U ${DB_USER} -d ${DB_NAME} -c 'SELECT 1;'"
+        echo ""
+        echo "Common causes:"
+        echo "  - pg_hba.conf requires a different auth method (peer/ident) for 127.0.0.1"
+        echo "  - the role name in .env (DB_USER) differs from the one Postgres has"
+        echo "  - a stray space or quote in .env around DB_PASSWORD"
+        echo "Aborting before migrate."
+        exit 1
+    fi
+    echo "    ~ recovered"
+else
+    echo "    ok"
+fi
+
+# ----------------------------------------------------------------------------
+# 5. Migrate
 # ----------------------------------------------------------------------------
 set +e
 python manage.py migrate --noinput
@@ -215,24 +288,11 @@ if [ "${MIGRATE_RC}" -ne 0 ]; then
     echo " MIGRATE FAILED."
     echo "======================================================="
     echo "If the error is:  relation \"...\" does not exist"
-    echo "  → the DB schema is out of sync with the migration graph."
-    echo "    Usually means a migration file was rewritten after it"
-    echo "    had already been applied to this database."
-    echo ""
-    echo "Diagnose:"
-    echo "  cd ${PROJECT_DIR} && source venv/bin/activate"
-    echo "  python manage.py showmigrations accounts"
-    echo ""
-    echo "If this DB has NO real data yet (safe):"
-    echo "  re-run this script with:  $0 --reset-db"
-    echo ""
-    echo "If this DB HAS real data (do NOT drop):"
-    echo "  1. Dump first:"
-    echo "     sudo -u postgres pg_dump ${DB_NAME} > /root/${DB_NAME}-\$(date +%F).sql"
-    echo "  2. Reconcile state manually — either:"
-    echo "     python manage.py migrate accounts --fake   # mark missing app applied"
-    echo "     then hand-write a data migration that backfills the missing table"
-    echo "     OR restore the dump into a fresh DB built from the new migration set."
+    echo "  → DB schema out of sync with migration graph."
+    echo "    If no real data: re-run with  $0 --reset-db"
+    echo "    If real data:    dump first, then reconcile manually:"
+    echo "      sudo -u postgres pg_dump ${DB_NAME} > /root/${DB_NAME}-backup.sql"
+    echo "      python manage.py showmigrations accounts"
     echo ""
     echo "Aborting before static/systemd steps."
     exit 1
@@ -244,7 +304,6 @@ python manage.py seed_maneb_syllabus       || true
 python manage.py assign_role_permissions   || true
 python manage.py collectstatic --noinput
 
-# Superuser only if none exists
 python manage.py shell <<'PY' || true
 from django.contrib.auth import get_user_model
 U = get_user_model()
@@ -254,7 +313,7 @@ if not U.objects.filter(is_superuser=True).exists():
 PY
 
 # ----------------------------------------------------------------------------
-# 6. Systemd: Daphne (ASGI — serves HTTP + WebSockets)
+# 6. Systemd: Daphne
 # ----------------------------------------------------------------------------
 sudo tee /etc/systemd/system/daphne-${PROJECT_NAME}.service > /dev/null <<EOF
 [Unit]
@@ -334,20 +393,17 @@ server {
 
     client_max_body_size 25M;
 
-    # Static files
     location /static/ {
         alias ${PROJECT_DIR}/staticfiles/;
         expires 30d;
         access_log off;
     }
 
-    # Media (uploads)
     location /media/ {
         alias ${PROJECT_DIR}/media/;
         expires 7d;
     }
 
-    # WebSocket endpoint (Channels)
     location /ws/ {
         proxy_pass http://127.0.0.1:${DAPHNE_PORT};
         proxy_http_version 1.1;
@@ -360,7 +416,6 @@ server {
         proxy_read_timeout 86400;
     }
 
-    # Everything else → Daphne
     location / {
         proxy_pass http://127.0.0.1:${DAPHNE_PORT};
         proxy_set_header Host \$host;
@@ -377,7 +432,7 @@ sudo nginx -t
 sudo systemctl reload nginx
 
 # ----------------------------------------------------------------------------
-# 9. SSL (only if DNS already points at this server)
+# 9. SSL
 # ----------------------------------------------------------------------------
 if getent hosts "${DOMAIN}" > /dev/null; then
     echo ">>> DNS resolves — running certbot"
