@@ -12,6 +12,8 @@ Assumptions this file makes:
 """
 from pathlib import Path
 from decouple import config, Csv
+# [ADDED from dev] needed for CELERY_BEAT_SCHEDULE below.
+from celery.schedules import crontab
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -31,6 +33,12 @@ DEBUG = False
 # Required, no default. Django rejects requests whose Host header isn't
 # listed here; this also mitigates Host-header injection attacks.
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv())
+
+# [ADDED from dev] Absolute base URL used to build absolute links in
+# SMS/email — e.g. the invitation claim URL issued by
+# accounts.tasks.deliver_invitation. Must be the public scheme+host.
+# Required in prod (no default) so a misconfigured deployment fails loud.
+SITE_URL = config('SITE_URL')
 
 # ==========================================================================
 # APPLICATIONS
@@ -64,6 +72,7 @@ INSTALLED_APPS = [
 
     # ---- Local apps ----
     'accounts',
+    'admissions',                   # [ADDED from dev] admissions workflow
     'students',
     'teachers',
     'staff',
@@ -245,9 +254,38 @@ AUTH_PASSWORD_VALIDATORS = [
      'OPTIONS': {'history_size': 3}},
 ]
 
+# ==========================================================================
+# GOVERNANCE ("Who Should Create Accounts?")
+#
+# Accounts are a by-product of an administrative event, not a self-service
+# action. Self-registration is therefore parent-only, and only with a
+# verified link to an existing student (student ID + admission code +
+# guardian phone on file). Students, teachers, staff, and admins are all
+# created via an invitation or direct creation by an authorised creator —
+# see accounts/constants.py for the permission matrix and
+# accounts/services.py for the issuance/claim logic.
+# ==========================================================================
 # Default OFF in production: student/parent self-registration should be
 # a deliberate opt-in, not an accidental opening on a live school system.
 ENABLE_SELF_REGISTRATION = config('ENABLE_SELF_REGISTRATION', default=False, cast=bool)
+
+# [ADDED from dev] Roles permitted to hit the self-registration view.
+# Kept as a list so a future "student self-registration with guardian
+# consent" pilot is a config flip, not a code change. Default: parent only.
+SELF_REGISTRATION_ALLOWED_ROLES = config(
+    'SELF_REGISTRATION_ALLOWED_ROLES', default='parent', cast=Csv(),
+)
+
+# [ADDED from dev] InvitationToken validity window, in days (doc §4).
+INVITATION_TOKEN_VALIDITY_DAYS = config(
+    'INVITATION_TOKEN_VALIDITY_DAYS', default=7, cast=int,
+)
+
+# [ADDED from dev] Cool-off period for high-privilege accounts
+# (admin / bursar / auditor) before their first login is permitted (doc §5).
+HIGH_PRIVILEGE_COOLOFF_HOURS = config(
+    'HIGH_PRIVILEGE_COOLOFF_HOURS', default=24, cast=int,
+)
 
 # Password-reset links expire after 24 hours (Django default is 3 days).
 PASSWORD_RESET_TIMEOUT = config('PASSWORD_RESET_TIMEOUT', default=60 * 60 * 24, cast=int)
@@ -377,6 +415,21 @@ CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_ACKS_LATE = True
 # Give one task to one worker at a time; smoother for long SMS/HTTP tasks.
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+
+# ==========================================================================
+# CELERY BEAT SCHEDULE
+# [ADDED from dev] Periodic tasks. Runs in Africa/Blantyre (CELERY_TIMEZONE
+# above). The TCM sweep is idempotent — it dedupes on an AuditLog row per
+# (teacher, window) — so it is safe to run manually or move the time
+# without double-notifying.
+# ==========================================================================
+CELERY_BEAT_SCHEDULE = {
+    'teachers.send_tcm_expiry_reminders': {
+        'task': 'teachers.tasks.send_tcm_expiry_reminders',
+        # 06:00 daily, so the HR digest lands before the school day.
+        'schedule': crontab(hour=6, minute=0),
+    },
+}
 
 # ==========================================================================
 # IMPORT / EXPORT
