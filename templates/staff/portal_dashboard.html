@@ -1,38 +1,349 @@
 {% extends "base.html" %}
+{% load static %}
 {% block page_title %}Staff Dashboard{% endblock %}
+
 {% block content %}
 {% if not staff %}
-<div class="alert alert-warning">No staff profile linked to your account.</div>
+
+<div class="card border-warning-subtle"
+     data-motion="scale-in" data-motion-duration="440">
+    <div class="card-body text-center py-5">
+        <div class="mx-auto mb-3 d-flex align-items-center justify-content-center"
+             style="width:72px;height:72px;border-radius:20px;
+                    background:var(--status-warning-bg);color:var(--status-warning-fg);"
+             data-motion-variant="brandMark"
+             data-motion-initial="hidden"
+             data-motion-animate="visible">
+            <i class="bi bi-person-x fs-2"></i>
+        </div>
+        <h3 class="h5 fw-bold mb-2">No staff profile linked</h3>
+        <p class="text-secondary small mb-0">
+            Your account isn't linked to a staff record yet.
+        </p>
+    </div>
+</div>
+
 {% else %}
+
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text data-reveal-delay="40" data-reveal-stagger="22">{{ staff.full_name }}</h1>
+        <p class="text-secondary small mb-0">
+            {% for r in roles %}<span class="badge rounded-pill bg-primary-subtle text-primary-emphasis me-1">{{ r }}</span>{% endfor %}
+        </p>
+    </div>
+</div>
+
 <div class="row g-3 mb-4">
-    <div class="col-md-3"><div class="card"><div class="card-body">
-        <h6>{{ staff.full_name }}</h6>
-        <p class="text-secondary small mb-2">{% for r in roles %}<span class="badge bg-light text-dark border">{{ r }}</span> {% endfor %}</p>
-        <form method="post" action="{% url 'staff:clock' %}">{% csrf_token %}
-            <button class="btn btn-sm btn-outline-primary w-100">
-                {% if today_attendance.clock_out %}Clocked out {{ today_attendance.clock_out }}{% elif today_attendance.clock_in %}Clock Out{% else %}Clock In{% endif %}
-            </button>
-        </form>
-    </div></div></div>
-    <div class="col-md-3"><div class="card"><div class="card-body"><h5>{{ pending_leave }}</h5><p class="text-secondary small mb-0">My Pending Leave</p></div></div></div>
-    {% if 'bursar' in roles %}<div class="col-md-3"><div class="card"><div class="card-body"><h5>{{ todays_collections }}</h5><p class="text-secondary small mb-0">Today's Collections</p><a href="{% url 'fees:list' %}" class="small">View fees &rarr;</a></div></div></div>
-    <div class="col-md-3"><div class="card"><div class="card-body"><h5>{{ defaulter_count }}</h5><p class="text-secondary small mb-0">Fee Defaulters</p><a href="{% url 'fees:defaulters_report' %}" class="small">View &rarr;</a></div></div></div>{% endif %}
-    {% if 'librarian' in roles %}<div class="col-md-3"><div class="card"><div class="card-body"><h5>{{ overdue_loans }}</h5><p class="text-secondary small mb-0">Overdue Books</p><a href="{% url 'staff:loan_list' %}?overdue=1" class="small">View &rarr;</a></div></div></div>{% endif %}
-    {% if 'security' in roles %}<div class="col-md-3"><div class="card"><div class="card-body"><h5>{{ active_gate_passes }}</h5><p class="text-secondary small mb-0">Students Out</p><a href="{% url 'staff:gate_pass_list' %}" class="small">View &rarr;</a></div></div></div>
-    <div class="col-md-3"><div class="card"><div class="card-body"><h5>{{ visitors_today }}</h5><p class="text-secondary small mb-0">Visitors Today</p><a href="{% url 'staff:visitor_list' %}" class="small">View &rarr;</a></div></div></div>{% endif %}
-    {% if 'nurse' in roles %}<div class="col-md-3"><div class="card"><div class="card-body"><h5>{{ sickbay_today }}</h5><p class="text-secondary small mb-0">Sick Bay Visits Today</p><a href="{% url 'staff:sickbay_list' %}" class="small">View &rarr;</a></div></div></div>
-    <div class="col-md-3"><div class="card"><div class="card-body"><h5>{{ low_stock|length }}</h5><p class="text-secondary small mb-0">Low Stock Items</p><a href="{% url 'staff:medication_stock' %}" class="small">View &rarr;</a></div></div></div>{% endif %}
-    {% if 'ict' in roles or 'groundskeeper' in roles or 'lab_tech' in roles %}<div class="col-md-3"><div class="card"><div class="card-body"><h5>{{ open_tickets }}</h5><p class="text-secondary small mb-0">Open Tickets Assigned to Me</p><a href="{% url 'staff:tickets' %}" class="small">View &rarr;</a></div></div></div>{% endif %}
-    {% if 'hr' in roles %}<div class="col-md-3"><div class="card"><div class="card-body"><h5>{{ leave_queue }}</h5><p class="text-secondary small mb-0">Leave Requests Awaiting Decision</p><a href="{% url 'staff:leave_approval' %}" class="small">View &rarr;</a></div></div></div>{% endif %}
+
+    {# Clock in / out #}
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card h-100"
+             data-motion="fade-up" data-motion-delay="60">
+            <div class="card-body d-flex flex-column justify-content-center">
+                <div class="small text-secondary fw-semibold text-uppercase mb-2"
+                     style="letter-spacing:.04em;font-size:11px;">Today</div>
+                <form method="post" action="{% url 'staff:clock' %}">
+                    {% csrf_token %}
+                    <button class="btn btn-primary w-100"
+                            data-motion-while-hover='{"y":-2,"scale":1.01}'
+                            data-motion-while-tap='{"scale":0.97}'
+                            data-ripple>
+                        <i class="bi bi-clock me-1"></i>
+                        {% if today_attendance and today_attendance.clock_out %}
+                            Clocked out {{ today_attendance.clock_out }}
+                        {% elif today_attendance and today_attendance.clock_in %}
+                            Clock Out
+                        {% else %}
+                            Clock In
+                        {% endif %}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card h-100"
+             data-motion="fade-up" data-motion-delay="140"
+             data-motion-while-hover='{"y":-3,"scale":1.005}'>
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:52px;height:52px;background:rgba(249,168,37,.18);color:#c67c00;"
+                     data-motion-variant="brandMark"
+                     data-motion-initial="hidden"
+                     data-motion-animate="visible"
+                     data-motion-delay="280">
+                    <i class="bi bi-calendar-check fs-5"></i>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="h3 fw-bold mb-0 tabular-nums"
+                         data-counter="{{ pending_leave|default:0 }}">0</div>
+                    <div class="small text-secondary">Pending Leave</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if 'bursar' in roles %}
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card h-100"
+             data-motion="fade-up" data-motion-delay="200"
+             data-motion-while-hover='{"y":-3,"scale":1.005}'>
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:52px;height:52px;background:rgba(25,135,84,.14);color:#198754;"
+                     data-motion-variant="brandMark"
+                     data-motion-initial="hidden"
+                     data-motion-animate="visible"
+                     data-motion-delay="340">
+                    <i class="bi bi-cash-coin fs-5"></i>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="h3 fw-bold mb-0 tabular-nums">
+                        <span data-counter="{{ todays_collections|default:0 }}"
+                              data-counter-prefix="MK ">MK 0</span>
+                    </div>
+                    <div class="small text-secondary">Today's Collections</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card h-100"
+             data-motion="fade-up" data-motion-delay="260"
+             data-motion-while-hover='{"y":-3,"scale":1.005}'>
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:52px;height:52px;background:rgba(220,38,38,.14);color:var(--md-error);"
+                     data-motion-variant="brandMark"
+                     data-motion-initial="hidden"
+                     data-motion-animate="visible"
+                     data-motion-delay="400">
+                    <i class="bi bi-exclamation-circle fs-5"></i>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="h3 fw-bold mb-0 tabular-nums"
+                         data-counter="{{ defaulter_count|default:0 }}">0</div>
+                    <div class="small text-secondary">Fee Defaulters</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if 'librarian' in roles %}
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card h-100"
+             data-motion="fade-up" data-motion-delay="320"
+             data-motion-while-hover='{"y":-3,"scale":1.005}'>
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:52px;height:52px;background:rgba(13,110,253,.12);color:#0d6efd;"
+                     data-motion-variant="brandMark"
+                     data-motion-initial="hidden"
+                     data-motion-animate="visible"
+                     data-motion-delay="460">
+                    <i class="bi bi-book fs-5"></i>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="h3 fw-bold mb-0 tabular-nums"
+                         data-counter="{{ overdue_loans|default:0 }}">0</div>
+                    <div class="small text-secondary">Overdue Books</div>
+                    <a href="{% url 'staff:loan_list' %}?overdue=1" class="small text-decoration-none">View &rarr;</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if 'security' in roles %}
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card h-100"
+             data-motion="fade-up" data-motion-delay="380"
+             data-motion-while-hover='{"y":-3,"scale":1.005}'>
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:52px;height:52px;background:rgba(249,168,37,.18);color:#c67c00;"
+                     data-motion-variant="brandMark"
+                     data-motion-initial="hidden"
+                     data-motion-animate="visible"
+                     data-motion-delay="520">
+                    <i class="bi bi-door-open fs-5"></i>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="h3 fw-bold mb-0 tabular-nums"
+                         data-counter="{{ active_gate_passes|default:0 }}">0</div>
+                    <div class="small text-secondary">Students Out</div>
+                    <a href="{% url 'staff:gate_pass_list' %}" class="small text-decoration-none">View &rarr;</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card h-100"
+             data-motion="fade-up" data-motion-delay="440"
+             data-motion-while-hover='{"y":-3,"scale":1.005}'>
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:52px;height:52px;background:rgba(13,110,253,.12);color:#0d6efd;"
+                     data-motion-variant="brandMark"
+                     data-motion-initial="hidden"
+                     data-motion-animate="visible"
+                     data-motion-delay="580">
+                    <i class="bi bi-people fs-5"></i>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="h3 fw-bold mb-0 tabular-nums"
+                         data-counter="{{ visitors_today|default:0 }}">0</div>
+                    <div class="small text-secondary">Visitors Today</div>
+                    <a href="{% url 'staff:visitor_list' %}" class="small text-decoration-none">View &rarr;</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if 'nurse' in roles %}
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card h-100"
+             data-motion="fade-up" data-motion-delay="500"
+             data-motion-while-hover='{"y":-3,"scale":1.005}'>
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:52px;height:52px;background:rgba(220,38,38,.14);color:var(--md-error);"
+                     data-motion-variant="brandMark"
+                     data-motion-initial="hidden"
+                     data-motion-animate="visible"
+                     data-motion-delay="640">
+                    <i class="bi bi-heart-pulse fs-5"></i>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="h3 fw-bold mb-0 tabular-nums"
+                         data-counter="{{ sickbay_today|default:0 }}">0</div>
+                    <div class="small text-secondary">Sick Bay Visits</div>
+                    <a href="{% url 'staff:sickbay_list' %}" class="small text-decoration-none">View &rarr;</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card h-100"
+             data-motion="fade-up" data-motion-delay="560"
+             data-motion-while-hover='{"y":-3,"scale":1.005}'>
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:52px;height:52px;background:rgba(249,168,37,.18);color:#c67c00;"
+                     data-motion-variant="brandMark"
+                     data-motion-initial="hidden"
+                     data-motion-animate="visible"
+                     data-motion-delay="700">
+                    <i class="bi bi-capsule fs-5"></i>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="h3 fw-bold mb-0 tabular-nums"
+                         data-counter="{{ low_stock|length|default:0 }}">0</div>
+                    <div class="small text-secondary">Low Stock Items</div>
+                    <a href="{% url 'staff:medication_stock' %}" class="small text-decoration-none">View &rarr;</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if 'ict' in roles or 'groundskeeper' in roles or 'lab_tech' in roles %}
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card h-100"
+             data-motion="fade-up" data-motion-delay="620"
+             data-motion-while-hover='{"y":-3,"scale":1.005}'>
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:52px;height:52px;background:rgba(106,27,154,.14);color:#6a1b9a;"
+                     data-motion-variant="brandMark"
+                     data-motion-initial="hidden"
+                     data-motion-animate="visible"
+                     data-motion-delay="760">
+                    <i class="bi bi-ticket-detailed fs-5"></i>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="h3 fw-bold mb-0 tabular-nums"
+                         data-counter="{{ open_tickets|default:0 }}">0</div>
+                    <div class="small text-secondary">Open Tickets</div>
+                    <a href="{% url 'staff:ticket_list' %}" class="small text-decoration-none">View &rarr;</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if 'hr' in roles %}
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card h-100"
+             data-motion="fade-up" data-motion-delay="680"
+             data-motion-while-hover='{"y":-3,"scale":1.005}'>
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:52px;height:52px;background:rgba(26,86,50,.14);color:var(--md-primary);"
+                     data-motion-variant="brandMark"
+                     data-motion-initial="hidden"
+                     data-motion-animate="visible"
+                     data-motion-delay="820">
+                    <i class="bi bi-person-check fs-5"></i>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="h3 fw-bold mb-0 tabular-nums"
+                         data-counter="{{ leave_queue|default:0 }}">0</div>
+                    <div class="small text-secondary">Leave Requests</div>
+                    <a href="{% url 'staff:leave_approval' %}" class="small text-decoration-none">View &rarr;</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
-<div class="d-flex gap-2 flex-wrap mb-4">
-    <a href="{% url 'staff:my_profile' %}" class="btn btn-outline-secondary btn-sm">My Profile</a>
-    <a href="{% url 'staff:my_leave' %}" class="btn btn-outline-secondary btn-sm">My Leave</a>
-    <a href="{% url 'staff:my_payslips' %}" class="btn btn-outline-secondary btn-sm">My Payslips</a>
-    <a href="{% url 'staff:announcements' %}" class="btn btn-outline-secondary btn-sm">Announcements</a>
-    <a href="{% url 'staff:raise_ticket' %}" class="btn btn-outline-secondary btn-sm">Report an Issue</a>
+
+<div class="d-flex gap-2 flex-wrap mb-4"
+     data-motion="fade-up" data-motion-delay="740"
+     data-motion-orchestrate='{"staggerChildren":0.04,"delayChildren":0.05}'>
+    <a href="{% url 'staff:my_profile' %}" class="btn btn-secondary btn-sm"
+       data-motion="fade-up" data-motion-while-hover='{"y":-2}'
+       data-motion-while-tap='{"scale":0.97}' data-ripple>My Profile</a>
+    <a href="{% url 'staff:my_leave' %}" class="btn btn-secondary btn-sm"
+       data-motion="fade-up" data-motion-while-hover='{"y":-2}'
+       data-motion-while-tap='{"scale":0.97}' data-ripple>My Leave</a>
+    <a href="{% url 'staff:my_payslips' %}" class="btn btn-secondary btn-sm"
+       data-motion="fade-up" data-motion-while-hover='{"y":-2}'
+       data-motion-while-tap='{"scale":0.97}' data-ripple>My Payslips</a>
+    <a href="{% url 'staff:announcements' %}" class="btn btn-secondary btn-sm"
+       data-motion="fade-up" data-motion-while-hover='{"y":-2}'
+       data-motion-while-tap='{"scale":0.97}' data-ripple>Announcements</a>
+    <a href="{% url 'staff:raise_ticket' %}" class="btn btn-secondary btn-sm"
+       data-motion="fade-up" data-motion-while-hover='{"y":-2}'
+       data-motion-while-tap='{"scale":0.97}' data-ripple>Report an Issue</a>
 </div>
-<div class="card"><div class="card-header"><h6 class="mb-0 fw-bold">Latest Announcements</h6></div>
-<div class="card-body p-0"><table class="table mb-0"><tbody>{% for a in announcements %}<tr><td><strong>{{ a.title }}</strong><br><small class="text-secondary">{{ a.body|truncatewords:20 }}</small></td></tr>{% empty %}<tr><td>No announcements yet.</td></tr>{% endfor %}</tbody></table></div></div>
+
+<div class="card"
+     data-motion="fade-up" data-motion-delay="800">
+    <div class="card-header">
+        <h6 class="mb-0 fw-bold">Latest Announcements</h6>
+    </div>
+    <div class="card-body p-0">
+        {% for a in announcements %}
+        <div class="p-3 border-bottom">
+            <div class="fw-semibold mb-1">{{ a.title }}</div>
+            <div class="text-secondary small">{{ a.body|truncatewords:20 }}</div>
+        </div>
+        {% empty %}
+        <div class="empty-state text-center py-5">
+            <div class="empty-icon mx-auto mb-3">
+                <i class="bi bi-megaphone fs-2 text-secondary"></i>
+            </div>
+            <p class="text-secondary small mb-0">No announcements yet.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
 {% endif %}
 {% endblock %}

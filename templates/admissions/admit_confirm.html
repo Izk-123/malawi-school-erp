@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Admit · {{ applicant.full_name }}{% endblock %}
+{% block page_title %}Confirm admission{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock %}
+
+{% block content %}
+
+{# ─────────── Header ─────────── #}
+<div class="page-header"
+     data-motion="fade-down" data-motion-duration="460">
+  <div>
+    <h1 class="page-title"
+        data-reveal-text
+        data-reveal-delay="40"
+        data-reveal-stagger="22">Admit · {{ applicant.full_name }}</h1>
+    <p class="text-muted-sm mb-0"
+       data-motion="fade-up" data-motion-delay="200">
+      {{ applicant.applicant_code }} · {{ applicant.applying_for }}
+    </p>
+  </div>
+  <div class="toolbar">
+    <a href="{% url 'admissions:applicant_detail' applicant.pk %}" class="btn btn-secondary"
+       data-motion="fade-up" data-motion-delay="220"
+       data-motion-while-hover='{"y":-2}'
+       data-motion-while-tap='{"scale":0.97}'
+       data-ripple>
+      <i class="bi bi-arrow-left"></i> Back
+    </a>
+  </div>
+</div>
+
+{# ─────────── Summary ─────────── #}
+<div class="card mb-3"
+     data-motion="fade-up" data-motion-delay="60"
+     data-motion-layout>
+  <div class="card-body">
+    {% include "admissions/_form_section.html" with icon="bi-clipboard-check" title="Applicant summary" sub="Confirm you are admitting the right person" tone="info" %}
+    <dl class="profile-fields"
+        data-motion-orchestrate='{"staggerChildren":0.06,"delayChildren":0.05}'>
+      <div class="profile-field" data-motion="fade-up">
+        <dt>Applicant</dt><dd>{{ applicant.full_name }}</dd>
+      </div>
+      <div class="profile-field" data-motion="fade-up">
+        <dt>Guardian</dt><dd>{{ applicant.guardian_name }} · {{ applicant.guardian_phone }}</dd>
+      </div>
+      <div class="profile-field" data-motion="fade-up">
+        <dt>Applying for</dt><dd>{{ applicant.applying_for }}</dd>
+      </div>
+      <div class="profile-field" data-motion="fade-up">
+        <dt>Composite score</dt><dd>{{ applicant.composite_score|default:"—" }}</dd>
+      </div>
+    </dl>
+  </div>
+</div>
+
+{# ─────────── Form ─────────── #}
+<form method="post" novalidate data-live-form
+      data-motion-orchestrate='{"when":"beforeChildren","staggerChildren":0.08,"delayChildren":0.05}'>
+
+  {% csrf_token %}
+
+  {% if form.non_field_errors %}
+  <div class="alert alert-danger" role="alert"
+       data-motion-variant="notice"
+       data-motion-initial="hidden"
+       data-motion-animate="visible">
+    <i class="bi bi-exclamation-triangle"></i> {{ form.non_field_errors.0 }}
+  </div>
+  {% endif %}
+
+  <div class="card mb-3"
+       data-motion="fade-up"
+       data-motion-layout>
+    <div class="card-body">
+      {% include "admissions/_form_section.html" with icon="bi-mortarboard" title="Class placement" sub="Where this student will be enrolled" tone="success" %}
+
+      <div class="callout warning"
+           data-motion="fade-up" data-motion-delay="180">
+        <i class="bi bi-exclamation-triangle"></i>
+        <div>
+          On confirm, a new <strong>Student</strong> record is created, the
+          guardian receives admission invitations, and the applicant is
+          marked <strong>Admitted</strong>. This action is not reversible.
+        </div>
+      </div>
+
+      <div class="row g-3"
+           data-motion-orchestrate='{"staggerChildren":0.06,"delayChildren":0.05}'>
+        <div class="col-md-4" data-motion="fade-up">
+          {% include "admissions/_field.html" with field=form.class_name icon="bi-mortarboard" %}
+        </div>
+        <div class="col-md-4" data-motion="fade-up">
+          {% include "admissions/_field.html" with field=form.stream %}
+        </div>
+        <div class="col-md-4" data-motion="fade-up">
+          {% include "admissions/_field_radio.html" with field=form.boarding_status %}
+        </div>
+
+        <div class="col-md-6" data-show-when="boarding_status=boarder" hidden>
+          {% include "admissions/_field.html" with field=form.hostel icon="bi-house" %}
+        </div>
+        <div class="col-md-6" data-show-when="boarding_status=boarder" hidden>
+          {% include "admissions/_field.html" with field=form.bed_number icon="bi-hash" %}
+        </div>
+
+        <div class="col-12" data-motion="fade-up">
+          {% include "admissions/_field.html" with field=form.reason %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="profile-actions-bar"
+       data-motion="fade-up" data-motion-delay="280">
+    <a href="{% url 'admissions:applicant_detail' applicant.pk %}" class="btn btn-outline"
+       data-motion-while-hover='{"y":-2}'
+       data-motion-while-tap='{"scale":0.97}'
+       data-ripple>
+      Cancel
+    </a>
+    <button type="submit" class="btn btn-primary"
+            data-motion-while-hover='{"y":-2,"scale":1.02}'
+            data-motion-while-tap='{"scale":0.97}'
+            data-ripple>
+      <i class="bi bi-mortarboard"></i> Confirm admission
+    </button>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/admissions-form.js' %}" defer></script>
+{% endblock %}

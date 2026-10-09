@@ -1,39 +1,165 @@
 {% extends "base.html" %}
+{% load static %}
 {% block page_title %}My Syllabus{% endblock %}
+
 {% block content %}
-{% if not teacher %}
-<div class="alert alert-warning">No teacher profile linked to your account.</div>
-{% elif not subject_data %}
-<div class="alert alert-info">You don't have any MANEB subjects or class assignments set up yet. Ask an administrator to link your syllabus subjects (Teacher admin) and class assignments.</div>
-{% else %}
-{% for block in subject_data %}
-<div class="card mb-3">
-    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <h6 class="mb-0 fw-bold">{{ block.subject.code }} - {{ block.subject.name }} &middot; {{ block.class_name }}{{ block.stream }}</h6>
-        <span class="badge bg-{% if block.percentage >= 80 %}success{% elif block.percentage >= 40 %}warning text-dark{% else %}danger{% endif %}">{{ block.covered }}/{{ block.total }} topics covered ({{ block.percentage }}%)</span>
+
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text data-reveal-delay="40" data-reveal-stagger="22">My Syllabus</h1>
+        <p class="text-secondary small mb-0">Track topic coverage per class.</p>
     </div>
+</div>
+
+{% if not teacher %}
+
+<div class="card border-warning-subtle"
+     data-motion="scale-in" data-motion-duration="440">
+    <div class="card-body text-center py-5">
+        <div class="mx-auto mb-3 d-flex align-items-center justify-content-center"
+             style="width:72px;height:72px;border-radius:20px;
+                    background:var(--status-warning-bg);color:var(--status-warning-fg);"
+             data-motion-variant="brandMark"
+             data-motion-initial="hidden"
+             data-motion-animate="visible">
+            <i class="bi bi-person-x fs-2"></i>
+        </div>
+        <h3 class="h5 fw-bold mb-2">No teacher profile linked</h3>
+        <p class="text-secondary small mb-0">
+            Your account isn't linked to a teacher record yet. Contact an administrator.
+        </p>
+    </div>
+</div>
+
+{% elif not subject_data %}
+
+<div class="card border-info-subtle"
+     data-motion="scale-in" data-motion-duration="440">
+    <div class="card-body text-center py-5">
+        <div class="mx-auto mb-3 d-flex align-items-center justify-content-center"
+             style="width:72px;height:72px;border-radius:20px;
+                    background:var(--status-info-bg);color:var(--status-info-fg);"
+             data-motion-variant="brandMark"
+             data-motion-initial="hidden"
+             data-motion-animate="visible">
+            <i class="bi bi-journal-bookmark fs-2"></i>
+        </div>
+        <h3 class="h5 fw-bold mb-2">Nothing to show yet</h3>
+        <p class="text-secondary small mb-0">
+            You don't have any MANEB subjects or class assignments set up yet.
+            Ask an administrator to link your syllabus subjects and class assignments.
+        </p>
+    </div>
+</div>
+
+{% else %}
+
+{% for block in subject_data %}
+<div class="card mb-3"
+     data-motion="fade-up"
+     data-motion-delay="{% widthratio forloop.counter0 1 120 %}"
+     style="overflow:hidden;">
+
+    <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2 min-w-0">
+            <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis font-monospace flex-shrink-0">
+                {{ block.subject.code }}
+            </span>
+            <div class="min-w-0">
+                <div class="fw-bold text-truncate">{{ block.subject.name }}</div>
+                <div class="small text-secondary">
+                    {{ block.class_name }}{{ block.stream }}
+                </div>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+            <div class="progress"
+                 style="width:80px;height:4px;background:var(--md-surface-3);">
+                <div class="progress-bar"
+                     data-progress="{{ block.percentage }}"
+                     data-progress-delay="300"
+                     data-progress-duration="900"
+                     style="background:{% if block.percentage >= 80 %}#198754{% elif block.percentage >= 40 %}#d97706{% else %}#dc2626{% endif %};"></div>
+            </div>
+            <span class="badge rounded-pill
+                {% if block.percentage >= 80 %}bg-success-subtle text-success-emphasis
+                {% elif block.percentage >= 40 %}bg-warning-subtle text-warning-emphasis
+                {% else %}bg-danger-subtle text-danger-emphasis{% endif %} tabular-nums">
+                {{ block.covered }}/{{ block.total }} · {{ block.percentage }}%
+            </span>
+        </div>
+    </div>
+
     <div class="card-body p-0">
-        <table class="table table-hover mb-0">
-            <thead><tr><th>Topic</th><th>Status</th><th></th></tr></thead>
+        {% if block.topics %}
+        <table class="table table-hover mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Topic</th>
+                    <th>Status</th>
+                    <th class="text-end"></th>
+                </tr>
+            </thead>
             <tbody>
-            {% for entry in block.topics %}
-            <tr>
-                <td>{{ entry.topic.code }} {{ entry.topic.title }}</td>
-                <td>{% if entry.is_covered %}<span class="badge bg-success">Covered</span>{% else %}<span class="badge bg-secondary">Pending</span>{% endif %}</td>
-                <td>
-                    <form method="post" action="{% url 'syllabus:toggle_coverage' entry.topic.id %}">
-                        {% csrf_token %}
-                        <input type="hidden" name="class_name" value="{{ block.class_name }}">
-                        <input type="hidden" name="stream" value="{{ block.stream }}">
-                        <button type="submit" class="btn btn-sm btn-outline-success">Toggle</button>
-                    </form>
-                </td>
-            </tr>
-            {% empty %}<tr><td colspan="3">No topics recorded for this subject yet.</td></tr>{% endfor %}
+                {% for entry in block.topics %}
+                <tr data-motion="fade-up"
+                    data-motion-delay="{% widthratio forloop.counter0 1 40 %}"
+                    data-motion-while-hover='{"x":3}'>
+                    <td data-label="Topic">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis font-monospace flex-shrink-0">
+                                {{ entry.topic.code }}
+                            </span>
+                            <span class="fw-medium">{{ entry.topic.title }}</span>
+                        </div>
+                    </td>
+                    <td data-label="Status">
+                        {% if entry.is_covered %}
+                        <span class="badge rounded-pill bg-success-subtle text-success-emphasis">
+                            <i class="bi bi-check-circle me-1"></i> Covered
+                        </span>
+                        {% else %}
+                        <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">
+                            <i class="bi bi-circle me-1"></i> Pending
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="actions text-end">
+                        <form method="post"
+                              action="{% url 'syllabus:toggle_coverage' entry.topic.id %}"
+                              class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="class_name" value="{{ block.class_name }}">
+                            <input type="hidden" name="stream" value="{{ block.stream }}">
+                            <button type="submit"
+                                    class="btn btn-sm {% if entry.is_covered %}btn-secondary{% else %}btn-primary{% endif %}"
+                                    data-motion-while-hover='{"y":-1}'
+                                    data-motion-while-tap='{"scale":0.94}'
+                                    data-ripple>
+                                {% if entry.is_covered %}
+                                <i class="bi bi-arrow-counterclockwise me-1"></i> Undo
+                                {% else %}
+                                <i class="bi bi-check2 me-1"></i> Mark covered
+                                {% endif %}
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
             </tbody>
         </table>
+        {% else %}
+        <div class="empty-state text-center py-4">
+            <p class="text-secondary small mb-0">No topics recorded for this subject yet.</p>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endfor %}
+
 {% endif %}
+
+{% include "partials/dashboard-widgets.html" %}
 {% endblock %}

@@ -1,53 +1,94 @@
 {% extends "base.html" %}
+{% load static %}
 {% block page_title %}Staff Dashboard{% endblock %}
+
 {% block content %}
 {% if not staff %}
-<div class="alert alert-warning">No staff profile linked to your account.</div>
-{% else %}
-<div class="row g-3 mb-4">
-    <div class="col-md-4"><div class="card"><div class="card-body">
-        <p class="text-secondary small mb-1">My Roles</p>
-        {% for r in roles %}<span class="badge bg-light text-dark border me-1">{{ r }}</span>{% empty %}<span class="text-secondary">None assigned</span>{% endfor %}
-    </div></div></div>
-    <div class="col-md-4"><div class="card"><div class="card-body">
-        <form method="post" action="{% url 'staff:clock' %}">{% csrf_token %}<button class="btn btn-primary btn-sm w-100"><i class="bi bi-clock me-1"></i>Clock In / Out</button></form>
-    </div></div></div>
-    <div class="col-md-4"><div class="card"><div class="card-body"><h5>{{ pending_leave }}</h5><p class="text-secondary small mb-0">My Pending Leave Requests</p></div></div></div>
+
+<div class="card border-warning-subtle"
+     data-motion="scale-in" data-motion-duration="440">
+    <div class="card-body text-center py-5">
+        <div class="mx-auto mb-3 d-flex align-items-center justify-content-center"
+             style="width:72px;height:72px;border-radius:20px;
+                    background:var(--status-warning-bg);color:var(--status-warning-fg);"
+             data-motion-variant="brandMark"
+             data-motion-initial="hidden"
+             data-motion-animate="visible">
+            <i class="bi bi-person-x fs-2"></i>
+        </div>
+        <h3 class="h5 fw-bold mb-2">No staff profile linked</h3>
+        <p class="text-secondary small mb-0">
+            Your account isn't linked to a staff record yet.
+        </p>
+    </div>
 </div>
 
-{% if 'librarian' in roles %}
-<div class="card mb-3"><div class="card-header"><h6 class="mb-0 fw-bold">Librarian</h6></div>
-<div class="card-body"><div class="row g-3">
-    <div class="col-md-4"><h5>{{ overdue_loans }}</h5><p class="text-secondary small">Overdue Books</p></div>
-    <div class="col-md-4"><h5>{{ due_today }}</h5><p class="text-secondary small">Due Today</p></div>
-    <div class="col-md-4"><a class="btn btn-outline-primary btn-sm" href="{% url 'staff:book_list' %}">Open Catalogue</a></div>
-</div></div></div>
-{% endif %}
+{% else %}
 
-{% if 'security' in roles %}
-<div class="card mb-3"><div class="card-header"><h6 class="mb-0 fw-bold">Security</h6></div>
-<div class="card-body"><div class="row g-3">
-    <div class="col-md-4"><h5>{{ active_gate_passes }}</h5><p class="text-secondary small">Active Gate Passes</p></div>
-    <div class="col-md-4"><h5>{{ visitors_today }}</h5><p class="text-secondary small">Visitors Today</p></div>
-    <div class="col-md-4"><a class="btn btn-outline-primary btn-sm" href="{% url 'staff:visitor_log' %}">Visitor Log</a></div>
-</div></div></div>
-{% endif %}
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text data-reveal-delay="40" data-reveal-stagger="22">My Dashboard</h1>
+        <p class="text-secondary small mb-0">{{ staff.full_name }}</p>
+    </div>
+</div>
 
-{% if 'nurse' in roles %}
-<div class="card mb-3"><div class="card-header"><h6 class="mb-0 fw-bold">Nurse / Matron</h6></div>
-<div class="card-body"><div class="row g-3">
-    <div class="col-md-4"><h5>{{ visits_today }}</h5><p class="text-secondary small">Sick Bay Visits Today</p></div>
-    <div class="col-md-4"><h5>{{ low_stock|length }}</h5><p class="text-secondary small">Medications Needing Reorder</p></div>
-    <div class="col-md-4"><a class="btn btn-outline-primary btn-sm" href="{% url 'staff:sickbay_list' %}">Sick Bay Log</a></div>
-</div></div></div>
-{% endif %}
+<div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card h-100" data-motion="fade-up" data-motion-delay="60">
+            <div class="card-body d-flex flex-column justify-content-center">
+                <form method="post" action="{% url 'staff:clock' %}">
+                    {% csrf_token %}
+                    <button class="btn btn-primary w-100"
+                            data-motion-while-hover='{"y":-2,"scale":1.01}'
+                            data-motion-while-tap='{"scale":0.97}' data-ripple>
+                        <i class="bi bi-clock me-1"></i> Clock In / Out
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
 
-{% if open_tickets is not None %}
-<div class="card mb-3"><div class="card-header"><h6 class="mb-0 fw-bold">Tickets</h6></div>
-<div class="card-body"><h5>{{ open_tickets }}</h5><p class="text-secondary small">Open Tickets</p><a class="btn btn-outline-primary btn-sm" href="{% url 'staff:ticket_list' %}">View Tickets</a></div></div>
-{% endif %}
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card h-100" data-motion="fade-up" data-motion-delay="140"
+             data-motion-while-hover='{"y":-3,"scale":1.005}'>
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:52px;height:52px;background:rgba(249,168,37,.18);color:#c67c00;"
+                     data-motion-variant="brandMark"
+                     data-motion-initial="hidden" data-motion-animate="visible">
+                    <i class="bi bi-calendar-check fs-5"></i>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="h3 fw-bold mb-0 tabular-nums"
+                         data-counter="{{ pending_leave|default:0 }}">0</div>
+                    <div class="small text-secondary">Pending Leave</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-<div class="card"><div class="card-header d-flex justify-content-between"><h6 class="mb-0 fw-bold">Announcements</h6><a class="btn btn-sm btn-outline-secondary" href="{% url 'staff:announcements' %}">View All</a></div>
-<div class="card-body">{% for a in announcements %}<p class="mb-1"><strong>{{ a.title }}</strong> - {{ a.body|truncatewords:15 }}</p>{% empty %}<p class="text-secondary">No announcements.</p>{% endfor %}</div></div>
+<div class="card" data-motion="fade-up" data-motion-delay="300">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <h6 class="mb-0 fw-bold">Announcements</h6>
+        <a class="btn btn-sm btn-ghost text-secondary"
+           href="{% url 'staff:announcements' %}"
+           data-motion-while-tap='{"scale":0.94}'>
+            View all <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+    </div>
+    <div class="card-body">
+        {% for a in announcements %}
+        <div class="border-bottom pb-2 mb-2">
+            <div class="fw-semibold">{{ a.title }}</div>
+            <div class="text-secondary small">{{ a.body|truncatewords:15 }}</div>
+        </div>
+        {% empty %}
+        <p class="text-secondary small mb-0">No announcements.</p>
+        {% endfor %}
+    </div>
+</div>
 {% endif %}
 {% endblock %}

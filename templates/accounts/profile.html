@@ -12,42 +12,54 @@
 <div class="profile-page">
 
     {# ───────── Hero ───────── #}
-    <section class="profile-hero">
+    <section class="profile-hero"
+             data-motion-orchestrate='{"staggerChildren":0.08,"delayChildren":0.05}'>
         <div class="profile-avatar-wrap">
-            <div class="profile-avatar">
+            <div class="profile-avatar"
+                 data-motion-variant="brandMark"
+                 data-motion-initial="hidden"
+                 data-motion-animate="visible">
                 {% if user.profile_picture %}
-                    <img src="{{ user.profile_picture.url }}"
-                         alt="{{ user.get_full_name|default:user.username }}">
+                <img src="{{ user.profile_picture.url }}"
+                     alt="{{ user.get_full_name|default:user.username }}">
                 {% else %}
-                    <span aria-hidden="true">
-                        {{ user.first_name|first|default:user.username|first }}{{ user.last_name|first }}
-                    </span>
+                <span aria-hidden="true">
+                    {{ user.first_name|first|default:user.username|first }}{{ user.last_name|first }}
+                </span>
                 {% endif %}
             </div>
             <button type="button"
                     class="avatar-edit"
                     data-open-photo-sheet
-                    aria-label="Change profile photo">
+                    aria-label="Change profile photo"
+                    data-motion-while-tap='{"scale":0.9}'>
                 <i class="bi bi-camera"></i>
             </button>
         </div>
 
-        <h1 class="profile-name">{{ user.get_full_name|default:user.username }}</h1>
-        <p class="profile-email">{{ user.email|default:"—" }}</p>
+        <h1 class="profile-name"
+            data-reveal-text data-reveal-delay="140" data-reveal-stagger="22">
+            {{ user.get_full_name|default:user.username }}
+        </h1>
+        <p class="profile-email" data-motion="fade-up">{{ user.email|default:"—" }}</p>
 
         <ul class="profile-roles" role="list" aria-label="Roles">
-            <li class="role-pill role-{{ user.role }}">
+            <li class="role-pill role-{{ user.role }}" data-motion="scale-in">
                 <i class="bi {{ role_meta.icon }}"></i> {{ user.get_role_display }}
             </li>
             {% if user.is_superuser %}
-            <li class="role-pill role-admin">
+            <li class="role-pill role-admin" data-motion="scale-in">
                 <i class="bi bi-shield-fill-check"></i> Superuser
             </li>
             {% endif %}
         </ul>
 
-        <a href="{% url 'accounts:profile_edit' %}" class="btn btn-primary">
-            <i class="bi bi-pencil"></i> Edit profile
+        <a href="{% url 'accounts:profile_edit' %}" class="btn btn-primary"
+           data-motion="fade-up"
+           data-motion-while-hover='{"y":-2,"scale":1.02}'
+           data-motion-while-tap='{"scale":0.97}'
+           data-ripple>
+            <i class="bi bi-pencil me-1"></i> Edit profile
         </a>
     </section>
 
@@ -56,10 +68,14 @@
 
         {# Quick stats #}
         {% if stats %}
-        <section class="stat-strip" aria-label="Quick stats">
+        <section class="stat-strip"
+                 aria-label="Quick stats"
+                 data-motion="fade-up" data-motion-delay="180"
+                 data-motion-orchestrate='{"staggerChildren":0.06,"delayChildren":0.05}'>
             {% for stat in stats %}
-            <div class="stat-strip-item">
-                <span class="stat-strip-value">{{ stat.value }}</span>
+            <div class="stat-strip-item" data-motion="fade-up">
+                <span class="stat-strip-value tabular-nums"
+                      data-counter="{{ stat.value }}">{{ stat.value }}</span>
                 <span class="stat-strip-label">{{ stat.label }}</span>
             </div>
             {% endfor %}
@@ -69,26 +85,28 @@
         {# Personal information #}
         <section class="profile-section"
                  data-section="personal"
-                 data-default-open="true">
+                 data-default-open="true"
+                 data-motion="fade-up" data-motion-delay="240">
             <button class="profile-section-head" type="button">
                 <h2 class="profile-section-title">Personal information</h2>
                 <i class="bi bi-chevron-down" aria-hidden="true"></i>
             </button>
             <div class="profile-section-body" id="section-personal">
-                <dl class="profile-fields">
-                    <div class="profile-field">
+                <dl class="profile-fields"
+                    data-motion-orchestrate='{"staggerChildren":0.05,"delayChildren":0.05}'>
+                    <div class="profile-field" data-motion="fade-up">
                         <dt>First name</dt>
                         <dd>{{ user.first_name|default:"—" }}</dd>
                     </div>
-                    <div class="profile-field">
+                    <div class="profile-field" data-motion="fade-up">
                         <dt>Last name</dt>
                         <dd>{{ user.last_name|default:"—" }}</dd>
                     </div>
-                    <div class="profile-field">
+                    <div class="profile-field" data-motion="fade-up">
                         <dt>Username</dt>
-                        <dd>{{ user.username }}</dd>
+                        <dd class="font-monospace">{{ user.username }}</dd>
                     </div>
-                    <div class="profile-field">
+                    <div class="profile-field" data-motion="fade-up">
                         <dt>Role</dt>
                         <dd>{{ user.get_role_display }}</dd>
                     </div>
@@ -97,15 +115,17 @@
         </section>
 
         {# Contact details #}
-        <section class="profile-section" data-section="contact">
+        <section class="profile-section" data-section="contact"
+                 data-motion="fade-up" data-motion-delay="300">
             <button class="profile-section-head" type="button">
                 <h2 class="profile-section-title">Contact details</h2>
                 <i class="bi bi-chevron-down" aria-hidden="true"></i>
             </button>
             <div class="profile-section-body" id="section-contact">
-                <dl class="profile-fields">
+                <dl class="profile-fields"
+                    data-motion-orchestrate='{"staggerChildren":0.05,"delayChildren":0.05}'>
 
-                    <div class="profile-field">
+                    <div class="profile-field" data-motion="fade-up">
                         <dt>Email</dt>
                         <dd>
                             <span>{{ user.email|default:"—" }}</span>
@@ -132,10 +152,10 @@
                         </dd>
                     </div>
 
-                    <div class="profile-field">
+                    <div class="profile-field" data-motion="fade-up">
                         <dt>Phone</dt>
                         <dd>
-                            <span>{{ user.phone_number|default:"—" }}</span>
+                            <span class="tabular-nums">{{ user.phone_number|default:"—" }}</span>
                             {% if user.phone_number %}
                                 {% if user.phone_verified %}
                                 <span class="verify-badge verify-ok">
@@ -153,7 +173,7 @@
                         </dd>
                     </div>
 
-                    <div class="profile-field">
+                    <div class="profile-field" data-motion="fade-up">
                         <dt>Preferred language</dt>
                         <dd>{{ user.get_preferred_language_display }}</dd>
                     </div>
@@ -163,14 +183,16 @@
         </section>
 
         {# Roles & portals #}
-        <section class="profile-section" data-section="roles">
+        <section class="profile-section" data-section="roles"
+                 data-motion="fade-up" data-motion-delay="360">
             <button class="profile-section-head" type="button">
                 <h2 class="profile-section-title">Roles &amp; portals</h2>
                 <i class="bi bi-chevron-down" aria-hidden="true"></i>
             </button>
             <div class="profile-section-body" id="section-roles">
-                <ul class="role-list">
-                    <li class="role-card">
+                <ul class="role-list"
+                    data-motion-orchestrate='{"staggerChildren":0.06,"delayChildren":0.05}'>
+                    <li class="role-card" data-motion="fade-up">
                         <span class="role-card-icon role-icon-{{ user.role }}">
                             <i class="bi {{ role_meta.icon }}"></i>
                         </span>
@@ -183,7 +205,7 @@
                         </span>
                     </li>
                     {% if user.is_superuser %}
-                    <li class="role-card">
+                    <li class="role-card" data-motion="fade-up">
                         <span class="role-card-icon role-icon-admin">
                             <i class="bi bi-shield-fill-check"></i>
                         </span>
@@ -191,7 +213,10 @@
                             <span class="role-card-title">Administrator</span>
                             <span class="role-card-desc">Full system access</span>
                         </div>
-                        <a href="/admin/" class="btn btn-sm btn-outline">Open admin</a>
+                        <a href="/admin/" class="btn btn-sm btn-outline"
+                           data-motion-while-tap='{"scale":0.94}'>
+                            Open admin
+                        </a>
                     </li>
                     {% endif %}
                 </ul>
@@ -199,31 +224,33 @@
         </section>
 
         {# Security #}
-        <section class="profile-section" data-section="security">
+        <section class="profile-section" data-section="security"
+                 data-motion="fade-up" data-motion-delay="420">
             <button class="profile-section-head" type="button">
                 <h2 class="profile-section-title">Security</h2>
                 <i class="bi bi-chevron-down" aria-hidden="true"></i>
             </button>
             <div class="profile-section-body" id="section-security">
-                <dl class="profile-fields">
-                    <div class="profile-field">
+                <dl class="profile-fields"
+                    data-motion-orchestrate='{"staggerChildren":0.05,"delayChildren":0.05}'>
+                    <div class="profile-field" data-motion="fade-up">
                         <dt>Password</dt>
                         <dd>
-                            <span class="muted">Click to set a new password</span>
+                            <span class="text-secondary small">Click to set a new password</span>
                             <a href="{% url 'accounts:password_change' %}" class="field-action">Change</a>
                         </dd>
                     </div>
-                    <div class="profile-field">
+                    <div class="profile-field" data-motion="fade-up">
                         <dt>Account created</dt>
-                        <dd>{{ user.date_joined|date:"j M Y" }}</dd>
+                        <dd class="tabular-nums">{{ user.date_joined|date:"j M Y" }}</dd>
                     </div>
-                    <div class="profile-field">
+                    <div class="profile-field" data-motion="fade-up">
                         <dt>Last login</dt>
-                        <dd>
+                        <dd class="tabular-nums">
                             {% if user.last_login %}
                                 {{ user.last_login|date:"j M Y, H:i" }}
                             {% else %}
-                                <span class="muted">Never</span>
+                                <span class="text-secondary">Never</span>
                             {% endif %}
                         </dd>
                     </div>
@@ -232,15 +259,17 @@
         </section>
 
         {# Preferences #}
-        <section class="profile-section" data-section="preferences">
+        <section class="profile-section" data-section="preferences"
+                 data-motion="fade-up" data-motion-delay="480">
             <button class="profile-section-head" type="button">
                 <h2 class="profile-section-title">Preferences</h2>
                 <i class="bi bi-chevron-down" aria-hidden="true"></i>
             </button>
             <div class="profile-section-body" id="section-preferences">
-                <dl class="profile-fields">
+                <dl class="profile-fields"
+                    data-motion-orchestrate='{"staggerChildren":0.05,"delayChildren":0.05}'>
 
-                    <div class="profile-field">
+                    <div class="profile-field" data-motion="fade-up">
                         <dt>Theme</dt>
                         <dd>
                             <div class="segmented" role="radiogroup" aria-label="Theme">
@@ -257,7 +286,7 @@
                         </dd>
                     </div>
 
-                    <div class="profile-field">
+                    <div class="profile-field" data-motion="fade-up">
                         <dt>SMS alerts</dt>
                         <dd>
                             <label class="switch" aria-label="Enable SMS alerts">
@@ -269,7 +298,7 @@
                         </dd>
                     </div>
 
-                    <div class="profile-field">
+                    <div class="profile-field" data-motion="fade-up">
                         <dt>Email notifications</dt>
                         <dd>
                             <label class="switch" aria-label="Enable email notifications">
@@ -287,11 +316,15 @@
     </div>
 
     {# ───────── Danger zone ───────── #}
-    <section class="profile-danger">
+    <section class="profile-danger"
+             data-motion="fade-up" data-motion-delay="540">
         <form method="post" action="{% url 'accounts:logout' %}" style="width:100%;">
             {% csrf_token %}
-            <button class="btn btn-outline" type="submit" style="width:100%;">
-                <i class="bi bi-box-arrow-right"></i> Log out
+            <button class="btn btn-outline" type="submit" style="width:100%;"
+                    data-motion-while-hover='{"y":-2}'
+                    data-motion-while-tap='{"scale":0.97}'
+                    data-ripple>
+                <i class="bi bi-box-arrow-right me-1"></i> Log out
             </button>
         </form>
 
@@ -310,24 +343,31 @@
 
 {# ───────── Photo sheet ───────── #}
 <div class="photo-sheet" id="photoSheet" role="dialog" aria-modal="true"
-     aria-label="Profile photo options">
+     aria-label="Profile photo options"
+     data-motion-variant="modalPanel"
+     data-motion-initial="hidden"
+     data-motion-animate="visible"
+     data-motion-exit="exit">
     <div class="photo-sheet-backdrop" data-close-photo-sheet></div>
     <div class="photo-sheet-content">
         <div class="sheet-handle"></div>
         <h3>Profile photo</h3>
         <div class="photo-options">
-            <button type="button" class="photo-option" data-photo-source="camera">
+            <button type="button" class="photo-option" data-photo-source="camera"
+                    data-motion-while-tap='{"scale":0.98}'>
                 <i class="bi bi-camera"></i>
                 <span>Take a photo</span>
             </button>
-            <button type="button" class="photo-option" data-photo-source="gallery">
+            <button type="button" class="photo-option" data-photo-source="gallery"
+                    data-motion-while-tap='{"scale":0.98}'>
                 <i class="bi bi-image"></i>
                 <span>Choose from gallery</span>
             </button>
             {% if user.profile_picture %}
             <button type="button"
                     class="photo-option danger"
-                    onclick="document.getElementById('removePhotoForm').submit();">
+                    onclick="document.getElementById('removePhotoForm').submit();"
+                    data-motion-while-tap='{"scale":0.98}'>
                 <i class="bi bi-trash"></i>
                 <span>Remove photo</span>
             </button>
@@ -357,6 +397,8 @@
         {% endif %}
     </div>
 </div>
+
+{% include "partials/dashboard-widgets.html" %}
 {% endblock %}
 
 {% block extra_js %}

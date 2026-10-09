@@ -1,28 +1,159 @@
 {% extends "base.html" %}
+{% load static %}
 {% block page_title %}Browse Syllabus{% endblock %}
+
 {% block content %}
-<form class="row g-2 mb-3" method="get">
-    <div class="col-md-4"><input type="text" name="search" class="form-control form-control-sm" placeholder="Search topics or objectives..." value="{{ request.GET.search }}"></div>
-    <div class="col-md-4">
-        <select name="subject" class="form-select form-select-sm">
-            <option value="">All subjects</option>
-            {% for s in subjects %}<option value="{{ s.code }}" {% if request.GET.subject == s.code %}selected{% endif %}>{{ s.code }} - {{ s.name }}</option>{% endfor %}
-        </select>
+
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text data-reveal-delay="40" data-reveal-stagger="22">Browse Syllabus</h1>
+        <p class="text-secondary small mb-0">
+            <span class="tabular-nums"
+                  data-counter="{{ topics|length }}">{{ topics|length }}</span>
+            {{ topics|length|pluralize:"topic,topics" }}
+            {% if request.GET.search %}matching "<strong>{{ request.GET.search }}</strong>"{% endif %}
+        </p>
     </div>
-    <div class="col-md-2"><button class="btn btn-sm btn-primary w-100" type="submit">Search</button></div>
-</form>
-<div class="list-group">
-{% for topic in topics %}
-<a href="{% url 'syllabus:subject_detail' topic.subject.pk %}" class="list-group-item list-group-item-action">
-    <span class="badge bg-secondary me-2">{{ topic.subject.code }}</span><strong>{{ topic.code }} {{ topic.title }}</strong>
-</a>
-{% empty %}<p class="text-secondary">No topics match your search.</p>{% endfor %}
 </div>
-{% if is_paginated %}
-<nav class="mt-3"><ul class="pagination">
-    {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>{% endif %}
-    <li class="page-item active"><span class="page-link">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
-    {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>{% endif %}
-</ul></nav>
+
+{# Filters #}
+<form class="card mb-4" method="get"
+      data-motion="fade-up" data-motion-delay="100">
+    <div class="card-body">
+        <div class="row g-2 align-items-center">
+            <div class="col-12 col-md-6 col-lg-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0">
+                        <i class="bi bi-search text-secondary"></i>
+                    </span>
+                    <input type="search" name="search"
+                           class="form-control border-start-0 ps-0"
+                           placeholder="Search topics or objectives…"
+                           value="{{ request.GET.search|default:'' }}">
+                </div>
+            </div>
+            <div class="col-12 col-md-3 col-lg-3">
+                <select name="subject" class="form-select">
+                    <option value="">All subjects</option>
+                    {% for s in subjects %}
+                    <option value="{{ s.code }}"
+                            {% if request.GET.subject == s.code %}selected{% endif %}>
+                        {{ s.code }} — {{ s.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-6 col-md-auto">
+                <button class="btn btn-primary w-100" type="submit"
+                        data-motion-while-hover='{"y":-1}'
+                        data-motion-while-tap='{"scale":0.97}'
+                        data-ripple>
+                    <i class="bi bi-search me-1"></i> Search
+                </button>
+            </div>
+            {% if request.GET.search or request.GET.subject %}
+            <div class="col-6 col-md-auto">
+                <a href="{% url 'syllabus:browse' %}"
+                   class="btn btn-ghost w-100 text-secondary"
+                   data-motion-while-tap='{"scale":0.94}'>
+                    <i class="bi bi-x-lg"></i> Clear
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</form>
+
+{# Results #}
+{% if topics %}
+<div class="card"
+     data-motion="fade-up" data-motion-delay="180"
+     style="overflow:hidden;">
+    <ul class="list-group list-group-flush">
+        {% for topic in topics %}
+        <li class="list-group-item p-0">
+            <a href="{% url 'syllabus:subject_detail' topic.subject.pk %}"
+               class="d-flex align-items-center gap-3 p-3 text-decoration-none text-reset"
+               data-motion="fade-up"
+               data-motion-delay="{% widthratio forloop.counter0 1 30 %}"
+               data-motion-while-hover='{"x":4}'
+               data-motion-while-tap='{"scale":0.98}'>
+                <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis font-monospace flex-shrink-0">
+                    {{ topic.subject.code }}
+                </span>
+                <div class="min-w-0 flex-grow-1">
+                    <div class="fw-medium text-truncate">
+                        <span class="font-monospace text-secondary">{{ topic.code }}</span>
+                        {{ topic.title }}
+                    </div>
+                    <div class="small text-secondary text-truncate">{{ topic.subject.name }}</div>
+                </div>
+                <i class="bi bi-chevron-right small text-secondary flex-shrink-0"></i>
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% else %}
+<div class="card"
+     data-motion="scale-in" data-motion-duration="440">
+    <div class="card-body text-center py-5">
+        <div class="mx-auto mb-3 d-flex align-items-center justify-content-center"
+             style="width:72px;height:72px;border-radius:20px;
+                    background:var(--md-surface-bright);
+                    color:var(--md-on-surface-variant);"
+             data-motion-variant="brandMark"
+             data-motion-initial="hidden"
+             data-motion-animate="visible">
+            <i class="bi bi-search fs-2"></i>
+        </div>
+        <h3 class="h5 fw-bold mb-2">No topics match</h3>
+        <p class="text-secondary small mb-3">
+            {% if request.GET.search or request.GET.subject %}
+            Try a different search or subject.
+            {% else %}
+            Start typing to search the syllabus.
+            {% endif %}
+        </p>
+        {% if request.GET.search or request.GET.subject %}
+        <a class="btn btn-primary btn-sm" href="{% url 'syllabus:browse' %}">
+            Show all topics
+        </a>
+        {% endif %}
+    </div>
+</div>
 {% endif %}
+
+{# Pagination #}
+{% if is_paginated %}
+<nav class="mt-4" data-motion="fade-up" data-motion-delay="280">
+    <ul class="pagination justify-content-center mb-0">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{{ extra_query }}"
+               data-motion-while-tap='{"scale":0.94}'>
+                <i class="bi bi-chevron-left"></i>
+            </a>
+        </li>
+        {% endif %}
+        <li class="page-item active">
+            <span class="page-link tabular-nums">
+                {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+            </span>
+        </li>
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{{ extra_query }}"
+               data-motion-while-tap='{"scale":0.94}'>
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% include "partials/dashboard-widgets.html" %}
 {% endblock %}

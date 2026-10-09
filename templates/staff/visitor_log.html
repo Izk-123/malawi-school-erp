@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% load static %}
+{% block page_title %}Visitor Log{% endblock %}
+
+{% block content %}
+
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text data-reveal-delay="40" data-reveal-stagger="22">Visitor Log</h1>
+        <p class="text-secondary small mb-0">
+            <span class="tabular-nums" data-counter="{{ visitors|length }}">{{ visitors|length }}</span> visits today
+        </p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap"
+         data-motion="fade-up" data-motion-delay="140">
+        <a class="btn btn-primary btn-sm" href="{% url 'staff:log_visitor' %}"
+           data-motion-while-hover='{"y":-2,"scale":1.02}'
+           data-motion-while-tap='{"scale":0.97}' data-ripple>
+            <i class="bi bi-plus-lg me-1"></i> Log Visitor
+        </a>
+        <a class="btn btn-secondary btn-sm" href="{% url 'staff:gate_pass_list' %}"
+           data-motion-while-hover='{"y":-2}'
+           data-motion-while-tap='{"scale":0.97}' data-ripple>
+            <i class="bi bi-door-open me-1"></i> Gate Passes
+        </a>
+    </div>
+</div>
+
+<div class="card" data-motion="fade-up" data-motion-delay="120" style="overflow:hidden;">
+    <div class="card-body p-0">
+        {% if visitors %}
+        <table class="table table-hover mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Name</th><th>Purpose</th><th>Host</th>
+                    <th>In</th><th>Out</th><th class="text-end"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in visitors %}
+                <tr data-motion="fade-up"
+                    data-motion-delay="{% widthratio forloop.counter0 1 40 %}">
+                    <td data-label="Name" class="fw-medium">{{ v.name }}</td>
+                    <td data-label="Purpose" class="text-secondary small">{{ v.purpose }}</td>
+                    <td data-label="Host" class="small">{{ v.host }}</td>
+                    <td data-label="In" class="tabular-nums small">{{ v.time_in|date:"H:i" }}</td>
+                    <td data-label="Out" class="tabular-nums small">
+                        {{ v.time_out|date:"H:i"|default:"â€”" }}
+                    </td>
+                    <td class="actions text-end">
+                        {% if not v.time_out %}
+                        <form method="post" action="{% url 'staff:sign_out_visitor' v.pk %}" class="d-inline">
+                            {% csrf_token %}
+                            <button class="btn btn-sm btn-primary"
+                                    data-motion-while-tap='{"scale":0.94}' data-ripple>
+                                <i class="bi bi-box-arrow-right"></i> Check Out
+                            </button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state text-center py-5">
+            <div class="empty-icon mx-auto mb-3">
+                <i class="bi bi-people fs-2 text-secondary"></i>
+            </div>
+            <h3 class="h6 fw-semibold mb-1">No visitors logged</h3>
+            <p class="text-secondary small mb-3">Log visitors as they arrive on campus.</p>
+            <a class="btn btn-primary btn-sm" href="{% url 'staff:log_visitor' %}">Log Visitor</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% include "partials/dashboard-widgets.html" %}
+{% endblock %}

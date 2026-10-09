@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Issue offer · {{ applicant.full_name }}{% endblock %}
+{% block page_title %}Issue offer{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock %}
+
+{% block content %}
+
+{# ─────────── Header ─────────── #}
+<div class="page-header"
+     data-motion="fade-down" data-motion-duration="460">
+  <div>
+    <h1 class="page-title"
+        data-reveal-text
+        data-reveal-delay="40"
+        data-reveal-stagger="22">Issue offer · {{ applicant.full_name }}</h1>
+    <p class="text-muted-sm mb-0"
+       data-motion="fade-up" data-motion-delay="200">
+      {{ applicant.applicant_code }} · {{ applicant.get_status_display }}
+    </p>
+  </div>
+  <div class="toolbar">
+    <a href="{% url 'admissions:applicant_detail' applicant.pk %}" class="btn btn-secondary"
+       data-motion="fade-up" data-motion-delay="220"
+       data-motion-while-hover='{"y":-2}'
+       data-motion-while-tap='{"scale":0.97}'
+       data-ripple>
+      <i class="bi bi-arrow-left"></i> Back
+    </a>
+  </div>
+</div>
+
+<form method="post" novalidate data-live-form
+      data-motion-orchestrate='{"when":"beforeChildren","staggerChildren":0.08,"delayChildren":0.05}'>
+
+  {% csrf_token %}
+
+  {% if form.non_field_errors %}
+  <div class="alert alert-danger" role="alert"
+       data-motion-variant="notice"
+       data-motion-initial="hidden"
+       data-motion-animate="visible">
+    <i class="bi bi-exclamation-triangle"></i> {{ form.non_field_errors.0 }}
+  </div>
+  {% endif %}
+
+  <div class="card mb-3"
+       data-motion="fade-up"
+       data-motion-layout>
+    <div class="card-body">
+      {% include "admissions/_form_section.html" with icon="bi-envelope-paper" title="Offer" sub="Response window and notes" tone="accent" %}
+
+      <div class="callout info"
+           data-motion="fade-up" data-motion-delay="180">
+        <i class="bi bi-info-circle"></i>
+        <div>
+          On issue, an SMS goes to <strong>{{ applicant.guardian_phone }}</strong>
+          and the offer letter PDF is generated in the background.
+          The applicant's status becomes <strong>Offered</strong>.
+        </div>
+      </div>
+
+      <div class="row g-3"
+           data-motion-orchestrate='{"staggerChildren":0.06,"delayChildren":0.05}'>
+        <div class="col-md-4" data-motion="fade-up">
+          {% include "admissions/_field.html" with field=form.deadline_days icon="bi-hourglass-split" %}
+        </div>
+        <div class="col-md-8" data-motion="fade-up">
+          {% include "admissions/_field.html" with field=form.notes %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="profile-actions-bar"
+       data-motion="fade-up" data-motion-delay="240">
+    <a href="{% url 'admissions:applicant_detail' applicant.pk %}" class="btn btn-outline"
+       data-motion-while-hover='{"y":-2}'
+       data-motion-while-tap='{"scale":0.97}'
+       data-ripple>
+      Cancel
+    </a>
+    <button type="submit" class="btn btn-primary"
+            data-motion-while-hover='{"y":-2,"scale":1.02}'
+            data-motion-while-tap='{"scale":0.97}'
+            data-ripple>
+      <i class="bi bi-envelope-paper"></i> Issue offer
+    </button>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/admissions-form.js' %}" defer></script>
+{% endblock %}

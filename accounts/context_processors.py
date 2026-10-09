@@ -5,6 +5,7 @@ ROLE_MENUS = {
         {'url': 'accounts:dashboard', 'icon': 'bi-speedometer2', 'label': 'Dashboard'},
         {'url': 'students:list', 'icon': 'bi-people', 'label': 'Students'},
         {'url': 'teachers:list', 'icon': 'bi-person-video3', 'label': 'Teachers'},
+        {'url': 'admissions:dashboard', 'icon': 'bi-clipboard-check', 'label': 'Admissions'},
         {'url': 'staff:list', 'icon': 'bi-people', 'label': 'Staff'},
         {'url': 'attendance:mark', 'icon': 'bi-clipboard-check', 'label': 'Mark Attendance'},
         {'url': 'attendance:admin_summary', 'icon': 'bi-bar-chart-steps', 'label': 'Attendance Summary'},
@@ -48,6 +49,7 @@ ROLE_MENUS = {
     ],
     'staff': [
         {'url': 'staff:dashboard', 'icon': 'bi-speedometer2', 'label': 'My Dashboard'},
+        {'url': 'admissions:dashboard', 'icon': 'bi-clipboard-check', 'label': 'Admissions'},
         {'url': 'staff:list', 'icon': 'bi-people', 'label': 'Staff Directory'},
         {'url': 'staff:my_leave', 'icon': 'bi-calendar-x', 'label': 'Leave'},
         {'url': 'staff:announcements', 'icon': 'bi-megaphone', 'label': 'Announcements'},

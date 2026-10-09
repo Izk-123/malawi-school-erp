@@ -1,46 +1,204 @@
 {% extends "base.html" %}
+{% load static %}
 {% block page_title %}{{ subject.name }}{% endblock %}
+
 {% block content %}
-<nav aria-label="breadcrumb"><ol class="breadcrumb">
-    <li class="breadcrumb-item"><a href="{% url 'syllabus:subject_list' %}">Syllabus</a></li>
-    <li class="breadcrumb-item active">{{ subject.code }}</li>
-</ol></nav>
-<h4>{{ subject.name }} <span class="badge bg-primary">{{ subject.code }}</span></h4>
 
-<h6 class="mt-4">Papers</h6>
-<div class="list-group mb-4">
-    {% for paper in papers %}
-    <a href="{% url 'syllabus:paper_detail' paper.pk %}" class="list-group-item list-group-item-action d-flex justify-content-between">
-        <span><strong>Paper {{ paper.number }}</strong> - {{ paper.get_paper_type_display }}</span>
-        <span class="text-secondary">{{ paper.duration_minutes }} min &middot; {{ paper.total_marks }} marks</span>
-    </a>
-    {% empty %}<p class="text-secondary">No papers recorded yet.</p>{% endfor %}
-</div>
+{# Breadcrumb #}
+<nav aria-label="breadcrumb" class="mb-3"
+     data-motion="fade-in" data-motion-delay="20">
+    <ol class="breadcrumb small mb-0">
+        <li class="breadcrumb-item">
+            <a href="{% url 'syllabus:subject_list' %}" class="text-decoration-none">Syllabus</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ subject.code }}</li>
+    </ol>
+</nav>
 
-<h6>Topics</h6>
-{% for topic in topics %}
-<div class="card mb-2">
-    <div class="card-header"><strong>{{ topic.code }} {{ topic.title }}</strong></div>
-    {% if topic.objectives.all %}
-    <ul class="list-group list-group-flush">
-        {% for obj in topic.objectives.all %}<li class="list-group-item small">{{ obj.text }}</li>{% endfor %}
-    </ul>
-    {% endif %}
-    {% for sub in topic.subtopics.all %}
-    <div class="card-body py-2 border-top">
-        <strong class="small">{{ sub.code }} {{ sub.title }}</strong>
+{# Header #}
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis font-monospace">
+                {{ subject.code }}
+            </span>
+            {% if subject.is_elective %}
+            <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis">Elective</span>
+            {% else %}
+            <span class="badge rounded-pill bg-success-subtle text-success-emphasis">Core</span>
+            {% endif %}
+        </div>
+        <h1 class="h4 fw-bold mb-0"
+            data-reveal-text data-reveal-delay="60" data-reveal-stagger="22">{{ subject.name }}</h1>
     </div>
-    {% endfor %}
 </div>
-{% empty %}<p class="text-secondary">No topics have been added for this subject yet.</p>{% endfor %}
 
-<h6 class="mt-4">Grade Descriptors</h6>
-<table class="table table-bordered">
-    <thead><tr><th>Band</th><th>Descriptor</th></tr></thead>
-    <tbody>
-    {% for d in descriptors %}
-    <tr><td><span class="badge {% if d.grade_band == 'distinction' %}bg-success{% elif d.grade_band == 'credit' %}bg-primary{% else %}bg-warning text-dark{% endif %}">{{ d.get_grade_band_display }}</span></td><td>{{ d.descriptor|linebreaks }}</td></tr>
-    {% empty %}<tr><td colspan="2">No descriptors recorded yet.</td></tr>{% endfor %}
-    </tbody>
-</table>
+{# ───── Papers ───── #}
+<section class="mb-4">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h6 class="fw-bold mb-0 text-uppercase small text-secondary"
+            style="letter-spacing:.06em;">Papers</h6>
+        <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">
+            {{ papers|length }}
+        </span>
+    </div>
+
+    {% if papers %}
+    <div class="row g-3"
+         data-motion-orchestrate='{"staggerChildren":0.06,"delayChildren":0.05}'>
+        {% for paper in papers %}
+        <div class="col-12 col-md-6"
+             data-motion="fade-up">
+            <a href="{% url 'syllabus:paper_detail' paper.pk %}"
+               class="card text-decoration-none text-reset h-100"
+               data-motion-while-hover='{"y":-3,"scale":1.005}'
+               data-motion-while-tap='{"scale":0.98}'>
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
+                         style="width:48px;height:48px;
+                                background:color-mix(in srgb, var(--md-primary) 14%, transparent);
+                                color:var(--md-primary);font-weight:700;">
+                        {{ paper.number }}
+                    </div>
+                    <div class="min-w-0 flex-grow-1">
+                        <div class="fw-semibold">Paper {{ paper.number }}</div>
+                        <div class="small text-secondary">
+                            {{ paper.get_paper_type_display }}
+                        </div>
+                        <div class="small text-secondary">
+                            <span class="tabular-nums">{{ paper.duration_minutes }}</span> min ·
+                            <span class="tabular-nums">{{ paper.total_marks }}</span> marks
+                        </div>
+                    </div>
+                    <i class="bi bi-chevron-right small text-secondary flex-shrink-0"></i>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body text-center py-4">
+            <p class="text-secondary small mb-0">No papers recorded yet.</p>
+        </div>
+    </div>
+    {% endif %}
+</section>
+
+{# ───── Topics ───── #}
+<section class="mb-4">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h6 class="fw-bold mb-0 text-uppercase small text-secondary"
+            style="letter-spacing:.06em;">Topics</h6>
+        <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">
+            {{ topics|length }}
+        </span>
+    </div>
+
+    {% if topics %}
+    <div class="d-flex flex-column gap-3"
+         data-motion-orchestrate='{"staggerChildren":0.05,"delayChildren":0.05}'>
+        {% for topic in topics %}
+        <div class="card"
+             data-motion="fade-up"
+             style="overflow:hidden;">
+
+            <div class="card-header d-flex align-items-center gap-2">
+                <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis font-monospace flex-shrink-0">
+                    {{ topic.code }}
+                </span>
+                <h6 class="fw-bold mb-0 text-truncate">{{ topic.title }}</h6>
+            </div>
+
+            {% if topic.objectives.all %}
+            <div class="card-body pb-2">
+                <div class="small text-secondary fw-semibold text-uppercase mb-2"
+                     style="letter-spacing:.05em;font-size:11px;">Objectives</div>
+                <ul class="list-unstyled mb-0">
+                    {% for obj in topic.objectives.all %}
+                    <li class="d-flex align-items-start gap-2 mb-2"
+                        data-motion="fade-up"
+                        data-motion-delay="{% widthratio forloop.counter0 1 40 %}">
+                        <i class="bi bi-check2-circle text-success flex-shrink-0 mt-1"></i>
+                        <span style="font-size:14px;">{{ obj.text }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if topic.subtopics.all %}
+            <div class="card-body pt-2 border-top">
+                <div class="small text-secondary fw-semibold text-uppercase mb-2"
+                     style="letter-spacing:.05em;font-size:11px;">Sub-topics</div>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for sub in topic.subtopics.all %}
+                    <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">
+                        <span class="font-monospace">{{ sub.code }}</span> {{ sub.title }}
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <p class="text-secondary small mb-0">No topics have been added for this subject yet.</p>
+        </div>
+    </div>
+    {% endif %}
+</section>
+
+{# ───── Grade Descriptors ───── #}
+<section>
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h6 class="fw-bold mb-0 text-uppercase small text-secondary"
+            style="letter-spacing:.06em;">Grade Descriptors</h6>
+    </div>
+
+    {% if descriptors %}
+    <div class="card"
+         data-motion="fade-up" data-motion-delay="120"
+         style="overflow:hidden;">
+        <table class="table table-hover mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Band</th>
+                    <th>Descriptor</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in descriptors %}
+                <tr data-motion="fade-up"
+                    data-motion-delay="{% widthratio forloop.counter0 1 40 %}">
+                    <td data-label="Band">
+                        <span class="badge rounded-pill
+                            {% if d.grade_band == 'distinction' %}bg-success-subtle text-success-emphasis
+                            {% elif d.grade_band == 'credit' %}bg-primary-subtle text-primary-emphasis
+                            {% else %}bg-warning-subtle text-warning-emphasis{% endif %}">
+                            {{ d.get_grade_band_display }}
+                        </span>
+                    </td>
+                    <td data-label="Descriptor" class="text-secondary small">
+                        {{ d.descriptor|linebreaksbr }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body text-center py-4">
+            <p class="text-secondary small mb-0">No descriptors recorded yet.</p>
+        </div>
+    </div>
+    {% endif %}
+</section>
+
+{% include "partials/dashboard-widgets.html" %}
 {% endblock %}

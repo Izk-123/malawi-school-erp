@@ -1,16 +1,143 @@
 {% extends "base.html" %}
-{% block page_title %}Dashboard{% endblock %}
+{% load static %}
+{% block page_title %}Teacher Dashboard{% endblock %}
+
 {% block content %}
+
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text
+            data-reveal-delay="40"
+            data-reveal-stagger="22">Welcome back</h1>
+        <p class="text-secondary small mb-0">Your teaching day at a glance.</p>
+    </div>
+    <a href="{% url 'attendance:mark' %}" class="btn btn-primary btn-sm"
+       data-motion="fade-up" data-motion-delay="140"
+       data-motion-while-hover='{"y":-2,"scale":1.02}'
+       data-motion-while-tap='{"scale":0.97}'
+       data-ripple>
+        <i class="bi bi-clipboard-check me-1"></i> Mark Attendance
+    </a>
+</div>
+
 <div class="row g-3 mb-4">
-    <div class="col-md-4"><div class="card"><div class="card-body"><h5>{{ classes|length }}</h5><p class="text-secondary small mb-0">Classes Assigned</p></div></div></div>
-    <div class="col-md-4"><div class="card"><div class="card-body"><h5>{{ today_periods|length }}</h5><p class="text-secondary small mb-0">Periods Today</p></div></div></div>
-    <div class="col-md-4"><div class="card"><div class="card-body"><a href="{% url 'attendance:mark' %}" class="btn btn-primary btn-sm">Mark Attendance</a></div></div></div>
+
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card h-100"
+             data-motion="fade-up" data-motion-delay="60"
+             data-motion-while-hover='{"y":-3,"scale":1.005}'>
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:52px;height:52px;background:rgba(26,86,50,.14);color:var(--md-primary);"
+                     data-motion-variant="brandMark"
+                     data-motion-initial="hidden"
+                     data-motion-animate="visible"
+                     data-motion-delay="260">
+                    <i class="bi bi-easel2 fs-5"></i>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="h3 fw-bold mb-0 tabular-nums"
+                         data-counter="{{ classes|length|default:0 }}">0</div>
+                    <div class="small text-secondary">Classes Assigned</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card h-100"
+             data-motion="fade-up" data-motion-delay="140"
+             data-motion-while-hover='{"y":-3,"scale":1.005}'>
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:52px;height:52px;background:rgba(13,110,253,.12);color:#0d6efd;"
+                     data-motion-variant="brandMark"
+                     data-motion-initial="hidden"
+                     data-motion-animate="visible"
+                     data-motion-delay="340">
+                    <i class="bi bi-clock-history fs-5"></i>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="h3 fw-bold mb-0 tabular-nums"
+                         data-counter="{{ today_periods|length|default:0 }}">0</div>
+                    <div class="small text-secondary">Periods Today</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card h-100"
+             data-motion="fade-up" data-motion-delay="220">
+            <div class="card-body d-flex flex-column justify-content-center align-items-stretch gap-2">
+                <div class="small text-secondary fw-medium">Quick action</div>
+                <a href="{% url 'attendance:mark' %}"
+                   class="btn btn-primary w-100"
+                   data-motion-while-hover='{"y":-2,"scale":1.01}'
+                   data-motion-while-tap='{"scale":0.97}'
+                   data-ripple>
+                    <i class="bi bi-clipboard-check me-1"></i> Take Register
+                </a>
+            </div>
+        </div>
+    </div>
 </div>
-<div class="card">
-    <div class="card-header"><h6 class="fw-bold">My Classes</h6></div>
-    <div class="card-body p-0"><table class="table table-hover mb-0">
-        <thead><tr><th>Class</th></tr></thead>
-        <tbody>{% for c in classes %}<tr><td>{{ c.0 }}{{ c.1 }}</td></tr>{% endfor %}</tbody>
-    </table></div>
+
+<div class="card"
+     data-motion="fade-up" data-motion-delay="260"
+     style="overflow:hidden;">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <h6 class="fw-bold mb-0">My Classes</h6>
+        <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">
+            {{ classes|length }}
+        </span>
+    </div>
+    <div class="card-body p-0">
+        {% if classes %}
+        <table class="table table-hover mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Class</th>
+                    <th>Subject</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in classes %}
+                <tr data-motion="fade-up"
+                    data-motion-delay="{% widthratio forloop.counter0 1 45 %}"
+                    data-motion-while-hover='{"x":3}'>
+                    <td data-label="Class">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="rounded-2 d-flex align-items-center justify-content-center flex-shrink-0"
+                                  style="width:32px;height:32px;background:rgba(26,86,50,.12);color:var(--md-primary);">
+                                <i class="bi bi-book small"></i>
+                            </span>
+                            <span class="fw-medium">{{ c.0 }}{{ c.1 }}</span>
+                        </div>
+                    </td>
+                    <td data-label="Subject" class="text-secondary">
+                        {{ c.2|default:"—" }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state text-center py-5">
+            <div class="empty-icon mx-auto mb-3"
+                 style="width:64px;height:64px;border-radius:16px;
+                        background:var(--md-surface-bright);
+                        display:flex;align-items:center;justify-content:center;">
+                <i class="bi bi-journal-bookmark fs-2 text-secondary"></i>
+            </div>
+            <h3 class="h6 fw-semibold mb-1">No classes assigned</h3>
+            <p class="text-secondary small mb-0">Ask an administrator to assign you to a class.</p>
+        </div>
+        {% endif %}
+    </div>
 </div>
+
+{% include "partials/dashboard-widgets.html" %}
 {% endblock %}

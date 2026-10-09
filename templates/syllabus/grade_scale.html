@@ -1,14 +1,88 @@
 {% extends "base.html" %}
+{% load static %}
 {% block page_title %}MANEB Grade Scale{% endblock %}
+
 {% block content %}
-<div class="card"><div class="card-header"><h5 class="mb-0 fw-bold">MSCE Grade Scale (1-9)</h5></div>
-<div class="card-body p-0"><table class="table table-hover mb-0">
-<thead><tr><th>Grade</th><th>Band</th><th>GCE 'O' Level Equivalent</th><th>Description</th></tr></thead>
-<tbody>{% for g in grades %}<tr>
-<td><strong>{{ g.grade_number }}</strong></td>
-<td><span class="badge {% if g.label == 'Distinction' %}bg-success{% elif g.label == 'Credit' %}bg-primary{% elif g.label == 'Pass' %}bg-warning text-dark{% else %}bg-danger{% endif %}">{{ g.label }}</span></td>
-<td>{% if g.gce_equivalent %}<i class="bi bi-check-circle text-success"></i> Yes{% else %}<i class="bi bi-x-circle text-secondary"></i> No{% endif %}</td>
-<td>{{ g.description }}</td>
-</tr>{% endfor %}</tbody>
-</table></div></div>
+
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text data-reveal-delay="40" data-reveal-stagger="22">MANEB Grade Scale</h1>
+        <p class="text-secondary small mb-0">MSCE Grade Scale (1–9) with GCE 'O' Level equivalence.</p>
+    </div>
+</div>
+
+<div class="card"
+     data-motion="fade-up" data-motion-delay="120"
+     style="overflow:hidden;">
+    <table class="table table-hover mb-0 align-middle">
+        <thead>
+            <tr>
+                <th style="width:70px;">Grade</th>
+                <th>Band</th>
+                <th>GCE 'O' Level</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for g in grades %}
+            <tr data-motion="fade-up"
+                data-motion-delay="{% widthratio forloop.counter0 1 35 %}"
+                data-motion-while-hover='{"x":3}'>
+                <td data-label="Grade">
+                    <span class="d-inline-flex align-items-center justify-content-center fw-bold tabular-nums"
+                          style="width:36px;height:36px;border-radius:10px;
+                                 background:color-mix(in srgb, var(--md-primary) 14%, transparent);
+                                 color:var(--md-primary);">
+                        {{ g.grade_number }}
+                    </span>
+                </td>
+                <td data-label="Band">
+                    <span class="badge rounded-pill
+                        {% if g.label == 'Distinction' %}bg-success-subtle text-success-emphasis
+                        {% elif g.label == 'Credit' %}bg-primary-subtle text-primary-emphasis
+                        {% elif g.label == 'Pass' %}bg-warning-subtle text-warning-emphasis
+                        {% else %}bg-danger-subtle text-danger-emphasis{% endif %}">
+                        {{ g.label }}
+                    </span>
+                </td>
+                <td data-label="GCE 'O' Level">
+                    {% if g.gce_equivalent %}
+                    <span class="text-success d-inline-flex align-items-center gap-1">
+                        <i class="bi bi-check-circle-fill"></i> Yes
+                    </span>
+                    {% else %}
+                    <span class="text-secondary d-inline-flex align-items-center gap-1">
+                        <i class="bi bi-x-circle"></i> No
+                    </span>
+                    {% endif %}
+                </td>
+                <td data-label="Description" class="text-secondary small">{{ g.description }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4">
+                    <div class="empty-state text-center py-5">
+                        <div class="empty-icon mx-auto mb-3"
+                             style="width:64px;height:64px;border-radius:16px;
+                                    background:var(--md-surface-bright);
+                                    display:flex;align-items:center;justify-content:center;"
+                             data-motion-variant="brandMark"
+                             data-motion-initial="hidden"
+                             data-motion-animate="visible">
+                            <i class="bi bi-bar-chart fs-2 text-secondary"></i>
+                        </div>
+                        <p class="text-secondary small mb-0">
+                            No grade scale configured. Run <code>seed_maneb_syllabus</code>.
+                        </p>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% include "partials/dashboard-widgets.html" %}
 {% endblock %}

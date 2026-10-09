@@ -5,6 +5,14 @@ group by the `sync_role_group` signal in accounts/signals.py; this command
 just needs to (re)run whenever permissions should be recalculated, e.g.
 after adding a new app/model.
 
+Governance ("Who Should Create Accounts?"): this command ALSO creates the
+three account-creation groups — `registry_clerk`, `hr_officer`,
+`head_teacher` — which grant the account-creation permissions declared in
+`User.Meta.permissions`. A user's role group grants portal access; one of
+these creator groups grants authority to create accounts on top. Only a
+Head Teacher (or superuser) should be in `head_teacher`; the other two are
+delegated by the Head Teacher via the admin.
+
     python manage.py assign_role_permissions
 """
 from django.contrib.auth.models import Group, Permission
@@ -128,10 +136,72 @@ ROLE_PERMISSIONS = {
 }
 
 
+# ---------------------------------------------------------------------------
+# Account-creation groups (governance doc §2)
+#
+# The three creators a typical Malawi secondary school needs. Expressed as
+# Groups holding the User-model permissions declared in
+# accounts/models.User.Meta.permissions. `services.can_create_account_for`
+# is the single enforcement point — it checks both the master
+# `create_account` gate and the purpose-specific permission (plus the
+# high-privilege gate for admin/bursar/auditor).
+# ---------------------------------------------------------------------------
+ACCOUNT_CREATION_GROUPS = {
+    # Registry Clerk / Secretary: students + parents.
+    'registry_clerk': [
+        'create_account',
+        'create_student_account',
+        'create_parent_account',
+    ],
+    # HR Officer / Deputy Head (Admin): teachers + non-teaching staff.
+    'hr_officer': [
+        'create_account',
+        'create_teacher_account',
+        'create_staff_account',
+    ],
+    # Head Teacher: everything, including high-privilege and approval.
+    'head_teacher': [
+        'create_account',
+        'create_student_account',
+        'create_parent_account',
+        'create_teacher_account',
+        'create_staff_account',
+        'create_admin_account',
+        'create_bursar_account',
+        'create_auditor_account',
+        'create_high_privilege_account',
+        'approve_account_creation',
+    ],
+}
+
+
+def _grant_user_perms(group, codenames):
+    """Attach User-model permissions by codename to a Group.
+
+    Permissions declared in `User.Meta.permissions` are created by Django
+    during `migrate`; the `get_or_create` here is a belt-and-braces in case
+    the command runs before a migration that adds a new codename."""
+    ct = ContentType.objects.get_for_model(User)
+    perms = []
+    for code in codenames:
+        short = code.split('.', 1)[1] if '.' in code else code
+        perm, _ = Permission.objects.get_or_create(
+            codename=short,
+            content_type=ct,
+            defaults={'name': short.replace('_', ' ').title()},
+        )
+        perms.append(perm)
+    group.permissions.add(*perms)
+    return perms
+
+
 class Command(BaseCommand):
-    help = 'Sync Django Groups/permissions to match each role (AC-16/17).'
+    help = 'Sync Django Groups/permissions to match each role (AC-16/17) and the account-creation matrix.'
 
     def handle(self, *args, **options):
+        # ------------------------------------------------------------------
+        # 1. Role groups: portal-level model permissions.
+        # ------------------------------------------------------------------
         for role, model_perms in ROLE_PERMISSIONS.items():
             group, _ = Group.objects.get_or_create(name=role)
             perms = []
@@ -145,11 +215,28 @@ class Command(BaseCommand):
                     )
                     perms.append(perm)
             group.permissions.set(perms)
-            self.stdout.write(self.style.SUCCESS(f'{role}: {len(perms)} permissions assigned to group.'))
+            self.stdout.write(self.style.SUCCESS(
+                f'{role}: {len(perms)} permissions assigned to group.'
+            ))
 
-        # Make sure every existing user is in their role's group.
+        # ------------------------------------------------------------------
+        # 2. Account-creation groups (governance doc §2).
+        # ------------------------------------------------------------------
+        for group_name, codenames in ACCOUNT_CREATION_GROUPS.items():
+            group, _ = Group.objects.get_or_create(name=group_name)
+            perms = _grant_user_perms(group, codenames)
+            self.stdout.write(self.style.SUCCESS(
+                f'{group_name}: {len(perms)} account-creation permissions assigned.'
+            ))
+
+        # ------------------------------------------------------------------
+        # 3. Make sure every existing user is in at least their role group.
+        #    NOTE: `.add()`, not `.set()` — the post_save signal on User
+        #    also uses `.add()` so that a Registry Clerk's account-creation
+        #    group survives re-runs of this command.
+        # ------------------------------------------------------------------
         for user in User.objects.all():
             group, _ = Group.objects.get_or_create(name=user.role)
-            user.groups.set([group])
+            user.groups.add(group)
 
         self.stdout.write(self.style.SUCCESS('Done.'))

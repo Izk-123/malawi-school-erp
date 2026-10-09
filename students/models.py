@@ -1,4 +1,6 @@
 import datetime
+import secrets
+import string
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -6,6 +8,18 @@ from django.db import models
 from simple_history.models import HistoricalRecords
 
 from accounts.models import malawi_phone_validator
+
+
+def generate_admission_code():
+    """One-time code printed on the admission letter (governance doc §3).
+
+    8 characters from a 36-symbol alphabet — ~2.8 trillion combinations,
+    so a collision on `unique=True` is astronomically unlikely, and even
+    then Django will surface an IntegrityError which a Registry Clerk can
+    retry. Excludes visually confusable characters (0/O, 1/I/L) to make
+    it easy to read off a printed letter and type into a phone."""
+    alphabet = '23456789ABCDEFGHJKMNPQRSTUVWXYZ'  # no 0/O/1/I/L
+    return ''.join(secrets.choice(alphabet) for _ in range(8))
 
 
 class Student(models.Model):
@@ -33,7 +47,10 @@ class Student(models.Model):
     gender = models.CharField(max_length=6, choices=Gender.choices)
     date_of_birth = models.DateField()
     guardian_name = models.CharField(max_length=150)
-    guardian_phone = models.CharField(max_length=20, validators=[malawi_phone_validator], db_index=True, blank=True)
+    guardian_phone = models.CharField(
+        max_length=20, validators=[malawi_phone_validator],
+        db_index=True, blank=True,
+    )
     guardians = models.ManyToManyField(
         settings.AUTH_USER_MODEL, related_name='children', blank=True,
         limit_choices_to={'role': 'parent'},
@@ -48,6 +65,23 @@ class Student(models.Model):
     attendance_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=100)
     average_grade = models.CharField(max_length=3, blank=True, default='N/A')
     enrolled_on = models.DateField(auto_now_add=True)
+
+    # ------------------------------------------------------------------
+    # Governance (doc §3): the one-time code on the admission letter a
+    # parent enters to verify their self-registration. Generated once at
+    # admission, unique per student, and never editable through the UI.
+    # ------------------------------------------------------------------
+    admission_code = models.CharField(
+        max_length=8,
+        unique=True,
+        default=generate_admission_code,
+        editable=False,
+        help_text=(
+            'One-time code printed on the admission letter, entered by '
+            'parents during self-registration.'
+        ),
+    )
+
     # SY-24/25: which MSCE session this student is preparing for, and the
     # syllabus subjects they're actually registered for this term.
     exam_session = models.ForeignKey(
@@ -103,6 +137,18 @@ class Student(models.Model):
                 self.enrolled_on = datetime.date.today()
             self.student_id = self._generate_student_id()
         super().save(*args, **kwargs)
+
+    # ------------------------------------------------------------------
+    # Governance helpers
+    # ------------------------------------------------------------------
+    def regenerate_admission_code(self, save=True):
+        """Issue a new admission code — called when the admission letter is
+        lost and the parent needs a fresh code. The old code is invalidated
+        immediately because it's stored on this row."""
+        self.admission_code = generate_admission_code()
+        if save:
+            self.save(update_fields=['admission_code'])
+        return self.admission_code
 
     @property
     def class_display(self):
@@ -166,7 +212,9 @@ class GuardianContact(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='guardian_contacts')
     name = models.CharField(max_length=150)
     phone_number = models.CharField(max_length=20, validators=[malawi_phone_validator])
-    relationship = models.CharField(max_length=20, choices=Relationship.choices, default=Relationship.GUARDIAN)
+    relationship = models.CharField(
+        max_length=20, choices=Relationship.choices, default=Relationship.GUARDIAN,
+    )
     is_primary = models.BooleanField(default=False)
     linked_user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,

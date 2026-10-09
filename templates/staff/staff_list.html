@@ -1,13 +1,160 @@
 {% extends "base.html" %}
+{% load static %}
 {% block page_title %}Staff Directory{% endblock %}
+
 {% block content %}
-<form class="row g-2 mb-3" method="get">
-    <div class="col-md-4"><input type="text" name="search" class="form-control form-control-sm" placeholder="Search..." value="{{ request.GET.search }}"></div>
-    <div class="col-md-3"><button class="btn btn-sm btn-outline-secondary" type="submit">Filter</button></div>
+
+{# ───── Header ───── #}
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text
+            data-reveal-delay="40"
+            data-reveal-stagger="22">Staff Directory</h1>
+        <p class="text-secondary small mb-0">
+            <span class="tabular-nums"
+                  data-counter="{{ staff_members|length }}">{{ staff_members|length }}</span>
+            {{ staff_members|length|pluralize:"person,people" }}
+            {% if request.GET.search %}matching "<strong>{{ request.GET.search }}</strong>"{% endif %}
+        </p>
+    </div>
+</div>
+
+{# ───── Search + Filter ───── #}
+<form class="card mb-3"
+      data-motion="fade-up" data-motion-delay="120"
+      method="get"
+      role="search">
+    <div class="card-body">
+        <div class="row g-2 align-items-center">
+
+            <div class="col-12 col-md-6 col-lg-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0">
+                        <i class="bi bi-search text-secondary"></i>
+                    </span>
+                    <input type="search"
+                           name="search"
+                           class="form-control border-start-0 ps-0"
+                           placeholder="Search by name, ID, phone…"
+                           value="{{ request.GET.search|default:'' }}"
+                           autocomplete="off">
+                </div>
+            </div>
+
+            <div class="col-6 col-md-auto">
+                <button class="btn btn-primary w-100"
+                        type="submit"
+                        data-motion-while-hover='{"y":-1}'
+                        data-motion-while-tap='{"scale":0.97}'
+                        data-ripple>
+                    <i class="bi bi-funnel me-1"></i> Filter
+                </button>
+            </div>
+
+            {% if request.GET.search %}
+            <div class="col-6 col-md-auto">
+                <a href="{% url 'staff:staff_list' %}"
+                   class="btn btn-ghost w-100 text-secondary"
+                   data-motion-while-tap='{"scale":0.94}'>
+                    <i class="bi bi-x-lg"></i> Clear
+                </a>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
 </form>
-<div class="card"><div class="card-header"><h5 class="mb-0 fw-bold">Staff Directory ({{ staff_members|length }})</h5></div>
-<div class="card-body p-0"><table class="table table-hover mb-0">
-<thead><tr><th>ID</th><th>Name</th><th>Position</th><th>Department</th><th>Roles</th><th>Phone</th></tr></thead>
-<tbody>{% for s in staff_members %}<tr><td>{{ s.staff_id }}</td><td>{{ s.full_name }}</td><td>{{ s.position }}</td><td>{{ s.department }}</td><td>{% for r in s.role_assignments.all %}<span class="badge bg-light text-dark border">{{ r.get_role_display }}</span> {% endfor %}</td><td>{{ s.phone_number }}</td></tr>{% endfor %}</tbody>
-</table></div></div>
+
+{# ───── Staff table ───── #}
+<div class="card"
+     data-motion="fade-up" data-motion-delay="200"
+     style="overflow:hidden;">
+    <div class="card-body p-0">
+        {% if staff_members %}
+        <table class="table table-hover mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Position</th>
+                    <th>Department</th>
+                    <th>Roles</th>
+                    <th class="text-end">Phone</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in staff_members %}
+                <tr data-motion="fade-up"
+                    data-motion-delay="{% widthratio forloop.counter0 1 35 %}"
+                    data-motion-while-hover='{"x": 3}'>
+                    <td data-label="Name">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="avatar avatar-sm">{{ s.full_name|slice:":1"|upper }}</span>
+                            <div class="min-w-0">
+                                <div class="fw-medium">{{ s.full_name }}</div>
+                                <div class="text-secondary small font-monospace">{{ s.staff_id }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td data-label="Position">{{ s.position|default:"—" }}</td>
+                    <td data-label="Department">{{ s.department|default:"—" }}</td>
+                    <td data-label="Roles">
+                        {% with roles=s.role_assignments.all %}
+                        {% if roles %}
+                        <div class="d-flex flex-wrap gap-1 justify-content-end">
+                            {% for r in roles %}
+                            <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis">
+                                {{ r.get_role_display }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <span class="text-secondary small fst-italic">No roles</span>
+                        {% endif %}
+                        {% endwith %}
+                    </td>
+                    <td data-label="Phone" class="text-end tabular-nums small">
+                        {% if s.phone_number %}
+                        <a href="tel:{{ s.phone_number }}" class="text-decoration-none text-body">
+                            {{ s.phone_number }}
+                        </a>
+                        {% else %}
+                        <span class="text-secondary">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state text-center py-5">
+            <div class="empty-icon mx-auto mb-3"
+                 style="width:64px;height:64px;border-radius:16px;
+                        background:var(--md-surface-bright);
+                        display:flex;align-items:center;justify-content:center;"
+                 data-motion-variant="brandMark"
+                 data-motion-initial="hidden"
+                 data-motion-animate="visible">
+                <i class="bi bi-people fs-2 text-secondary"></i>
+            </div>
+            <h3 class="h6 fw-semibold mb-1">No staff found</h3>
+            <p class="text-secondary small mb-3">
+                {% if request.GET.search %}
+                Try a different search term.
+                {% else %}
+                Staff records will appear here.
+                {% endif %}
+            </p>
+            {% if request.GET.search %}
+            <a href="{% url 'staff:staff_list' %}" class="btn btn-primary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i> Show all staff
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% include "partials/dashboard-widgets.html" %}
 {% endblock %}

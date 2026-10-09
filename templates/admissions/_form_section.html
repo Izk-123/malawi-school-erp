@@ -1,0 +1,19 @@
+{% comment %}
+    Renders a section header with icon inside a card.
+    Motion-aware: icon pops in, title fades up.
+{% endcomment %}
+<div class="form-section-head"
+     data-motion-orchestrate='{"staggerChildren":0.08,"delayChildren":0.05}'>
+  <span class="form-section-icon {{ tone|default:'' }}"
+        data-motion-variant="brandMark"
+        data-motion-initial="hidden"
+        data-motion-animate="visible">
+    <i class="bi {{ icon|default:'bi-circle' }}"></i>
+  </span>
+  <div>
+    <h2 class="form-section-title" data-motion="fade-up">{{ title }}</h2>
+    {% if sub %}
+    <p class="form-section-sub" data-motion="fade-up">{{ sub }}</p>
+    {% endif %}
+  </div>
+</div>

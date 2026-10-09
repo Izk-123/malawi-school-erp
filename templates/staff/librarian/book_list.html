@@ -1,11 +1,85 @@
 {% extends "base.html" %}
+{% load static %}
 {% block page_title %}Book Catalogue{% endblock %}
+
 {% block content %}
-<a href="{% url 'staff:book_create' %}" class="btn btn-primary btn-sm mb-3">Add Book</a>
-<a href="{% url 'staff:issue_book' %}" class="btn btn-outline-primary btn-sm mb-3">Issue Book</a>
-<a href="{% url 'staff:loan_list' %}" class="btn btn-outline-secondary btn-sm mb-3">View Loans</a>
-<div class="card"><div class="card-body p-0"><table class="table table-hover mb-0">
-<thead><tr><th>Title</th><th>Author</th><th>Subject</th><th>Copies</th><th>Available</th></tr></thead>
-<tbody>{% for b in books %}<tr><td>{{ b.title }}</td><td>{{ b.author }}</td><td>{{ b.subject }}</td><td>{{ b.total_copies }}</td><td>{{ b.copies_available }}</td></tr>{% empty %}<tr><td colspan="5">No books catalogued yet.</td></tr>{% endfor %}</tbody>
-</table></div></div>
+
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text data-reveal-delay="40" data-reveal-stagger="22">Book Catalogue</h1>
+        <p class="text-secondary small mb-0">
+            <span class="tabular-nums" data-counter="{{ books|length }}">{{ books|length }}</span> titles
+        </p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap"
+         data-motion="fade-up" data-motion-delay="140">
+        <a href="{% url 'staff:book_create' %}" class="btn btn-primary btn-sm"
+           data-motion-while-hover='{"y":-2,"scale":1.02}'
+           data-motion-while-tap='{"scale":0.97}' data-ripple>
+            <i class="bi bi-plus-lg me-1"></i> Add Book
+        </a>
+        <a href="{% url 'staff:issue_book' %}" class="btn btn-secondary btn-sm"
+           data-motion-while-hover='{"y":-2}'
+           data-motion-while-tap='{"scale":0.97}' data-ripple>
+            <i class="bi bi-box-arrow-up me-1"></i> Issue
+        </a>
+        <a href="{% url 'staff:loan_list' %}" class="btn btn-secondary btn-sm"
+           data-motion-while-hover='{"y":-2}'
+           data-motion-while-tap='{"scale":0.97}' data-ripple>
+            <i class="bi bi-list-check me-1"></i> Loans
+        </a>
+    </div>
+</div>
+
+<div class="card"
+     data-motion="fade-up" data-motion-delay="120"
+     style="overflow:hidden;">
+    <div class="card-body p-0">
+        {% if books %}
+        <table class="table table-hover mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Author</th>
+                    <th>Subject</th>
+                    <th>Copies</th>
+                    <th>Available</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in books %}
+                <tr data-motion="fade-up"
+                    data-motion-delay="{% widthratio forloop.counter0 1 35 %}"
+                    data-motion-while-hover='{"x":3}'>
+                    <td data-label="Title" class="fw-medium">{{ b.title }}</td>
+                    <td data-label="Author">{{ b.author }}</td>
+                    <td data-label="Subject" class="text-secondary">{{ b.subject|default:"â€”" }}</td>
+                    <td data-label="Copies" class="tabular-nums">{{ b.total_copies }}</td>
+                    <td data-label="Available">
+                        <span class="badge rounded-pill
+                            {% if b.copies_available > 0 %}bg-success-subtle text-success-emphasis
+                            {% else %}bg-danger-subtle text-danger-emphasis{% endif %}">
+                            {{ b.copies_available }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state text-center py-5">
+            <div class="empty-icon mx-auto mb-3">
+                <i class="bi bi-book fs-2 text-secondary"></i>
+            </div>
+            <h3 class="h6 fw-semibold mb-1">No books catalogued</h3>
+            <p class="text-secondary small mb-3">Add your first book to begin.</p>
+            <a class="btn btn-primary btn-sm" href="{% url 'staff:book_create' %}">Add Book</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% include "partials/dashboard-widgets.html" %}
 {% endblock %}

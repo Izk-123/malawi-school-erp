@@ -1,12 +1,71 @@
 {% extends "base.html" %}
+{% load static %}
 {% block page_title %}Staff Announcements{% endblock %}
+
 {% block content %}
-{% if current_role == 'admin' %}<a href="{% url 'staff:post_announcement' %}" class="btn btn-primary btn-sm mb-3">Post Announcement</a>{% endif %}
-{% for a in announcements %}
-<div class="card mb-2"><div class="card-body">
-<h6>{{ a.title }} {% if a.pinned %}<span class="badge bg-warning text-dark">Pinned</span>{% endif %}</h6>
-<p class="text-secondary mb-1">{{ a.body }}</p>
-<small class="text-secondary">{{ a.posted_by }} - {{ a.posted_at|date:"Y-m-d H:i" }}</small>
-</div></div>
-{% empty %}<p class="text-secondary">No announcements yet.</p>{% endfor %}
+
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text data-reveal-delay="40" data-reveal-stagger="22">Announcements</h1>
+        <p class="text-secondary small mb-0">
+            <span class="tabular-nums" data-counter="{{ announcements|length }}">{{ announcements|length }}</span> posted
+        </p>
+    </div>
+    {% if request.user.role == 'admin' or request.user.is_superuser %}
+    <a class="btn btn-primary btn-sm"
+       href="{% url 'staff:post_announcement' %}"
+       data-motion="fade-up" data-motion-delay="140"
+       data-motion-while-hover='{"y":-2,"scale":1.02}'
+       data-motion-while-tap='{"scale":0.97}' data-ripple>
+        <i class="bi bi-plus-lg me-1"></i> Post Announcement
+    </a>
+    {% endif %}
+</div>
+
+{% if announcements %}
+<div class="row g-3"
+     data-motion-orchestrate='{"staggerChildren":0.06,"delayChildren":0.05}'>
+    {% for a in announcements %}
+    <div class="col-12" data-motion="fade-up">
+        <div class="card" data-motion-while-hover='{"y":-2}'>
+            <div class="card-body">
+                <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+                    <h6 class="fw-bold mb-0">{{ a.title }}</h6>
+                    {% if a.pinned %}
+                    <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis flex-shrink-0">
+                        <i class="bi bi-pin-angle-fill me-1"></i> Pinned
+                    </span>
+                    {% endif %}
+                </div>
+                <p class="text-secondary mb-3" style="font-size:14px;">{{ a.body }}</p>
+                <div class="d-flex align-items-center gap-2 text-secondary small">
+                    <i class="bi bi-person-circle"></i>
+                    <span>{{ a.posted_by }}</span>
+                    <span>&middot;</span>
+                    <span class="tabular-nums">{{ a.posted_at|date:"Y-m-d H:i" }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card" data-motion="scale-in" data-motion-duration="440">
+    <div class="card-body text-center py-5">
+        <div class="mx-auto mb-3 d-flex align-items-center justify-content-center"
+             style="width:72px;height:72px;border-radius:20px;
+                    background:var(--md-surface-bright);color:var(--md-on-surface-variant);"
+             data-motion-variant="brandMark"
+             data-motion-initial="hidden" data-motion-animate="visible">
+            <i class="bi bi-megaphone fs-2"></i>
+        </div>
+        <h3 class="h5 fw-bold mb-2">No announcements yet</h3>
+        <p class="text-secondary small mb-0">Announcements from the school will appear here.</p>
+    </div>
+</div>
+{% endif %}
+
+{% include "partials/dashboard-widgets.html" %}
 {% endblock %}

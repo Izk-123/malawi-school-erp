@@ -1,0 +1,116 @@
+{% comment %}
+Dashboard widgets — counters, progress bars, animated SVG rings.
+Idempotent: safe to include on any page. Runs once.
+
+Usage:
+  <span data-counter="142" data-counter-duration="1000"></span>
+  <span data-counter="1250000" data-counter-prefix="MK " data-counter-decimals="0"></span>
+  <span data-counter="87.5" data-counter-suffix="%" data-counter-decimals="1"></span>
+
+  <div data-progress="65" data-progress-delay="300"></div>
+
+  <circle data-ring="92" />
+{% endcomment %}
+<script>
+(function () {
+  if (window.__moWidgetsReady) return;
+  window.__moWidgetsReady = true;
+
+  const reduced = document.documentElement.dataset.reducedMotion === 'true';
+  const easeOutExpo = (t) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t));
+
+  // ── Counters ────────────────────────────────────────────────────────
+  function animateCounter(el) {
+    if (el.dataset.counterReady) return;
+    el.dataset.counterReady = '1';
+
+    const target = parseFloat(el.dataset.counter);
+    if (!isFinite(target)) return;
+
+    const decimals = parseInt(el.dataset.counterDecimals || '0', 10);
+    const duration = parseInt(el.dataset.counterDuration || '900', 10);
+    const prefix   = el.dataset.counterPrefix || '';
+    const suffix   = el.dataset.counterSuffix || '';
+
+    if (reduced) {
+      el.textContent = prefix + target.toFixed(decimals) + suffix;
+      return;
+    }
+
+    const start = performance.now();
+    const tick = (now) => {
+      const t = Math.min((now - start) / duration, 1);
+      const v = target * easeOutExpo(t);
+      el.textContent = prefix + v.toFixed(decimals) + suffix;
+      if (t < 1) requestAnimationFrame(tick);
+      else el.textContent = prefix + target.toFixed(decimals) + suffix;
+    };
+    requestAnimationFrame(tick);
+  }
+
+  // ── Progress bars ───────────────────────────────────────────────────
+  function animateProgress(el) {
+    if (el.dataset.progressReady) return;
+    el.dataset.progressReady = '1';
+
+    const target = parseFloat(el.dataset.progress);
+    if (!isFinite(target)) return;
+
+    const delay    = parseInt(el.dataset.progressDelay    || '200',  10);
+    const duration = parseInt(el.dataset.progressDuration || '900',  10);
+    const suffix   = el.dataset.progressSuffix || '%';
+
+    if (reduced) { el.style.width = target + suffix; return; }
+
+    el.style.width = '0';
+    el.style.transition = `width ${duration}ms cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms`;
+
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      el.style.width = target + suffix;
+    }));
+  }
+
+  // ── SVG rings (stroke-dasharray trick) ──────────────────────────────
+  function animateRing(el) {
+    if (el.dataset.ringReady) return;
+    el.dataset.ringReady = '1';
+
+    const target = parseFloat(el.dataset.ring);
+    if (!isFinite(target)) return;
+
+    const duration = parseInt(el.dataset.ringDuration || '1100', 10);
+    const delay    = parseInt(el.dataset.ringDelay    || '300',  10);
+
+    if (reduced) {
+      el.setAttribute('stroke-dasharray', `${target}, 100`);
+      return;
+    }
+
+    el.setAttribute('stroke-dasharray', '0, 100');
+    const start = performance.now() + delay;
+    const tick = (now) => {
+      if (now < start) { requestAnimationFrame(tick); return; }
+      const t = Math.min((now - start) / duration, 1);
+      const v = target * easeOutExpo(t);
+      el.setAttribute('stroke-dasharray', `${v}, 100`);
+      if (t < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+
+  function boot(root) {
+    const s = root || document;
+    s.querySelectorAll('[data-counter]').forEach(animateCounter);
+    s.querySelectorAll('[data-progress]').forEach(animateProgress);
+    s.querySelectorAll('[data-ring]').forEach(animateRing);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => boot());
+  } else {
+    boot();
+  }
+
+  window.MotionWidgets = { refresh: boot };
+})();
+</script>

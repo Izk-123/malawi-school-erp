@@ -1,21 +1,72 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="light" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#1a5632">
-    <title>{% block title %}Sign in{% endblock %} · Malawi School ERP</title>
 
-    {# Theme bootstrap — respects OS preference unless overridden #}
+    {% firstof page_title "Sign in" as resolved_page_title %}
+
+    <title>{% block title %}{{ resolved_page_title }}{% endblock %} · Malawi School ERP</title>
+
+    {% include "partials/seo.html" %}
+
     <script>
     (function () {
-        var saved = localStorage.getItem('mse.theme');
-        var prefersDark = window.matchMedia &&
-            window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var html = document.documentElement;
+        html.classList.add('js');
+
+        var saved = null;
+        try { saved = localStorage.getItem('mse.theme'); } catch (e) {}
+        var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
         var theme = saved || (prefersDark ? 'dark' : 'light');
-        document.documentElement.setAttribute('data-theme', theme);
-        document.documentElement.setAttribute('data-bs-theme', theme);
+        html.setAttribute('data-theme', theme);
+        html.setAttribute('data-bs-theme', theme);
+
+        var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        html.dataset.reducedMotion = reduced ? 'true' : 'false';
+        if (reduced) html.classList.add('no-motion');
+
+        var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        var isSlow = false;
+        if (conn) {
+            if (conn.saveData === true) isSlow = true;
+            if (/(^|-)2g$/.test(conn.effectiveType || '')) isSlow = true;
+        }
+        if (reduced || isSlow) {
+            html.classList.add('no-motion');
+            var revealAll = function () {
+                document.querySelectorAll(
+                    '[data-motion],[data-motion-variant],[data-reveal-text]'
+                ).forEach(function (el) {
+                    el.setAttribute('data-motion-ready', '1');
+                    el.style.opacity = '1';
+                    el.style.transform = 'none';
+                    el.style.filter = 'none';
+                });
+            };
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', revealAll);
+            } else {
+                revealAll();
+            }
+        }
+
+        window.__moBooted = false;
+        if (!reduced && !isSlow) {
+            setTimeout(function () {
+                if (window.__moBooted) return;
+                html.classList.remove('js');
+                html.classList.add('no-motion');
+                document.querySelectorAll('[data-motion],[data-motion-variant],[data-reveal-text]')
+                    .forEach(function (el) {
+                        el.setAttribute('data-motion-ready', '1');
+                        el.style.opacity = '1';
+                        el.style.transform = 'none';
+                        el.style.filter = 'none';
+                    });
+            }, 900);
+        }
     })();
     </script>
 
@@ -24,33 +75,57 @@
     <link rel="stylesheet" href="{% static 'css/theme.css' %}">
     <link rel="stylesheet" href="{% static 'css/_dark.css' %}">
     <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/motion.css' %}">
+    <link rel="stylesheet" href="{% static 'css/motion-pro.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
 <body class="auth-shell">
 
-    <div class="auth-hero">
-        <div class="auth-brand">
-            <div class="auth-brand-mark">
-                <i class="bi bi-mortarboard-fill"></i>
+{% include "partials/motion-variants.html" %}
+
+<div class="auth-hero">
+    <div class="auth-brand">
+        <div class="auth-brand-mark"
+             data-motion-variant="brandMark"
+             data-motion-initial="hidden"
+             data-motion-animate="visible"
+             data-motion-delay="40">
+            <i class="bi bi-mortarboard-fill"></i>
+        </div>
+        <div>
+            <div class="auth-brand-name"
+                 data-motion="fade-up"
+                 data-motion-delay="120">
+                Malawi School ERP
             </div>
-            <div>
-                <div class="auth-brand-name">Malawi School ERP</div>
-                <div class="auth-brand-tagline">Maphunziro Athu &middot; Our Education</div>
+            <div class="auth-brand-tagline"
+                 data-motion="fade-up"
+                 data-motion-delay="180">
+                Maphunziro Athu &middot; Our Education
             </div>
         </div>
-        {% block hero_blurb %}{% endblock %}
     </div>
+    {% block hero_blurb %}{% endblock %}
+</div>
 
-    <main class="auth-content">
-        {% block content %}{% block auth_content %}{% endblock %}{% endblock %}
-    </main>
+<main class="auth-content"
+      data-motion="fade-up"
+      data-motion-duration="520"
+      data-motion-delay="100"
+      data-motion-orchestrate='{"when":"beforeChildren","staggerChildren":0.06,"delayChildren":0.05}'>
+    {% block content %}{% block auth_content %}{% endblock %}{% endblock %}
+</main>
 
-    <footer class="auth-footer">
-        Need help? Call <a href="tel:+265888800800">0888 800 800</a>
-        {% block footer_extra %}{% endblock %}
-    </footer>
+<footer class="auth-footer"
+        data-motion="fade-in"
+        data-motion-delay="420">
+    Need help? Call <a href="tel:+265888800800">0888 800 800</a>
+    {% block footer_extra %}{% endblock %}
+</footer>
 
-    <script src="{% static 'js/auth.js' %}" defer></script>
-    {% block extra_js %}{% endblock %}
+<script src="{% static 'js/motion.js' %}" defer
+        onload="window.__moBooted = true;"></script>
+<script src="{% static 'js/auth.js' %}" defer></script>
+{% block extra_js %}{% endblock %}
 </body>
 </html>

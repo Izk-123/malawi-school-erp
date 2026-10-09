@@ -1,0 +1,27 @@
+{% comment %}
+    Modern file-upload widget with JS preview.
+
+    Usage:
+        {% include "admissions/_field_upload.html" with field=form.photo label="Applicant photo" icon="bi-person-badge" accept="image/*" %}
+{% endcomment %}
+<div class="field{% if field.errors %} is-invalid{% endif %}">
+  <label class="field-label">{{ label|default:field.label }}</label>
+
+  <label class="field-upload" data-upload>
+    <input type="file"
+           name="{{ field.name }}"
+           id="{{ field.id_for_label }}"
+           accept="{{ accept|default:'image/*,application/pdf' }}"
+           {% if field.field.required %}required{% endif %}>
+    <i class="bi {{ icon|default:'bi-cloud-arrow-up' }} field-upload-icon" aria-hidden="true"></i>
+    <div class="field-upload-title">Click to browse or drag a file here</div>
+    <div class="field-upload-hint">{{ hint|default:"Max 5 MB" }}</div>
+  </label>
+
+  <div class="field-upload-preview" hidden></div>
+
+  {% if field.help_text %}<p class="field-help">{{ field.help_text }}</p>{% endif %}
+  {% if field.errors %}
+    <p class="field-error" role="alert"><i class="bi bi-exclamation-circle"></i> {{ field.errors.0 }}</p>
+  {% endif %}
+</div>

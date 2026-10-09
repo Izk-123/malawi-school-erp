@@ -1,9 +1,96 @@
 {% extends "base.html" %}
+{% load static %}
 {% block page_title %}My Grades{% endblock %}
+
 {% block content %}
-<div class="card"><div class="card-header"><h5 class="mb-0 fw-bold">My Grades</h5></div>
-<div class="card-body p-0"><table class="table table-hover mb-0">
-<thead><tr><th>Subject</th><th>Exam</th><th>Score</th><th>Grade</th></tr></thead>
-<tbody>{% for g in grades %}<tr><td>{{ g.subject }}</td><td>{{ g.exam }}</td><td>{{ g.score }}%</td><td>{{ g.grade }}</td></tr>{% empty %}<tr><td colspan="4">No grades recorded</td></tr>{% endfor %}</tbody>
-</table></div></div>
+
+{# ───── Header ───── #}
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text data-reveal-delay="40" data-reveal-stagger="22">My Grades</h1>
+        <p class="text-secondary small mb-0">
+            <span class="tabular-nums"
+                  data-counter="{{ grades|length }}">{{ grades|length }}</span>
+            {{ grades|length|pluralize:"record,records" }}
+        </p>
+    </div>
+</div>
+
+{# ───── Table ───── #}
+<div class="card"
+     data-motion="fade-up" data-motion-delay="120"
+     style="overflow:hidden;">
+    <div class="card-body p-0">
+        {% if grades %}
+        <table class="table table-hover mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Subject</th>
+                    <th>Exam</th>
+                    <th>Score</th>
+                    <th class="text-end">Grade</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for g in grades %}
+                <tr data-motion="fade-up"
+                    data-motion-delay="{% widthratio forloop.counter0 1 35 %}"
+                    data-motion-while-hover='{"x": 3}'>
+                    <td data-label="Subject" class="fw-medium">{{ g.subject }}</td>
+                    <td data-label="Exam" class="text-secondary small">{{ g.exam }}</td>
+                    <td data-label="Score">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="tabular-nums fw-medium">{{ g.score }}%</span>
+                            <div class="progress flex-shrink-0"
+                                 style="height:4px;width:60px;background:var(--md-surface-3);">
+                                <div class="progress-bar"
+                                     data-progress="{{ g.score }}"
+                                     data-progress-delay="{% widthratio forloop.counter0 1 60 %}"
+                                     data-progress-duration="900"
+                                     style="background:var(--md-primary);"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td data-label="Grade" class="text-end">
+                        {% if g.score >= 80 %}
+                        <span class="badge rounded-pill bg-success-subtle text-success-emphasis">
+                            {{ g.grade }}
+                        </span>
+                        {% elif g.score >= 60 %}
+                        <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis">
+                            {{ g.grade }}
+                        </span>
+                        {% else %}
+                        <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis">
+                            {{ g.grade }}
+                        </span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state text-center py-5">
+            <div class="empty-icon mx-auto mb-3"
+                 style="width:64px;height:64px;border-radius:16px;
+                        background:var(--md-surface-bright);
+                        display:flex;align-items:center;justify-content:center;"
+                 data-motion-variant="brandMark"
+                 data-motion-initial="hidden"
+                 data-motion-animate="visible">
+                <i class="bi bi-journal-x fs-2 text-secondary"></i>
+            </div>
+            <h3 class="h6 fw-semibold mb-1">No grades yet</h3>
+            <p class="text-secondary small mb-0">
+                Your grades will appear here once teachers publish them.
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% include "partials/dashboard-widgets.html" %}
 {% endblock %}

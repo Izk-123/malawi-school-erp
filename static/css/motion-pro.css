@@ -1,0 +1,495 @@
+/* ==========================================================================
+   motion-pro.css — sidebar, logout, bottom nav, KPI grid helpers,
+   responsive table-card mode, and the no-motion escape hatch.
+   Loaded after motion.css.
+   ========================================================================== */
+
+
+/* ==========================================================================
+   1 · SIDEBAR LAYOUT
+   ========================================================================== */
+@media (max-width: 599px) {
+  .sidebar {
+    display: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+    visibility: hidden !important;
+  }
+  .sidebar[data-motion] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+@media (min-width: 600px) {
+  .sidebar {
+    display: flex !important;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .sidebar-nav {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 8px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+    -webkit-overflow-scrolling: touch;
+  }
+  .sidebar-nav::-webkit-scrollbar { width: 6px; }
+  .sidebar-nav::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.18);
+    border-radius: 3px;
+  }
+  .sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+
+  .sidebar-footer {
+    flex: 0 0 auto;
+    padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: relative;
+    z-index: 2;
+    background: inherit;
+  }
+  .sidebar-brand { padding: 12px 14px; }
+}
+
+
+/* ==========================================================================
+   2 · LOGOUT BUTTON
+   ========================================================================== */
+.sidebar-logout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.10);
+  color: #ffffff !important;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.sidebar-logout-btn:hover,
+.sidebar-logout-btn:focus-visible {
+  background: rgba(220, 38, 38, 0.22);
+  border-color: rgba(248, 81, 73, 0.75);
+  box-shadow: 0 0 0 3px rgba(248, 81, 73, 0.18);
+  outline: none;
+}
+.sidebar-logout-btn:active { transform: scale(0.97); }
+.sidebar-logout-btn i { font-size: 16px; }
+
+@media (max-width: 839px) and (min-width: 600px) {
+  .sidebar-logout-btn .logout-label { display: none; }
+  .sidebar-logout-btn { width: 44px; padding: 0; margin: 0 auto; }
+}
+
+html[data-reduced-motion="true"] .sidebar-logout-btn:active { transform: none; }
+
+
+/* ==========================================================================
+   3 · BOTTOM NAV — visibility guarantee
+   ========================================================================== */
+@media (max-width: 599px) {
+  .bottom-nav {
+    display: grid !important;
+    grid-auto-flow: column !important;
+    grid-auto-columns: 1fr !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    transform: none !important;
+    grid-area: bottomnav !important;
+    height: var(--bottom-nav-height, 64px) !important;
+    min-height: var(--bottom-nav-height, 64px) !important;
+  }
+  .bottom-nav > * {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .bottom-nav > [data-motion]:not([data-motion-ready]),
+  .bottom-nav > [data-motion-variant]:not([data-motion-ready]) {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+
+/* ==========================================================================
+   4 · KPI GRID & CARD CONTENT — mobile-first fit
+   --------------------------------------------------------------------------
+   On phones (< 576px), each KPI card goes full-width so labels never
+   truncate. On small tablets (≥ 576px) two per row; on desktop (≥ 1200px)
+   four per row. Uses Bootstrap's grid utility classes as the driver —
+   these rules just fix internal layout for narrow viewports.
+   ========================================================================== */
+@media (max-width: 575.98px) {
+  /* KPI card body becomes a horizontal strip: icon · number · label */
+  .card .card-body.d-flex {
+    gap: 12px !important;
+  }
+
+  /* Numbers stop hogging vertical space */
+  .card .card-body .h3,
+  .card .card-body .h4 {
+    font-size: 1.35rem;
+    line-height: 1.1;
+  }
+  .card .card-body .h2 {
+    font-size: 1.6rem;
+    line-height: 1.1;
+  }
+
+  /* Icons shrink so text has room */
+  .card .card-body .rounded-circle[style*="width:56px"],
+  .card .card-body .rounded-circle[style*="width: 56px"] {
+    width: 44px !important;
+    height: 44px !important;
+  }
+  .card .card-body .rounded-circle i.fs-4 { font-size: 1.15rem !important; }
+
+  /* Allow labels to wrap instead of truncating */
+  .card .card-body .text-truncate {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    word-break: break-word;
+  }
+}
+
+/* Very narrow (< 380px) — stack number above label, tighten further */
+@media (max-width: 379.98px) {
+  .card .card-body .rounded-circle[style*="width:56px"],
+  .card .card-body .rounded-circle[style*="width: 56px"] {
+    width: 40px !important;
+    height: 40px !important;
+  }
+  .card .card-body .h3,
+  .card .card-body .h4 { font-size: 1.2rem; }
+}
+
+
+/* ==========================================================================
+   5 · RESPONSIVE TABLES → CARDS ON MOBILE
+   --------------------------------------------------------------------------
+   Every <td> with a data-label attribute becomes a label/value row inside
+   a per-row card. The first <td> in each row is styled as the card header
+   (no label, bigger font, dashed divider underneath) — this gives each
+   row the feel of a self-contained card rather than a compressed table.
+   ========================================================================== */
+@media (max-width: 599px) {
+
+  /* Container is a stack of cards, not a table */
+  .card > .card-body > .table,
+  .card > .table,
+  .card .data-table {
+    display: block;
+    width: 100%;
+    border: 0;
+    font-size: 14px;
+    background: transparent;
+  }
+
+  /* Hide the real header row — we inject column names via ::before */
+  .card .table > thead,
+  .card .data-table > thead { display: none; }
+
+  /* tbody / tr as block containers */
+  .card .table > tbody,
+  .card .data-table > tbody { display: block; width: 100%; }
+
+  /* ── The row card ── */
+  .card .table > tbody > tr,
+  .card .data-table > tbody > tr {
+    display: block;
+    width: 100%;
+    background: var(--md-surface, #fff);
+    border: 1px solid var(--md-outline-variant, #dde4df);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.03), 0 4px 12px rgba(0,0,0,.02);
+    transition: border-color .12s, box-shadow .12s;
+  }
+  .card .table > tbody > tr:last-child,
+  .card .data-table > tbody > tr:last-child { margin-bottom: 0; }
+
+  /* ── Every cell: label on left, value on right ── */
+  .card .table > tbody > tr > td,
+  .card .data-table > tbody > tr > td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 0;
+    border: 0;
+    font-size: 13.5px;
+    line-height: 1.4;
+    text-align: right;
+    min-height: 24px;
+    width: 100%;
+  }
+
+  /* Injected column label */
+  .card .table > tbody > tr > td[data-label]::before,
+  .card .data-table > tbody > tr > td[data-label]::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--md-on-surface-variant, #5a6660);
+    text-align: left;
+  }
+
+  /* ── First cell = card header ── */
+  .card .table > tbody > tr > td:first-child,
+  .card .data-table > tbody > tr > td:first-child {
+    padding-top: 0;
+    padding-bottom: 10px;
+    margin-bottom: 4px;
+    border-bottom: 1px dashed var(--md-outline-variant, #dde4df);
+    font-size: 14.5px;
+    text-align: left;
+    justify-content: flex-start;
+  }
+  /* Suppress the injected label on the header cell */
+  .card .table > tbody > tr > td:first-child[data-label]::before,
+  .card .data-table > tbody > tr > td:first-child[data-label]::before {
+    content: none;
+    display: none;
+  }
+
+  /* ── Actions cell ── */
+  .card .table > tbody > tr > td.actions,
+  .card .data-table > tbody > tr > td.actions {
+    padding-top: 10px;
+    margin-top: 6px;
+    border-top: 1px solid var(--md-outline-variant, #dde4df);
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .card .table > tbody > tr > td.actions::before,
+  .card .data-table > tbody > tr > td.actions::before {
+    content: none;
+  }
+
+  /* ── Text cells (subject/exam/etc.) get right-align so numbers line up ── */
+  .card .table > tbody > tr > td .fw-medium,
+  .card .data-table > tbody > tr > td .fw-medium {
+    text-align: right;
+    word-break: break-word;
+  }
+
+  /* Badge cells don't stretch */
+  .card .table > tbody > tr > td .badge,
+  .card .data-table > tbody > tr > td .badge {
+    flex-shrink: 0;
+  }
+
+  /* Empty-state / colspan rows — reset to plain block */
+  .card .table > tbody > tr > td[colspan],
+  .card .data-table > tbody > tr > td[colspan] {
+    display: block;
+    text-align: center;
+    padding: 24px;
+    justify-content: center;
+  }
+  .card .table > tbody > tr > td[colspan]::before,
+  .card .data-table > tbody > tr > td[colspan]::before {
+    content: none;
+  }
+
+  /* Fallback: if the browser doesn't support :has, unlabeled tables scroll */
+  .card .table:not(:has(td[data-label])) {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    border: 1px solid var(--md-outline-variant);
+    border-radius: 12px;
+  }
+  .card .table:not(:has(td[data-label])) > thead { display: table-header-group; }
+  .card .table:not(:has(td[data-label])) > tbody { display: table-row-group; }
+  .card .table:not(:has(td[data-label])) > tbody > tr {
+    display: table-row;
+    padding: 0; margin: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+  }
+  .card .table:not(:has(td[data-label])) > tbody > tr > td {
+    display: table-cell;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--md-outline-variant);
+    text-align: left;
+    white-space: nowrap;
+    width: auto;
+  }
+  .card .table:not(:has(td[data-label])) > tbody > tr > td::before {
+    content: none;
+  }
+}
+
+
+/* ==========================================================================
+   6 · NO-MOTION ESCAPE HATCH
+   ========================================================================== */
+html.no-motion [data-motion],
+html.no-motion [data-motion-variant],
+html.no-motion [data-reveal-text],
+html.no-motion .sidebar-logout-form {
+  opacity: 1 !important;
+  transform: none !important;
+  filter: none !important;
+  transition: none !important;
+  animation: none !important;
+  will-change: auto !important;
+}
+html.no-motion [data-mo-flip] { transition: none !important; }
+html.no-motion [data-mo-init] { opacity: 1 !important; }
+
+
+/* ==========================================================================
+   7 · SPOTLIGHT
+   ========================================================================== */
+[data-spotlight] { position: relative; overflow: hidden; }
+[data-spotlight] > .spotlight-glow { z-index: 0; pointer-events: none; }
+[data-spotlight] > *:not(.spotlight-glow) { position: relative; z-index: 1; }
+html.no-motion [data-spotlight] > .spotlight-glow { display: none !important; }
+
+
+/* ==========================================================================
+   8 · MAGNETIC HOVER
+   ========================================================================== */
+[data-magnetic] {
+  will-change: transform;
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+html.no-motion [data-magnetic] { transform: none !important; transition: none !important; }
+
+
+/* ==========================================================================
+   9 · 3D TILT
+   ========================================================================== */
+[data-tilt] { transform-style: preserve-3d; will-change: transform; }
+html.no-motion [data-tilt] { transform: none !important; transition: none !important; }
+
+
+/* ==========================================================================
+   10 · RIPPLE
+   ========================================================================== */
+[data-ripple] { position: relative; overflow: hidden; isolation: isolate; }
+[data-ripple] > .mo-ripple { z-index: 0; }
+[data-ripple] > *:not(.mo-ripple) { position: relative; z-index: 1; }
+html.no-motion [data-ripple] > .mo-ripple { display: none !important; }
+
+
+/* ==========================================================================
+   11 · ODOMETER
+   ========================================================================== */
+[data-odometer] {
+  display: inline-flex;
+  align-items: baseline;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+[data-odometer] > span { line-height: 1; }
+html.no-motion [data-odometer] > span { transform: none !important; transition: none !important; }
+
+
+/* ==========================================================================
+   12 · REVEAL TEXT
+   ========================================================================== */
+.rv-line {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  line-height: 1.15;
+  padding-bottom: 0.06em;
+}
+.rv-word { display: inline-block; will-change: transform; }
+html.no-motion .rv-word { transform: none !important; transition: none !important; }
+
+
+/* ==========================================================================
+   13 · CURSOR GLOW
+   ========================================================================== */
+html.no-motion #mo-cursor-glow { display: none !important; }
+
+
+/* ==========================================================================
+   14 · FORM FIELD STATES
+   ========================================================================== */
+.field.is-checking .field-input-wrap .field-status {
+  opacity: 1;
+  color: var(--md-on-surface-variant);
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  width: 16px; height: 16px;
+  animation: mo-spin 0.8s linear infinite;
+}
+.field.is-checking .field-input-wrap .field-status::before { content: ""; }
+@keyframes mo-spin { to { transform: rotate(360deg); } }
+
+.field.is-shaking .field-input-wrap {
+  animation: mo-field-shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+@keyframes mo-field-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-5px); }
+  40%, 80% { transform: translateX(5px); }
+}
+html.no-motion .field.is-checking .field-input-wrap .field-status { animation: none; }
+html.no-motion .field.is-shaking .field-input-wrap { animation: none; }
+
+
+/* ==========================================================================
+   15 · REDUCED-MOTION MEDIA QUERY FALLBACK
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  [data-motion],
+  [data-motion-variant],
+  [data-reveal-text],
+  [data-tilt],
+  [data-magnetic],
+  .sidebar-logout-form,
+  .rv-word {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    transition: none !important;
+    animation: none !important;
+  }
+  #mo-cursor-glow,
+  .spotlight-glow,
+  .mo-ripple { display: none !important; }
+}
+
+
+/* ==========================================================================
+   16 · SMALL SCREEN TWEAKS
+   ========================================================================== */
+@media (max-width: 360px) {
+  .sidebar-logout-btn { padding: 0 10px; font-size: 13px; }
+  .sidebar-logout-btn i { font-size: 15px; }
+}

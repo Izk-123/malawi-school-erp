@@ -3,21 +3,90 @@
 
 {% block title %}Log in{% endblock %}
 
+{% block extra_css %}
+<style>
+/* ───────── Mobile hero centering ─────────
+   The base .auth-hero is a flex row by default in older versions of
+   auth.css. This forces a centered column on phones so the brand mark,
+   name, tagline and blurb stack vertically and read as a banner.
+   On tablet+ (≥ 840px) the desktop grid takes over.
+*/
+@media (max-width: 839.98px) {
+    .auth-hero {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+        gap: 20px !important;
+        width: 100%;
+    }
+
+    .auth-brand {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+        gap: 14px !important;
+        width: 100%;
+        max-width: 340px;
+    }
+
+    /* The inner text wrapper (name + tagline) centers as a stack */
+    .auth-brand > div:not(.auth-brand-mark) {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        width: 100%;
+    }
+
+    .auth-brand-name {
+        font-size: 22px !important;
+        line-height: 1.2 !important;
+        white-space: normal !important;
+        overflow-wrap: break-word;
+        max-width: 100%;
+    }
+
+    .auth-brand-tagline {
+        font-size: 13px !important;
+        line-height: 1.35 !important;
+        white-space: normal !important;
+    }
+
+    .auth-hero-blurb {
+        margin: 0 !important;
+        max-width: 320px !important;
+        text-align: center !important;
+        font-size: 13.5px !important;
+        line-height: 1.55 !important;
+        color: var(--md-on-surface-variant);
+        padding: 0 6px;
+    }
+}
+</style>
+{% endblock %}
+
 {% block hero_blurb %}
-<p class="auth-hero-blurb">
+<p class="auth-hero-blurb" data-motion="fade-up" data-motion-delay="220">
     Manage students, grades, fees and attendance — <strong>all in one place</strong>,
     from any device.
 </p>
 {% endblock %}
 
 {% block content %}
-<h1 class="auth-form-title" style="text-align:center;">Welcome back</h1>
-<p class="auth-form-sub" style="text-align:center;margin-bottom:20px;">
+<h1 class="auth-form-title" style="text-align:center;"
+    data-motion="fade-up" data-motion-delay="40">Welcome back</h1>
+<p class="auth-form-sub" style="text-align:center;margin-bottom:20px;"
+   data-motion="fade-up" data-motion-delay="90">
     Log in to continue
 </p>
 
 {% if form.non_field_errors %}
-<div class="alert alert-danger" role="alert">
+<div class="alert alert-danger" role="alert"
+     data-motion="fade-down" data-motion-delay="120">
     <i class="bi bi-exclamation-triangle"></i>
     <div>
         {{ form.non_field_errors.0 }}
@@ -26,10 +95,10 @@
 </div>
 {% endif %}
 
-<form method="post" class="auth-form" novalidate>
+<form method="post" class="auth-form" novalidate data-motion-stagger="70">
     {% csrf_token %}
 
-    <div class="field">
+    <div class="field" data-motion="fade-up">
         <label class="field-label" for="id_username">Username or email</label>
         <input
             id="id_username"
@@ -53,7 +122,7 @@
         {% endif %}
     </div>
 
-    <div class="field">
+    <div class="field" data-motion="fade-up">
         <label class="field-label" for="id_password">Password</label>
         <div class="field-password">
             <input
@@ -66,7 +135,8 @@
             >
             <button type="button" class="field-eye"
                     data-pwd-toggle="id_password"
-                    aria-label="Show password">
+                    aria-label="Show password"
+                    data-motion-tap="squish">
                 <i class="bi bi-eye"></i>
             </button>
         </div>
@@ -74,16 +144,29 @@
 
     <input type="hidden" name="next" value="{{ next }}">
 
-    <button type="submit" class="btn btn-primary btn-auth">Log in</button>
+    <button type="submit" class="btn btn-primary btn-auth"
+            data-motion="fade-up"
+            data-motion-hover="glow"
+            data-motion-tap="press">Log in</button>
 
-    <div class="auth-links">
+    <div class="auth-links" data-motion="fade-up">
         <a href="{% url 'accounts:password_reset' %}">Forgot password?</a>
     </div>
 </form>
 
-<div class="auth-divider">or</div>
+<div class="auth-divider" data-motion="fade-in" data-motion-delay="200">or</div>
 
-<a href="{% url 'accounts:signup' %}" class="btn btn-outline btn-auth">
+<a href="{% url 'accounts:signup' %}" class="btn btn-outline btn-auth"
+   data-motion="fade-up"
+   data-motion-hover="lift"
+   data-motion-tap="press">
     Create an account
 </a>
+
+<div class="auth-links" style="margin-top:12px;"
+     data-motion="fade-up" data-motion-delay="160">
+    <a href="{% url 'accounts:claim_by_code' %}">
+        Have an admission code? Activate your account
+    </a>
+</div>
 {% endblock %}

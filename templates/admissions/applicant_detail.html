@@ -1,0 +1,462 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ applicant.full_name }}{% endblock %}
+{% block page_title %}Applicant · {{ applicant.applicant_code }}{% endblock %}
+
+{% block content %}
+
+{# ─────────── Header ─────────── #}
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3"
+     data-motion="fade-down" data-motion-duration="440">
+  <a href="{% url 'admissions:applicant_list' %}" class="btn btn-ghost btn-sm"
+     data-motion-while-hover='{"x":-3}'
+     data-motion-while-tap='{"scale":0.94}'>
+    <i class="bi bi-arrow-left"></i> Back
+  </a>
+  <div class="d-flex flex-wrap gap-2">
+    <a class="btn btn-secondary btn-sm"
+       href="{% url 'admissions:applicant_update' applicant.pk %}"
+       data-motion="fade-up" data-motion-delay="120"
+       data-motion-while-hover='{"y":-2}'
+       data-motion-while-tap='{"scale":0.97}'
+       data-ripple>
+      <i class="bi bi-pencil"></i> Edit
+    </a>
+  </div>
+</div>
+
+{# ─────────── Hero ─────────── #}
+<section class="profile-hero" style="padding-top:8px;"
+         data-motion-orchestrate='{"staggerChildren":0.08,"delayChildren":0.05}'>
+  <div class="profile-avatar-wrap">
+    <div class="profile-avatar"
+         data-motion-variant="brandMark"
+         data-motion-initial="hidden"
+         data-motion-animate="visible"
+         data-motion-delay="100">
+      {% if applicant.photo %}
+        <img src="{{ applicant.photo.url }}" alt="">
+      {% else %}
+        <span aria-hidden="true">{{ applicant.full_name|first }}</span>
+      {% endif %}
+    </div>
+  </div>
+  <h1 class="profile-name"
+      data-reveal-text
+      data-reveal-delay="140"
+      data-reveal-stagger="26">{{ applicant.full_name }}</h1>
+  <p class="profile-email" data-motion="fade-up">
+    {{ applicant.applicant_code }} · DOB {{ applicant.date_of_birth|date:"j M Y" }}
+  </p>
+  <ul class="profile-roles" role="list">
+    <li class="role-pill" data-motion="scale-in">{{ applicant.get_gender_display }}</li>
+    <li class="role-pill" data-motion="scale-in">{{ applicant.applying_for }}</li>
+    <li class="role-pill" data-motion="scale-in">{{ applicant.get_boarding_preference_display }}</li>
+    {% if applicant.composite_score %}
+      <li class="role-pill role-student" data-motion="scale-in">
+        Score {{ applicant.composite_score }}
+      </li>
+    {% endif %}
+  </ul>
+</section>
+
+{# ─────────── Pipeline ─────────── #}
+<section class="profile-section"
+         data-motion="fade-up" data-motion-delay="180">
+  <div class="profile-section-head" style="cursor:default;">
+    <h2 class="profile-section-title">
+      Pipeline · {{ applicant.get_status_display }}
+    </h2>
+  </div>
+  <div class="profile-section-body">
+    <div class="d-flex justify-content-between gap-1"
+         data-motion-orchestrate='{"staggerChildren":0.08,"delayChildren":0.05}'>
+      {% for stage in stages %}
+      <div class="text-center flex-fill" data-motion="fade-up">
+        <div class="mx-auto d-flex align-items-center justify-content-center"
+             style="width:40px; height:40px; border-radius:50%;
+                    {% if stage.done %}background:var(--status-success-bg); color:var(--status-success-fg);
+                    {% elif stage.active %}background:var(--md-primary); color:#fff;
+                    {% else %}background:var(--md-surface-2); color:var(--md-on-surface-variant);{% endif %}"
+             {% if stage.active %}data-motion-while-hover='{"scale":1.1}'{% endif %}>
+          <i class="bi {{ stage.icon }}"></i>
+        </div>
+        <div class="text-muted-sm mt-2
+                    {% if stage.active %}text-primary fw-semibold{% endif %}">
+          {{ stage.label }}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{# ─────────── Next action ─────────── #}
+<section class="profile-section"
+         data-motion="fade-up" data-motion-delay="240">
+  <div class="profile-section-head" style="cursor:default;">
+    <h2 class="profile-section-title">Next action</h2>
+  </div>
+  <div class="profile-section-body">
+    <div class="d-flex flex-wrap gap-2"
+         data-motion-orchestrate='{"staggerChildren":0.06,"delayChildren":0.05}'>
+      {% if applicant.status == 'applied' or applicant.status == 'exam_scheduled' %}
+        <a class="btn btn-primary"
+           href="{% url 'admissions:exam_session_list' %}"
+           data-motion="fade-up"
+           data-motion-while-hover='{"y":-2,"scale":1.02}'
+           data-motion-while-tap='{"scale":0.97}'
+           data-ripple>
+          <i class="bi bi-calendar-plus"></i> Assign to exam
+        </a>
+      {% endif %}
+      {% if applicant.status == 'exam_completed' or applicant.status == 'interviewed' %}
+        <a class="btn btn-primary"
+           href="{% url 'admissions:record_interview' applicant.pk %}"
+           data-motion="fade-up"
+           data-motion-while-hover='{"y":-2,"scale":1.02}'
+           data-motion-while-tap='{"scale":0.97}'
+           data-ripple>
+          <i class="bi bi-people"></i>
+          {% if interview %}Update interview{% else %}Record interview{% endif %}
+        </a>
+      {% endif %}
+      {% if applicant.status == 'interviewed' and can_offer %}
+        <a class="btn btn-primary"
+           href="{% url 'admissions:issue_offer' applicant.pk %}"
+           data-motion="fade-up"
+           data-motion-while-hover='{"y":-2,"scale":1.02}'
+           data-motion-while-tap='{"scale":0.97}'
+           data-ripple>
+          <i class="bi bi-envelope-paper"></i> Issue offer
+        </a>
+      {% endif %}
+      {% if offer and offer.status == 'pending' %}
+        <form method="post" action="{% url 'admissions:accept_offer' applicant.pk %}"
+              class="d-inline"
+              data-motion="fade-up">
+          {% csrf_token %}
+          <button class="btn btn-primary" type="submit"
+                  data-motion-while-hover='{"y":-2,"scale":1.02}'
+                  data-motion-while-tap='{"scale":0.97}'
+                  data-ripple>
+            <i class="bi bi-check2-circle"></i> Mark accepted
+          </button>
+        </form>
+        <form method="post" action="{% url 'admissions:decline_offer' applicant.pk %}"
+              class="d-inline d-flex gap-2 align-items-center"
+              data-motion="fade-up">
+          {% csrf_token %}
+          <input type="text" name="reason" class="input" placeholder="Reason"
+                 style="max-width:200px;">
+          <button class="btn btn-secondary" type="submit"
+                  data-motion-while-hover='{"y":-2}'
+                  data-motion-while-tap='{"scale":0.97}'
+                  data-ripple>
+            Decline
+          </button>
+        </form>
+      {% endif %}
+      {% if applicant.status == 'offer_accepted' and can_admit %}
+        <a class="btn btn-primary"
+           href="{% url 'admissions:admit' applicant.pk %}"
+           data-motion="fade-up"
+           data-motion-while-hover='{"y":-2,"scale":1.02}'
+           data-motion-while-tap='{"scale":0.97}'
+           data-ripple>
+          <i class="bi bi-mortarboard"></i> Admit applicant
+        </a>
+      {% endif %}
+      {% if not applicant.status == 'admitted' and not waitlist and can_admit %}
+        <form method="post" action="{% url 'admissions:waitlist_add' applicant.pk %}"
+              class="d-inline"
+              data-motion="fade-up">
+          {% csrf_token %}
+          <input type="hidden" name="class_name" value="{{ applicant.applying_for }}">
+          <input type="hidden" name="stream" value="A">
+          <button class="btn btn-secondary" type="submit"
+                  data-motion-while-hover='{"y":-2}'
+                  data-motion-while-tap='{"scale":0.97}'
+                  data-ripple>
+            <i class="bi bi-list-ol"></i> Add to waitlist
+          </button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+{# ─────────── Guardian ─────────── #}
+<section class="profile-section"
+         data-motion="fade-up" data-motion-delay="300">
+  <div class="profile-section-head" style="cursor:default;">
+    <h2 class="profile-section-title">Guardian</h2>
+  </div>
+  <div class="profile-section-body">
+    <dl class="profile-fields"
+        data-motion-orchestrate='{"staggerChildren":0.05,"delayChildren":0.05}'>
+      <div class="profile-field" data-motion="fade-up">
+        <dt>Name</dt><dd>{{ applicant.guardian_name }}</dd>
+      </div>
+      <div class="profile-field" data-motion="fade-up">
+        <dt>Phone</dt><dd>{{ applicant.guardian_phone }}</dd>
+      </div>
+      {% if applicant.guardian_email %}
+        <div class="profile-field" data-motion="fade-up">
+          <dt>Email</dt><dd>{{ applicant.guardian_email }}</dd>
+        </div>
+      {% endif %}
+      {% if applicant.guardian_relationship %}
+        <div class="profile-field" data-motion="fade-up">
+          <dt>Relationship</dt><dd>{{ applicant.guardian_relationship }}</dd>
+        </div>
+      {% endif %}
+    </dl>
+  </div>
+</section>
+
+{# ─────────── Scores ─────────── #}
+<section class="profile-section"
+         data-motion="fade-up" data-motion-delay="360">
+  <div class="profile-section-head" style="cursor:default;">
+    <h2 class="profile-section-title">Scores</h2>
+  </div>
+  <div class="profile-section-body">
+    <dl class="profile-fields"
+        data-motion-orchestrate='{"staggerChildren":0.05,"delayChildren":0.05}'>
+      <div class="profile-field" data-motion="fade-up">
+        <dt>Exam</dt><dd>{{ applicant.exam_score|default:"—" }}</dd>
+      </div>
+      <div class="profile-field" data-motion="fade-up">
+        <dt>Interview (student)</dt><dd>{{ applicant.interview_student_score|default:"—" }}</dd>
+      </div>
+      <div class="profile-field" data-motion="fade-up">
+        <dt>Interview (parent)</dt><dd>{{ applicant.interview_parent_score|default:"—" }}</dd>
+      </div>
+      <div class="profile-field" data-motion="fade-up">
+        <dt>Priority bonus</dt><dd>{{ applicant.priority_bonus }}</dd>
+      </div>
+      <div class="profile-field" data-motion="fade-up">
+        <dt>Composite</dt>
+        <dd>
+          <strong class="tabular-nums"
+                  data-counter="{{ applicant.composite_score|default:0 }}"
+                  data-counter-duration="900">
+            {{ applicant.composite_score|default:"—" }}
+          </strong>
+        </dd>
+      </div>
+    </dl>
+  </div>
+</section>
+
+{# ─────────── Priority flags ─────────── #}
+<section class="profile-section"
+         data-motion="fade-up" data-motion-delay="420">
+  <div class="profile-section-head" style="cursor:default;">
+    <h2 class="profile-section-title">Priority flags</h2>
+  </div>
+  <div class="profile-section-body">
+    {% for p in priorities %}
+    <div class="role-card mb-2"
+         data-motion="fade-up"
+         data-motion-delay="{% widthratio forloop.counter0 1 45 %}"
+         data-motion-while-hover='{"x":3}'>
+      <span class="role-card-icon"><i class="bi bi-star-fill"></i></span>
+      <div class="role-card-info">
+        <span class="role-card-title">
+          {{ p.get_flag_type_display }} (+{{ p.bonus_points }})
+        </span>
+        <span class="role-card-desc">{{ p.reason|default:"" }}</span>
+      </div>
+    </div>
+    {% empty %}
+    <p class="text-muted-sm mb-3">No priority flags.</p>
+    {% endfor %}
+
+    <form method="post"
+          action="{% url 'admissions:applicant_add_priority' applicant.pk %}"
+          class="d-flex flex-wrap gap-2 align-items-end mt-3"
+          data-motion-orchestrate='{"staggerChildren":0.05,"delayChildren":0.05}'>
+      {% csrf_token %}
+      <div class="field" style="flex:1; min-width:160px;" data-motion="fade-up">
+        <label class="field-label" for="flag_type">Flag</label>
+        <select name="flag_type" id="flag_type" class="field-input">
+          <option value="sibling">Sibling</option>
+          <option value="staff_child">Staff child</option>
+          <option value="alumni_child">Alumni child</option>
+          <option value="board_directive">Board directive</option>
+          <option value="special_consideration">Special consideration</option>
+        </select>
+      </div>
+      <div class="field" style="max-width:120px;" data-motion="fade-up">
+        <label class="field-label" for="bonus_points">Bonus</label>
+        <input type="number" step="0.01" name="bonus_points"
+               id="bonus_points" class="field-input" value="0">
+      </div>
+      <div class="field" style="flex:2; min-width:200px;" data-motion="fade-up">
+        <label class="field-label" for="reason">Reason</label>
+        <input type="text" name="reason" id="reason" class="field-input">
+      </div>
+      <button class="btn btn-primary" type="submit"
+              data-motion="fade-up"
+              data-motion-while-hover='{"y":-2}'
+              data-motion-while-tap='{"scale":0.97}'
+              data-ripple>
+        Add flag
+      </button>
+    </form>
+  </div>
+</section>
+
+{# ─────────── Documents ─────────── #}
+<section class="profile-section"
+         data-motion="fade-up" data-motion-delay="480">
+  <div class="profile-section-head" style="cursor:default;">
+    <h2 class="profile-section-title">Documents</h2>
+  </div>
+  <div class="profile-section-body">
+    {% for d in documents %}
+    <div class="d-flex align-items-center justify-content-between gap-2 py-2 border-bottom"
+         data-motion="fade-up"
+         data-motion-delay="{% widthratio forloop.counter0 1 45 %}">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-file-earmark-text"></i>
+        <a href="{{ d.file.url }}" target="_blank" rel="noopener" class="text-decoration-none">
+          {{ d.get_document_type_display }}
+        </a>
+      </div>
+      {% if d.verified %}
+        <span class="badge badge-success">
+          <i class="bi bi-patch-check-fill"></i> Verified
+        </span>
+      {% else %}
+        <span class="badge badge-warning">Pending</span>
+      {% endif %}
+    </div>
+    {% empty %}
+    <p class="text-muted-sm mb-3">No documents uploaded yet.</p>
+    {% endfor %}
+
+    <form method="post"
+          action="{% url 'admissions:applicant_upload_document' applicant.pk %}"
+          enctype="multipart/form-data"
+          class="mt-3 d-flex flex-wrap gap-2 align-items-end"
+          data-motion-orchestrate='{"staggerChildren":0.05,"delayChildren":0.05}'>
+      {% csrf_token %}
+      <div class="field" style="flex:1; min-width:180px;" data-motion="fade-up">
+        <label class="field-label" for="doc_type">Type</label>
+        <select name="document_type" id="doc_type" class="field-input">
+          <option value="pslce">PSLCE certificate</option>
+          <option value="birth_cert">Birth certificate</option>
+          <option value="transfer_letter">Transfer letter</option>
+          <option value="report_card">Report card</option>
+          <option value="guardian_id">Guardian ID</option>
+          <option value="photo">Passport photos</option>
+          <option value="medical">Medical</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="field" style="flex:2; min-width:220px;" data-motion="fade-up">
+        <label class="field-label" for="doc_file">File</label>
+        <input type="file" name="file" id="doc_file" class="field-input" required>
+      </div>
+      <button class="btn btn-primary" type="submit"
+              data-motion="fade-up"
+              data-motion-while-hover='{"y":-2}'
+              data-motion-while-tap='{"scale":0.97}'
+              data-ripple>
+        Upload
+      </button>
+    </form>
+  </div>
+</section>
+
+{# ─────────── Exam assignments ─────────── #}
+{% if exam_assignments %}
+<section class="profile-section"
+         data-motion="fade-up" data-motion-delay="540">
+  <div class="profile-section-head" style="cursor:default;">
+    <h2 class="profile-section-title">Exam sessions</h2>
+  </div>
+  <div class="profile-section-body"
+       data-motion-orchestrate='{"staggerChildren":0.06,"delayChildren":0.05}'>
+    {% for a in exam_assignments %}
+    <div class="role-card mb-2"
+         data-motion="fade-up"
+         data-motion-while-hover='{"x":3}'>
+      <span class="role-card-icon"><i class="bi bi-pencil-square"></i></span>
+      <div class="role-card-info">
+        <span class="role-card-title">{{ a.session.name }}</span>
+        <span class="role-card-desc">
+          Seat {{ a.seat_number }} ·
+          {{ a.session.exam_date|date:"j M Y" }} ·
+          {{ a.get_attended_display }}
+        </span>
+      </div>
+      <a class="btn btn-ghost btn-sm"
+         href="{% url 'admissions:exam_session_detail' a.session.pk %}"
+         data-motion-while-tap='{"scale":0.94}'>
+        Open
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{# ─────────── Offer ─────────── #}
+{% if offer %}
+<section class="profile-section"
+         data-motion="fade-up" data-motion-delay="600">
+  <div class="profile-section-head" style="cursor:default;">
+    <h2 class="profile-section-title">Offer</h2>
+  </div>
+  <div class="profile-section-body">
+    <dl class="profile-fields"
+        data-motion-orchestrate='{"staggerChildren":0.05,"delayChildren":0.05}'>
+      <div class="profile-field" data-motion="fade-up">
+        <dt>Status</dt><dd>{{ offer.get_status_display }}</dd>
+      </div>
+      <div class="profile-field" data-motion="fade-up">
+        <dt>Issued</dt>
+        <dd>{{ offer.issued_at|date:"j M Y" }} by {{ offer.issued_by.get_full_name|default:offer.issued_by.username }}</dd>
+      </div>
+      <div class="profile-field" data-motion="fade-up">
+        <dt>Deadline</dt><dd>{{ offer.response_deadline|date:"j M Y" }}</dd>
+      </div>
+      {% if offer.decline_reason %}
+        <div class="profile-field" data-motion="fade-up">
+          <dt>Reason</dt><dd>{{ offer.decline_reason }}</dd>
+        </div>
+      {% endif %}
+    </dl>
+  </div>
+</section>
+{% endif %}
+
+{# ─────────── Waitlist ─────────── #}
+{% if waitlist %}
+<section class="profile-section"
+         data-motion="fade-up" data-motion-delay="660">
+  <div class="profile-section-head" style="cursor:default;">
+    <h2 class="profile-section-title">Waitlist</h2>
+  </div>
+  <div class="profile-section-body">
+    <dl class="profile-fields"
+        data-motion-orchestrate='{"staggerChildren":0.06,"delayChildren":0.05}'>
+      <div class="profile-field" data-motion="fade-up">
+        <dt>Position</dt>
+        <dd>#{{ waitlist.position }} for {{ waitlist.class_name }}{{ waitlist.stream }}</dd>
+      </div>
+      <div class="profile-field" data-motion="fade-up">
+        <dt>Added</dt><dd>{{ waitlist.added_at|date:"j M Y" }}</dd>
+      </div>
+    </dl>
+  </div>
+</section>
+{% endif %}
+
+{% include "partials/dashboard-widgets.html" %}
+{% endblock %}

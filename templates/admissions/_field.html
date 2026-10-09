@@ -1,0 +1,80 @@
+{% comment %}
+    Renders one bound form field with the project's `.field` markup.
+
+    Usage:
+        {% include "admissions/_field.html" with field=form.full_name %}
+        {% include "admissions/_field.html" with field=form.guardian_phone icon="bi-telephone" %}
+{% endcomment %}
+{% with widget_tpl=field.field.widget.template_name|default:"" %}
+
+<div class="field{% if field.errors %} is-invalid{% endif %}">
+
+  {% if 'checkbox' in widget_tpl %}
+    <label class="checkbox">
+      {{ field }}
+      <span>{{ field.label }}</span>
+    </label>
+
+  {% else %}
+    <label class="field-label" for="{{ field.id_for_label }}">
+      {{ field.label }}{% if field.field.required %}<span class="required">*</span>{% endif %}
+    </label>
+
+    {% if 'textarea' in widget_tpl %}
+      <div class="field-control">
+        <textarea name="{{ field.name }}"
+                  id="{{ field.id_for_label }}"
+                  class="field-input"
+                  rows="{{ field.field.widget.attrs.rows|default:4 }}"
+                  {% if field.field.required %}required{% endif %}
+                  {% if field.field.widget.attrs.placeholder %}placeholder="{{ field.field.widget.attrs.placeholder }}"{% endif %}>{{ field.value|default_if_none:"" }}</textarea>
+      </div>
+
+    {% elif 'select' in widget_tpl %}
+      <div class="field-control">
+        <select name="{{ field.name }}"
+                id="{{ field.id_for_label }}"
+                class="field-input"
+                {% if field.field.required %}required{% endif %}>
+          {% if not field.field.required %}
+            <option value="">---------</option>
+          {% endif %}
+          {% for value, label in field.field.choices %}
+            <option value="{{ value }}"
+              {% if field.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>
+              {{ label }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+    {% else %}
+      <div class="field-control{% if icon %} has-icon{% endif %}">
+        {% if icon %}<i class="bi {{ icon }} field-icon" aria-hidden="true"></i>{% endif %}
+        <input type="{{ field.field.widget.input_type|default:'text' }}"
+               name="{{ field.name }}"
+               id="{{ field.id_for_label }}"
+               class="field-input"
+               value="{{ field.value|default_if_none:'' }}"
+               {% if field.field.required %}required{% endif %}
+               {% if field.field.widget.attrs.placeholder %}placeholder="{{ field.field.widget.attrs.placeholder }}"{% endif %}
+               {% if field.field.widget.attrs.inputmode %}inputmode="{{ field.field.widget.attrs.inputmode }}"{% endif %}
+               {% if field.field.widget.attrs.autocomplete %}autocomplete="{{ field.field.widget.attrs.autocomplete }}"{% endif %}
+               {% if field.field.widget.attrs.pattern %}pattern="{{ field.field.widget.attrs.pattern }}"{% endif %}
+               {% if field.field.widget.attrs.maxlength %}maxlength="{{ field.field.widget.attrs.maxlength }}"{% endif %}>
+      </div>
+    {% endif %}
+  {% endif %}
+
+  {% if field.help_text %}
+    <p class="field-help">{{ field.help_text }}</p>
+  {% endif %}
+
+  {% if field.errors %}
+    <p class="field-error" role="alert">
+      <i class="bi bi-exclamation-circle"></i> {{ field.errors.0 }}
+    </p>
+  {% endif %}
+</div>
+
+{% endwith %}

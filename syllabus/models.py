@@ -6,15 +6,28 @@ from simple_history.models import HistoricalRecords
 
 
 class ExamSession(models.Model):
-    """SY-22/23/24: a specific exam cycle (e.g. 'MSCE 2025'); students,
-    grades, and reports reference whichever session is current."""
+    """SY-22/23/24: a specific exam cycle (e.g. 'MSCE 2025', 'JCE 2025');
+    students, grades, and reports reference whichever session is current
+    for their level."""
+    LEVEL_CHOICES = [
+        ('JCE', 'Junior Certificate of Education'),
+        ('MSCE', 'Malawi School Certificate of Education'),
+    ]
+
     name = models.CharField(max_length=100, unique=True)
     exam_year = models.PositiveIntegerField()
+    level = models.CharField(
+        max_length=10, choices=LEVEL_CHOICES, default='MSCE', db_index=True,
+        help_text="Which national examination this session belongs to.",
+    )
     is_current = models.BooleanField(default=False)
     date_effective = models.DateField(null=True, blank=True)
 
     class Meta:
-        ordering = ['-exam_year']
+        ordering = ['-exam_year', 'level']
+        indexes = [
+            models.Index(fields=['level', 'is_current']),
+        ]
 
     def __str__(self):
         return self.name
@@ -22,12 +35,16 @@ class ExamSession(models.Model):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         if self.is_current:
-            # SY-23: only one session may be current at a time.
-            ExamSession.objects.exclude(pk=self.pk).update(is_current=False)
+            # SY-23: only one session may be current at a time, per level.
+            # (MSCE 2025 and JCE 2025 can both be current; two MSCE sessions
+            # cannot.)
+            ExamSession.objects.filter(level=self.level).exclude(pk=self.pk).update(is_current=False)
 
 
 class Subject(models.Model):
-    """SY-01/02/03: an MSCE subject with its official MANEB code."""
+    """SY-01/02/03: a MANEB subject (MSCE or JCE) with its official code."""
+    LEVEL_CHOICES = ExamSession.LEVEL_CHOICES
+
     CORE_ELEMENTS = [
         ('sciences', 'Sciences'),
         ('languages', 'Languages'),
@@ -40,21 +57,32 @@ class Subject(models.Model):
 
     code = models.CharField(
         max_length=10, unique=True, db_index=True,
-        validators=[RegexValidator(r'^M\d{3}$', 'Code must be in format M### (e.g., M131).')],
-        help_text='MANEB subject code, e.g., M131 for Mathematics',
+        validators=[RegexValidator(
+            r'^[MJ]\d{3}$',
+            'Code must be M### for MSCE or J### for JCE (e.g., M131, J131).',
+        )],
+        help_text='MANEB subject code, e.g., M131 (MSCE Mathematics) or J131 (JCE Mathematics)',
     )
     name = models.CharField(max_length=100)
     category = models.CharField(max_length=20, choices=CORE_ELEMENTS)
+    level = models.CharField(
+        max_length=10, choices=LEVEL_CHOICES, default='MSCE', db_index=True,
+        help_text="Which national examination this subject belongs to.",
+    )
     is_elective = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     description = models.TextField(blank=True)
     history = HistoricalRecords()
 
     class Meta:
-        ordering = ['code']
+        ordering = ['level', 'code']
+        indexes = [
+            models.Index(fields=['level', 'category', 'is_active']),
+            models.Index(fields=['level', 'is_active']),
+        ]
 
     def __str__(self):
-        return f'{self.code} - {self.name}'
+        return f'[{self.level}] {self.code} - {self.name}'
 
     @property
     def paper_count(self):
@@ -96,6 +124,11 @@ class SyllabusTopic(MPTTModel):
     (get_descendants(), get_ancestors()) instead of N recursive queries -
     the NFR calls out topic trees with 100+ nodes needing to render in
     under 2 seconds, which plain adjacency-list recursion won't scale to.
+
+    Applies to both MSCE and JCE subjects: the level comes from the
+    parent Subject, so the same tree code (e.g. '3.3.1' for Additional
+    Mathematics, 'J-MATH-01' for JCE Mathematics) can coexist cleanly
+    across the two levels.
     """
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='topics')
     paper = models.ForeignKey(
@@ -103,7 +136,7 @@ class SyllabusTopic(MPTTModel):
         help_text='Paper(s) this topic is tested in',
     )
     core_element = models.CharField(max_length=150, blank=True, help_text="e.g., 'Functions and Graphs'")
-    code = models.CharField(max_length=20, blank=True, db_index=True, help_text="Syllabus code like '3.3.1.1'")
+    code = models.CharField(max_length=20, blank=True, db_index=True, help_text="Syllabus code like '3.3.1.1' or 'J-MATH-01-01'")
     title = models.CharField(max_length=200)
     parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='subtopics')
     order = models.PositiveIntegerField(default=0)
@@ -121,6 +154,7 @@ class SyllabusTopic(MPTTModel):
     class Meta:
         indexes = [
             models.Index(fields=['subject', 'is_active']),
+            models.Index(fields=['subject', 'code']),
         ]
 
     def __str__(self):
@@ -136,6 +170,9 @@ class AssessmentObjective(models.Model):
 
     class Meta:
         ordering = ['topic', 'order']
+        indexes = [
+            models.Index(fields=['topic', 'is_active']),
+        ]
 
     def __str__(self):
         return self.text[:80]
@@ -219,6 +256,10 @@ class TopicCoverage(models.Model):
 
     class Meta:
         unique_together = ('topic', 'teacher', 'class_name', 'stream')
+        indexes = [
+            models.Index(fields=['teacher', 'is_covered']),
+            models.Index(fields=['teacher', 'class_name', 'stream']),
+        ]
 
     def __str__(self):
         status = 'covered' if self.is_covered else 'pending'

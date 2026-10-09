@@ -1,90 +1,380 @@
 {% extends "base.html" %}
+{% load static %}
 {% block page_title %}Mark Attendance{% endblock %}
+
 {% block content %}
+
+{# ───── Header ───── #}
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text data-reveal-delay="40" data-reveal-stagger="22">Mark Attendance</h1>
+        <p class="text-secondary small mb-0">{{ class_name }}{{ stream }} · {{ date }}</p>
+    </div>
+    <a class="btn btn-secondary btn-sm"
+       href="{% url 'attendance:export' %}?class_name={{ class_name }}&stream={{ stream }}"
+       data-motion="fade-up" data-motion-delay="140"
+       data-motion-while-hover='{"y":-2}'
+       data-motion-while-tap='{"scale":0.97}'
+       data-ripple>
+        <i class="bi bi-download me-1"></i> Export CSV
+    </a>
+</div>
+
 <div class="row g-4">
-    <div class="col-lg-8">
-        <div class="card"><div class="card-header d-flex justify-content-between align-items-center">
-            <h6 class="mb-0 fw-bold">Mark Attendance</h6>
-            <a class="btn btn-sm btn-outline-secondary" href="{% url 'attendance:export' %}?class_name={{ class_name }}&stream={{ stream }}"><i class="bi bi-download me-1"></i>Export CSV</a>
+
+    {# ══════════════════════ Left: filters + roster ══════════════════════ #}
+    <div class="col-12 col-lg-8">
+
+        {# ───── Filters ───── #}
+        <div class="card mb-3"
+             data-motion="fade-up" data-motion-delay="60">
+            <div class="card-body">
+                <form method="get" class="row g-2">
+                    <div class="col-6 col-md-4">
+                        <label class="form-label small text-secondary fw-semibold mb-1">Class</label>
+                        <select class="form-select form-select-sm" name="class_name"
+                                onchange="this.form.submit()">
+                            {% for c in classes %}
+                            <option value="{{ c.0 }}" {% if c.0 == class_name %}selected{% endif %}>{{ c.0 }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <label class="form-label small text-secondary fw-semibold mb-1">Stream</label>
+                        <select class="form-select form-select-sm" name="stream"
+                                onchange="this.form.submit()">
+                            <option value="A" {% if stream == 'A' %}selected{% endif %}>A</option>
+                            <option value="B" {% if stream == 'B' %}selected{% endif %}>B</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <label class="form-label small text-secondary fw-semibold mb-1">Date</label>
+                        <input type="date" class="form-control form-control-sm" name="date"
+                               value="{{ date }}" max="{% now 'Y-m-d' %}"
+                               onchange="this.form.submit()">
+                    </div>
+                </form>
+            </div>
         </div>
-        <div class="card-body">
-            <form method="get" class="row g-3 mb-3">
-                <div class="col-md-4"><label class="form-label">Class</label>
-                    <select class="form-select" name="class_name" onchange="this.form.submit()">
-                        {% for c in classes %}<option value="{{ c.0 }}" {% if c.0 == class_name %}selected{% endif %}>{{ c.0 }}</option>{% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-4"><label class="form-label">Stream</label>
-                    <select class="form-select" name="stream" onchange="this.form.submit()">
-                        <option value="A" {% if stream == 'A' %}selected{% endif %}>A</option>
-                        <option value="B" {% if stream == 'B' %}selected{% endif %}>B</option>
-                    </select>
-                </div>
-                <div class="col-md-4"><label class="form-label">Date</label>
-                    <input type="date" class="form-control" name="date" value="{{ date }}" max="{% now 'Y-m-d' %}" onchange="this.form.submit()">
-                </div>
-            </form>
 
-            {% if is_future %}
-                <div class="alert alert-danger">Attendance can't be marked for a future date.</div>
-            {% elif not is_school_day %}
-                <div class="alert alert-warning">This date is a weekend or declared holiday - attendance is not normally taken.</div>
-            {% endif %}
-            <div class="alert alert-info small py-2">Records can be corrected within {{ edit_window_hours }} hours of being marked; admins can override this.</div>
+        {# ───── Warnings ───── #}
+        {% if is_future %}
+        <div class="alert alert-danger d-flex align-items-start gap-2"
+             role="alert"
+             data-motion="fade-down" data-motion-delay="120">
+            <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+            <div>Attendance can't be marked for a future date.</div>
+        </div>
+        {% elif not is_school_day %}
+        <div class="alert alert-warning d-flex align-items-start gap-2"
+             role="alert"
+             data-motion="fade-down" data-motion-delay="120">
+            <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+            <div>This date is a weekend or declared holiday — attendance is not normally taken.</div>
+        </div>
+        {% endif %}
 
-            <form method="post" class="d-inline">
+        <div class="alert alert-info small py-2 d-flex align-items-start gap-2"
+             role="alert"
+             data-motion="fade-in" data-motion-delay="180">
+            <i class="bi bi-info-circle flex-shrink-0"></i>
+            <div>
+                Records can be corrected within <strong>{{ edit_window_hours }} hours</strong>
+                of being marked; admins can override this.
+            </div>
+        </div>
+
+        {# ───── Action buttons ───── #}
+        <div class="d-flex flex-wrap gap-2 mb-3"
+             data-motion="fade-up" data-motion-delay="240"
+             data-motion-orchestrate='{"staggerChildren":0.05,"delayChildren":0.05}'>
+
+            <form method="post" class="d-inline" data-motion="fade-up">
                 {% csrf_token %}
                 <input type="hidden" name="class_name" value="{{ class_name }}">
                 <input type="hidden" name="stream" value="{{ stream }}">
                 <input type="hidden" name="date" value="{{ date }}">
-                <button type="submit" formaction="{% url 'attendance:mark_all_present' %}" class="btn btn-outline-success btn-sm mb-3" {% if is_future %}disabled{% endif %}>
+                <button type="submit" formaction="{% url 'attendance:mark_all_present' %}"
+                        class="btn btn-primary btn-sm"
+                        {% if is_future %}disabled{% endif %}
+                        data-motion-while-hover='{"y":-2}'
+                        data-motion-while-tap='{"scale":0.97}'
+                        data-ripple>
                     <i class="bi bi-check-all me-1"></i>Mark All Present
                 </button>
             </form>
-            <form method="post" class="d-inline mb-3">
+
+            <form method="post" class="d-inline" data-motion="fade-up">
                 {% csrf_token %}
                 <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                <button type="submit" formaction="{% url 'attendance:undo' %}" class="btn btn-outline-danger btn-sm">
+                <button type="submit" formaction="{% url 'attendance:undo' %}"
+                        class="btn btn-secondary btn-sm"
+                        data-motion-while-hover='{"y":-2}'
+                        data-motion-while-tap='{"scale":0.97}'
+                        data-ripple>
                     <i class="bi bi-arrow-counterclockwise me-1"></i>Undo Last Save
                 </button>
             </form>
+        </div>
 
-            <form method="post">
-                {% csrf_token %}
-                <input type="hidden" name="class_name" value="{{ class_name }}">
-                <input type="hidden" name="stream" value="{{ stream }}">
-                <input type="hidden" name="date" value="{{ date }}">
-                {% for s in students %}
-                <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                    <span>{{ s.full_name }}</span>
-                    <div class="btn-group" role="group">
-                        <label class="btn btn-outline-success btn-sm">
-                            <input type="radio" name="status_{{ s.pk }}" value="present" class="d-none" checked> Present
-                        </label>
-                        <label class="btn btn-outline-danger btn-sm">
-                            <input type="radio" name="status_{{ s.pk }}" value="absent" class="d-none"> Absent
-                        </label>
-                        <label class="btn btn-outline-warning btn-sm">
-                            <input type="radio" name="status_{{ s.pk }}" value="late" class="d-none"> Late
-                        </label>
-                    </div>
+        {# ───── Roster ───── #}
+        <form method="post" id="markForm">
+            {% csrf_token %}
+            <input type="hidden" name="class_name" value="{{ class_name }}">
+            <input type="hidden" name="stream" value="{{ stream }}">
+            <input type="hidden" name="date" value="{{ date }}">
+
+            <div class="card"
+                 data-motion="fade-up" data-motion-delay="300"
+                 style="overflow:hidden;">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h6 class="fw-bold mb-0">Students</h6>
+                    <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">
+                        {{ students|length }}
+                    </span>
                 </div>
-                {% empty %}<p class="text-secondary">No students in this class{% if not classes %} - you have no class assignments yet{% endif %}.</p>
-                {% endfor %}
-                <button type="submit" class="btn btn-primary w-100 mt-3" {% if is_future %}disabled{% endif %}><i class="bi bi-check-circle me-1"></i>Save Attendance</button>
-            </form>
-        </div></div>
+
+                <ul class="list-group list-group-flush">
+                    {% for s in students %}
+                    <li class="list-group-item py-3"
+                        data-motion="fade-up"
+                        data-motion-delay="{% widthratio forloop.counter0 1 40 %}"
+                        data-attendance-row>
+
+                        <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
+
+                            {# Name #}
+                            <div class="d-flex align-items-center gap-2 min-w-0">
+                                <span class="avatar avatar-sm flex-shrink-0">
+                                    {{ s.full_name|slice:":1"|upper }}
+                                </span>
+                                <span class="fw-medium text-truncate">{{ s.full_name }}</span>
+                            </div>
+
+                            {# Status picker: seg control on desktop, stacked on mobile #}
+                            <div class="attendance-picker d-flex gap-2" role="group" aria-label="Attendance status">
+                                <input type="radio"
+                                       name="status_{{ s.pk }}"
+                                       value="present"
+                                       id="present_{{ s.pk }}"
+                                       class="attendance-radio"
+                                       checked>
+                                <label class="attendance-opt attendance-present flex-grow-1"
+                                       for="present_{{ s.pk }}">
+                                    <i class="bi bi-check-circle"></i> <span>Present</span>
+                                </label>
+
+                                <input type="radio"
+                                       name="status_{{ s.pk }}"
+                                       value="absent"
+                                       id="absent_{{ s.pk }}"
+                                       class="attendance-radio">
+                                <label class="attendance-opt attendance-absent flex-grow-1"
+                                       for="absent_{{ s.pk }}">
+                                    <i class="bi bi-x-circle"></i> <span>Absent</span>
+                                </label>
+
+                                <input type="radio"
+                                       name="status_{{ s.pk }}"
+                                       value="late"
+                                       id="late_{{ s.pk }}"
+                                       class="attendance-radio">
+                                <label class="attendance-opt attendance-late flex-grow-1"
+                                       for="late_{{ s.pk }}">
+                                    <i class="bi bi-clock"></i> <span>Late</span>
+                                </label>
+                            </div>
+                        </div>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item">
+                        <div class="empty-state text-center py-5">
+                            <div class="empty-icon mx-auto mb-3"
+                                 style="width:64px;height:64px;border-radius:16px;
+                                        background:var(--md-surface-bright);
+                                        display:flex;align-items:center;justify-content:center;"
+                                 data-motion-variant="brandMark"
+                                 data-motion-initial="hidden"
+                                 data-motion-animate="visible">
+                                <i class="bi bi-people fs-2 text-secondary"></i>
+                            </div>
+                            <h3 class="h6 fw-semibold mb-1">No students in this class</h3>
+                            <p class="text-secondary small mb-0">
+                                {% if not classes %}
+                                You have no class assignments yet — contact an administrator.
+                                {% else %}
+                                Ask an administrator to enrol students in this class.
+                                {% endif %}
+                            </p>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+
+                {% if students %}
+                <div class="card-footer bg-transparent">
+                    <button type="submit" class="btn btn-primary w-100"
+                            {% if is_future %}disabled{% endif %}
+                            data-motion-while-hover='{"y":-2,"scale":1.005}'
+                            data-motion-while-tap='{"scale":0.98}'
+                            data-ripple>
+                        <i class="bi bi-check-circle me-1"></i> Save Attendance
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </form>
     </div>
-    <div class="col-lg-4">
-        <div class="card"><div class="card-header"><h6 class="mb-0 fw-bold">More</h6></div>
-        <div class="card-body d-grid gap-2">
-            {% if current_role == 'admin' %}
-            <a class="btn btn-outline-primary btn-sm" href="{% url 'attendance:admin_summary' %}"><i class="bi bi-bar-chart-steps me-1"></i>School-wide Summary</a>
-            {% endif %}
-            {% if current_role == 'teacher' %}
-            <a class="btn btn-outline-primary btn-sm" href="{% url 'attendance:history' %}"><i class="bi bi-clock-history me-1"></i>My Attendance History</a>
-            {% endif %}
-        </div></div>
+
+    {# ══════════════════════ Right: More links ══════════════════════ #}
+    <div class="col-12 col-lg-4">
+        <div class="card"
+             data-motion="fade-up" data-motion-delay="180">
+            <div class="card-header">
+                <h6 class="mb-0 fw-bold">More</h6>
+            </div>
+            <div class="card-body d-grid gap-2"
+                 data-motion-orchestrate='{"staggerChildren":0.06,"delayChildren":0.05}'>
+
+                {% if current_role == 'admin' %}
+                <a class="btn btn-secondary"
+                   href="{% url 'attendance:admin_summary' %}"
+                   data-motion="fade-up"
+                   data-motion-while-hover='{"y":-2}'
+                   data-motion-while-tap='{"scale":0.97}'
+                   data-ripple>
+                    <i class="bi bi-bar-chart-steps me-1"></i> School-wide Summary
+                </a>
+                {% endif %}
+
+                {% if current_role == 'teacher' %}
+                <a class="btn btn-secondary"
+                   href="{% url 'attendance:history' %}"
+                   data-motion="fade-up"
+                   data-motion-while-hover='{"y":-2}'
+                   data-motion-while-tap='{"scale":0.97}'
+                   data-ripple>
+                    <i class="bi bi-clock-history me-1"></i> My Attendance History
+                </a>
+                {% endif %}
+
+                <a class="btn btn-secondary"
+                   href="{% url 'attendance:summary' %}"
+                   data-motion="fade-up"
+                   data-motion-while-hover='{"y":-2}'
+                   data-motion-while-tap='{"scale":0.97}'
+                   data-ripple>
+                    <i class="bi bi-list-check me-1"></i> Class Summary
+                </a>
+            </div>
+        </div>
     </div>
 </div>
+
+{% include "partials/dashboard-widgets.html" %}
+{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ─── Attendance picker: segmented control, mobile-stackable ─── */
+.attendance-picker { width: 100%; max-width: 340px; }
+.attendance-radio {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 0;
+    height: 0;
+}
+.attendance-opt {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border: 1.5px solid var(--md-outline-variant);
+    border-radius: 10px;
+    background: var(--md-surface);
+    color: var(--md-on-surface-variant);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.08s;
+    white-space: nowrap;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+.attendance-opt:hover {
+    border-color: var(--md-outline);
+    background: var(--md-surface-bright);
+}
+.attendance-opt:active { transform: scale(0.96); }
+.attendance-opt i { font-size: 16px; }
+
+/* Present */
+.attendance-radio:checked + .attendance-present {
+    background: #d9f0e0;
+    border-color: #198754;
+    color: #0f5132;
+}
+.attendance-radio:checked + .attendance-present i { color: #198754; }
+
+/* Absent */
+.attendance-radio:checked + .attendance-absent {
+    background: #fde2e2;
+    border-color: #dc2626;
+    color: #991b1b;
+}
+.attendance-radio:checked + .attendance-absent i { color: #dc2626; }
+
+/* Late */
+.attendance-radio:checked + .attendance-late {
+    background: #fef3d0;
+    border-color: #d97706;
+    color: #78350f;
+}
+.attendance-radio:checked + .attendance-late i { color: #d97706; }
+
+/* Focus ring */
+.attendance-radio:focus-visible + .attendance-opt {
+    box-shadow: 0 0 0 3px rgba(26,86,50,0.18);
+    outline: none;
+}
+
+/* Dark mode */
+[data-theme="dark"] .attendance-radio:checked + .attendance-present {
+    background: rgba(25,135,84,.20);
+    border-color: #4c9a6e;
+    color: #9cd6a6;
+}
+[data-theme="dark"] .attendance-radio:checked + .attendance-absent {
+    background: rgba(220,38,38,.20);
+    border-color: #f85149;
+    color: #ffb0b0;
+}
+[data-theme="dark"] .attendance-radio:checked + .attendance-late {
+    background: rgba(217,119,6,.20);
+    border-color: #e3b341;
+    color: #f5d97a;
+}
+
+/* Mobile: shorter labels */
+@media (max-width: 480px) {
+    .attendance-opt span { display: none; }
+    .attendance-opt { padding: 10px 12px; }
+    .attendance-opt i { font-size: 18px; }
+    .attendance-picker { max-width: 220px; }
+}
+
+/* Reduced motion */
+html.no-motion .attendance-opt,
+html[data-reduced-motion="true"] .attendance-opt {
+    transition: none !important;
+}
+html.no-motion .attendance-opt:active,
+html[data-reduced-motion="true"] .attendance-opt:active {
+    transform: none !important;
+}
+</style>
 {% endblock %}

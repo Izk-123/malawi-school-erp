@@ -1,20 +1,175 @@
 {% extends "base.html" %}
+{% load static %}
 {% block page_title %}Paper {{ paper.number }}{% endblock %}
+
 {% block content %}
-<nav aria-label="breadcrumb"><ol class="breadcrumb">
-    <li class="breadcrumb-item"><a href="{% url 'syllabus:subject_list' %}">Syllabus</a></li>
-    <li class="breadcrumb-item"><a href="{% url 'syllabus:subject_detail' paper.subject.pk %}">{{ paper.subject.code }}</a></li>
-    <li class="breadcrumb-item active">Paper {{ paper.number }}</li>
-</ol></nav>
-<div class="card"><div class="card-body">
-<h5>{{ paper.subject.name }} - Paper {{ paper.number }}</h5>
-<p><strong>Type:</strong> {{ paper.get_paper_type_display }} &middot; <strong>Duration:</strong> {{ paper.duration_minutes }} min &middot; <strong>Marks:</strong> {{ paper.total_marks }}</p>
-{% if paper.description %}<p class="text-secondary">{{ paper.description|linebreaks }}</p>{% endif %}
-</div></div>
-<h6 class="mt-4">Topics tested in this paper</h6>
-<div class="list-group">
-{% for topic in topics %}<div class="list-group-item"><strong>{{ topic.code }} {{ topic.title }}</strong>
-{% for obj in topic.objectives.all %}<div class="small text-secondary ms-3">- {{ obj.text }}</div>{% endfor %}
-</div>{% empty %}<p class="text-secondary">No topics linked to this paper yet.</p>{% endfor %}
+
+{# Breadcrumb #}
+<nav aria-label="breadcrumb" class="mb-3"
+     data-motion="fade-in" data-motion-delay="20">
+    <ol class="breadcrumb small mb-0">
+        <li class="breadcrumb-item">
+            <a href="{% url 'syllabus:subject_list' %}" class="text-decoration-none">Syllabus</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'syllabus:subject_detail' paper.subject.pk %}" class="text-decoration-none">
+                {{ paper.subject.code }}
+            </a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">Paper {{ paper.number }}</li>
+    </ol>
+</nav>
+
+{# Header #}
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text data-reveal-delay="40" data-reveal-stagger="22">
+            {{ paper.subject.name }} · Paper {{ paper.number }}
+        </h1>
+        <p class="text-secondary small mb-0">
+            {{ paper.get_paper_type_display }}
+        </p>
+    </div>
+    <a href="{% url 'syllabus:subject_detail' paper.subject.pk %}"
+       class="btn btn-secondary btn-sm"
+       data-motion="fade-up" data-motion-delay="140"
+       data-motion-while-hover='{"y":-2}'
+       data-motion-while-tap='{"scale":0.97}'
+       data-ripple>
+        <i class="bi bi-arrow-left me-1"></i> Back to {{ paper.subject.code }}
+    </a>
 </div>
+
+{# Paper summary #}
+<div class="row g-3 mb-4">
+
+    <div class="col-6 col-md-4">
+        <div class="card h-100"
+             data-motion="fade-up" data-motion-delay="60"
+             data-motion-while-hover='{"y":-3,"scale":1.005}'>
+            <div class="card-body text-center">
+                <div class="rounded-circle mx-auto mb-2 d-flex align-items-center justify-content-center"
+                     style="width:44px;height:44px;
+                            background:color-mix(in srgb, var(--md-primary) 14%, transparent);
+                            color:var(--md-primary);"
+                     data-motion-variant="brandMark"
+                     data-motion-initial="hidden"
+                     data-motion-animate="visible"
+                     data-motion-delay="280">
+                    <i class="bi bi-clock-history"></i>
+                </div>
+                <div class="h3 fw-bold mb-0 tabular-nums"
+                     data-counter="{{ paper.duration_minutes|default:0 }}">0</div>
+                <div class="small text-secondary">Minutes</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-4">
+        <div class="card h-100"
+             data-motion="fade-up" data-motion-delay="140"
+             data-motion-while-hover='{"y":-3,"scale":1.005}'>
+            <div class="card-body text-center">
+                <div class="rounded-circle mx-auto mb-2 d-flex align-items-center justify-content-center"
+                     style="width:44px;height:44px;
+                            background:rgba(13,110,253,.12);color:#0d6efd;"
+                     data-motion-variant="brandMark"
+                     data-motion-initial="hidden"
+                     data-motion-animate="visible"
+                     data-motion-delay="340">
+                    <i class="bi bi-award"></i>
+                </div>
+                <div class="h3 fw-bold mb-0 tabular-nums"
+                     data-counter="{{ paper.total_marks|default:0 }}">0</div>
+                <div class="small text-secondary">Marks</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-md-4">
+        <div class="card h-100"
+             data-motion="fade-up" data-motion-delay="220"
+             data-motion-while-hover='{"y":-3,"scale":1.005}'>
+            <div class="card-body d-flex flex-column justify-content-center">
+                <div class="small text-secondary fw-semibold text-uppercase mb-1"
+                     style="letter-spacing:.05em;font-size:11px;">Type</div>
+                <div class="h6 fw-bold mb-0">{{ paper.get_paper_type_display }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Description #}
+{% if paper.description %}
+<div class="card mb-4"
+     data-motion="fade-up" data-motion-delay="280">
+    <div class="card-body">
+        <div class="small text-secondary fw-semibold text-uppercase mb-2"
+             style="letter-spacing:.05em;font-size:11px;">Description</div>
+        <p class="mb-0">{{ paper.description|linebreaksbr }}</p>
+    </div>
+</div>
+{% endif %}
+
+{# Topics #}
+<section>
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h6 class="fw-bold mb-0 text-uppercase small text-secondary"
+            style="letter-spacing:.06em;">Topics tested in this paper</h6>
+        <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">
+            {{ topics|length }}
+        </span>
+    </div>
+
+    {% if topics %}
+    <div class="d-flex flex-column gap-3"
+         data-motion-orchestrate='{"staggerChildren":0.06,"delayChildren":0.05}'>
+        {% for topic in topics %}
+        <div class="card"
+             data-motion="fade-up">
+            <div class="card-header d-flex align-items-center gap-2">
+                <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis font-monospace flex-shrink-0">
+                    {{ topic.code }}
+                </span>
+                <h6 class="fw-bold mb-0 text-truncate">{{ topic.title }}</h6>
+            </div>
+            {% if topic.objectives.all %}
+            <div class="card-body pb-2">
+                <ul class="list-unstyled mb-0">
+                    {% for obj in topic.objectives.all %}
+                    <li class="d-flex align-items-start gap-2 mb-2"
+                        data-motion="fade-up"
+                        data-motion-delay="{% widthratio forloop.counter0 1 40 %}">
+                        <i class="bi bi-dot text-secondary flex-shrink-0"></i>
+                        <span style="font-size:14px;" class="text-secondary">{{ obj.text }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card"
+         data-motion="scale-in" data-motion-duration="440">
+        <div class="card-body text-center py-5">
+            <div class="mx-auto mb-3 d-flex align-items-center justify-content-center"
+                 style="width:64px;height:64px;border-radius:16px;
+                        background:var(--md-surface-bright);
+                        color:var(--md-on-surface-variant);"
+                 data-motion-variant="brandMark"
+                 data-motion-initial="hidden"
+                 data-motion-animate="visible">
+                <i class="bi bi-journal-text fs-2"></i>
+            </div>
+            <p class="text-secondary small mb-0">No topics linked to this paper yet.</p>
+        </div>
+    </div>
+    {% endif %}
+</section>
+
+{% include "partials/dashboard-widgets.html" %}
 {% endblock %}

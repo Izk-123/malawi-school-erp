@@ -1,12 +1,87 @@
 {% extends "base.html" %}
+{% load static %}
 {% block page_title %}Tickets{% endblock %}
+
 {% block content %}
-<a href="{% url 'staff:raise_ticket' %}" class="btn btn-primary btn-sm mb-3">Report an Issue</a>
-<div class="card"><div class="card-body p-0"><table class="table table-hover mb-0">
-<thead><tr><th>Type</th><th>Description</th><th>Raised By</th><th>Status</th><th></th></tr></thead>
-<tbody>{% for t in tickets %}<tr><td>{{ t.get_ticket_type_display }}</td><td>{{ t.description|truncatewords:10 }}</td><td>{{ t.raised_by }}</td>
-<td><span class="badge {% if t.status == 'resolved' %}bg-success{% elif t.status == 'in_progress' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ t.get_status_display }}</span></td>
-<td>{% if t.status != 'resolved' %}<form method="post" action="{% url 'staff:resolve_ticket' t.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-success">Resolve</button></form>{% endif %}</td>
-</tr>{% empty %}<tr><td colspan="5">No tickets.</td></tr>{% endfor %}</tbody>
-</table></div></div>
+
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text data-reveal-delay="40" data-reveal-stagger="22">Tickets</h1>
+        <p class="text-secondary small mb-0">
+            <span class="tabular-nums" data-counter="{{ tickets|length }}">{{ tickets|length }}</span> total
+        </p>
+    </div>
+    <a class="btn btn-primary btn-sm"
+       href="{% url 'staff:raise_ticket' %}"
+       data-motion="fade-up" data-motion-delay="140"
+       data-motion-while-hover='{"y":-2,"scale":1.02}'
+       data-motion-while-tap='{"scale":0.97}' data-ripple>
+        <i class="bi bi-plus-lg me-1"></i> Report Issue
+    </a>
+</div>
+
+<div class="card"
+     data-motion="fade-up" data-motion-delay="120"
+     style="overflow:hidden;">
+    <div class="card-body p-0">
+        {% if tickets %}
+        <table class="table table-hover mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Raised By</th>
+                    <th>Status</th>
+                    <th class="text-end"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in tickets %}
+                <tr data-motion="fade-up"
+                    data-motion-delay="{% widthratio forloop.counter0 1 45 %}">
+                    <td data-label="Type" class="fw-medium">{{ t.get_ticket_type_display }}</td>
+                    <td data-label="Description" class="text-secondary small">
+                        {{ t.description|truncatewords:10 }}
+                    </td>
+                    <td data-label="Raised By" class="small">{{ t.raised_by }}</td>
+                    <td data-label="Status">
+                        {% if t.status == 'resolved' %}
+                        <span class="badge rounded-pill bg-success-subtle text-success-emphasis">Resolved</span>
+                        {% elif t.status == 'in_progress' %}
+                        <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis">In Progress</span>
+                        {% else %}
+                        <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">Open</span>
+                        {% endif %}
+                    </td>
+                    <td class="actions text-end">
+                        {% if t.status != 'resolved' %}
+                        <form method="post" action="{% url 'staff:resolve_ticket' t.pk %}" class="d-inline">
+                            {% csrf_token %}
+                            <button class="btn btn-sm btn-primary"
+                                    data-motion-while-tap='{"scale":0.94}' data-ripple>
+                                <i class="bi bi-check2"></i> Resolve
+                            </button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state text-center py-5">
+            <div class="empty-icon mx-auto mb-3">
+                <i class="bi bi-ticket-detailed fs-2 text-secondary"></i>
+            </div>
+            <h3 class="h6 fw-semibold mb-1">No tickets</h3>
+            <p class="text-secondary small mb-3">All clear! Report an issue if something needs attention.</p>
+            <a class="btn btn-primary btn-sm" href="{% url 'staff:raise_ticket' %}">Report Issue</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% include "partials/dashboard-widgets.html" %}
 {% endblock %}

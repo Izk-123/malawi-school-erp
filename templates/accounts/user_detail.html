@@ -11,28 +11,40 @@
 {% block content %}
 <div style="max-width:880px; margin:0 auto; padding:0 16px 96px;">
 
-    {# ───────── Top bar: back · actions ───────── #}
+    {# ───────── Top bar ───────── #}
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3"
-         style="margin-top:4px;">
-        <a href="{% url 'accounts:user_list' %}" class="btn btn-ghost btn-sm">
-            <i class="bi bi-arrow-left"></i> Back to users
+         style="margin-top:4px;"
+         data-motion="fade-down" data-motion-duration="440">
+        <a href="{% url 'accounts:user_list' %}" class="btn btn-ghost btn-sm"
+           data-motion-while-hover='{"x":-3}'
+           data-motion-while-tap='{"scale":0.94}'>
+            <i class="bi bi-arrow-left me-1"></i> Back to users
         </a>
-        <div class="d-flex flex-wrap gap-2">
+        <div class="d-flex flex-wrap gap-2"
+             data-motion-orchestrate='{"staggerChildren":0.05,"delayChildren":0.05}'>
             <a class="btn btn-secondary btn-sm"
-               href="{% url 'accounts:user_update' account.pk %}">
-                <i class="bi bi-pencil"></i> Edit
+               href="{% url 'accounts:user_update' account.pk %}"
+               data-motion="fade-up"
+               data-motion-while-hover='{"y":-2}'
+               data-motion-while-tap='{"scale":0.97}'
+               data-ripple>
+                <i class="bi bi-pencil me-1"></i> Edit
             </a>
 
             <form method="post"
                   action="{% url 'accounts:user_toggle_active' account.pk %}"
-                  style="display:inline;">
+                  style="display:inline;"
+                  data-motion="fade-up">
                 {% csrf_token %}
                 <button class="btn btn-sm {% if account.is_active %}btn-danger{% else %}btn-primary{% endif %}"
-                        type="submit">
+                        type="submit"
+                        data-motion-while-hover='{"y":-2}'
+                        data-motion-while-tap='{"scale":0.97}'
+                        data-ripple>
                     {% if account.is_active %}
-                        <i class="bi bi-slash-circle"></i> Deactivate
+                        <i class="bi bi-slash-circle me-1"></i> Deactivate
                     {% else %}
-                        <i class="bi bi-check-circle"></i> Activate
+                        <i class="bi bi-check-circle me-1"></i> Activate
                     {% endif %}
                 </button>
             </form>
@@ -40,10 +52,14 @@
             {% if is_locked %}
             <form method="post"
                   action="{% url 'accounts:user_unlock' account.pk %}"
-                  style="display:inline;">
+                  style="display:inline;"
+                  data-motion="fade-up">
                 {% csrf_token %}
-                <button class="btn btn-secondary btn-sm" type="submit">
-                    <i class="bi bi-unlock"></i> Unlock
+                <button class="btn btn-secondary btn-sm" type="submit"
+                        data-motion-while-hover='{"y":-2}'
+                        data-motion-while-tap='{"scale":0.97}'
+                        data-ripple>
+                    <i class="bi bi-unlock me-1"></i> Unlock
                 </button>
             </form>
             {% endif %}
@@ -51,10 +67,18 @@
     </div>
 
     {# ───────── Identity card ───────── #}
-    <div class="card mb-3" style="padding:0; overflow:hidden;">
-        <div class="profile-hero" style="padding:24px 20px 20px;">
+    <div class="card mb-3"
+         style="padding:0; overflow:hidden;"
+         data-motion="fade-up" data-motion-delay="100"
+         data-motion-layout>
+        <div class="profile-hero"
+             style="padding:24px 20px 20px;"
+             data-motion-orchestrate='{"staggerChildren":0.07,"delayChildren":0.05}'>
             <div class="profile-avatar-wrap">
-                <div class="profile-avatar">
+                <div class="profile-avatar"
+                     data-motion-variant="brandMark"
+                     data-motion-initial="hidden"
+                     data-motion-animate="visible">
                     {% if account.profile_picture %}
                         <img src="{{ account.profile_picture.url }}" alt="">
                     {% else %}
@@ -65,29 +89,35 @@
                 </div>
             </div>
 
-            <h1 class="profile-name">{{ account.get_full_name|default:account.username }}</h1>
-            <p class="profile-email">{{ account.email|default:"—" }}</p>
+            <h1 class="profile-name"
+                data-reveal-text data-reveal-delay="140" data-reveal-stagger="22">
+                {{ account.get_full_name|default:account.username }}
+            </h1>
+            <p class="profile-email" data-motion="fade-up">{{ account.email|default:"—" }}</p>
 
             <ul class="profile-roles" role="list" aria-label="Roles and status">
-                <li class="role-pill role-{{ account.role }}">
+                <li class="role-pill role-{{ account.role }}" data-motion="scale-in">
                     {{ account.get_role_display }}
                 </li>
                 {% if account.is_superuser %}
-                <li class="role-pill role-admin">
+                <li class="role-pill role-admin" data-motion="scale-in">
                     <i class="bi bi-shield-fill-check"></i> Superuser
                 </li>
                 {% endif %}
                 {% if account.is_active %}
-                <li class="role-pill" style="background: var(--status-success-bg); color: var(--status-success-fg);">
+                <li class="role-pill" data-motion="scale-in"
+                    style="background: var(--status-success-bg); color: var(--status-success-fg);">
                     <i class="bi bi-circle-fill" style="font-size:6px;"></i> Active
                 </li>
                 {% else %}
-                <li class="role-pill" style="background: var(--status-danger-bg); color: var(--status-danger-fg);">
+                <li class="role-pill" data-motion="scale-in"
+                    style="background: var(--status-danger-bg); color: var(--status-danger-fg);">
                     <i class="bi bi-circle-fill" style="font-size:6px;"></i> Inactive
                 </li>
                 {% endif %}
                 {% if is_locked %}
-                <li class="role-pill" style="background: var(--status-warning-bg); color: var(--status-warning-fg);">
+                <li class="role-pill" data-motion="scale-in"
+                    style="background: var(--status-warning-bg); color: var(--status-warning-fg);">
                     <i class="bi bi-lock-fill"></i> Locked
                 </li>
                 {% endif %}
@@ -96,17 +126,19 @@
     </div>
 
     {# ───────── Account details ───────── #}
-    <section class="profile-section">
+    <section class="profile-section"
+             data-motion="fade-up" data-motion-delay="200">
         <div class="profile-section-head" style="cursor:default;">
             <h2 class="profile-section-title">Account</h2>
         </div>
         <div class="profile-section-body">
-            <dl class="profile-fields">
-                <div class="profile-field">
+            <dl class="profile-fields"
+                data-motion-orchestrate='{"staggerChildren":0.04,"delayChildren":0.05}'>
+                <div class="profile-field" data-motion="fade-up">
                     <dt>Username</dt>
-                    <dd>{{ account.username }}</dd>
+                    <dd class="font-monospace">{{ account.username }}</dd>
                 </div>
-                <div class="profile-field">
+                <div class="profile-field" data-motion="fade-up">
                     <dt>Email</dt>
                     <dd>
                         <span>{{ account.email|default:"—" }}</span>
@@ -123,10 +155,10 @@
                         {% endif %}
                     </dd>
                 </div>
-                <div class="profile-field">
+                <div class="profile-field" data-motion="fade-up">
                     <dt>Phone</dt>
                     <dd>
-                        <span>{{ account.phone_number|default:"—" }}</span>
+                        <span class="tabular-nums">{{ account.phone_number|default:"—" }}</span>
                         {% if account.phone_number %}
                             {% if account.phone_verified %}
                             <span class="verify-badge verify-ok">
@@ -140,26 +172,26 @@
                         {% endif %}
                     </dd>
                 </div>
-                <div class="profile-field">
+                <div class="profile-field" data-motion="fade-up">
                     <dt>Role</dt>
                     <dd>{{ account.get_role_display }}</dd>
                 </div>
-                <div class="profile-field">
+                <div class="profile-field" data-motion="fade-up">
                     <dt>Preferred language</dt>
                     <dd>{{ account.get_preferred_language_display }}</dd>
                 </div>
-                <div class="profile-field">
+                <div class="profile-field" data-motion="fade-up">
                     <dt>Joined</dt>
-                    <dd>{{ account.date_joined|date:"j M Y, H:i" }}</dd>
+                    <dd class="tabular-nums">{{ account.date_joined|date:"j M Y, H:i" }}</dd>
                 </div>
-                <div class="profile-field">
+                <div class="profile-field" data-motion="fade-up">
                     <dt>Last login</dt>
-                    <dd>
+                    <dd class="tabular-nums">
                         {% if account.last_login %}
                             {{ account.last_login|date:"j M Y, H:i" }}
-                            <span class="muted">({{ account.last_login|timesince }} ago)</span>
+                            <span class="text-secondary small">({{ account.last_login|timesince }} ago)</span>
                         {% else %}
-                            <span class="muted">Never</span>
+                            <span class="text-secondary">Never</span>
                         {% endif %}
                     </dd>
                 </div>
@@ -168,57 +200,76 @@
     </section>
 
     {# ───────── Recent activity ───────── #}
-    <section class="profile-section">
+    <section class="profile-section"
+             data-motion="fade-up" data-motion-delay="280">
         <div class="profile-section-head" style="cursor:default;">
             <h2 class="profile-section-title">Recent activity</h2>
         </div>
-        <div class="profile-section-body" style="padding:0;">
-            <table class="data-table">
+        <div class="profile-section-body p-0" style="padding:0;">
+            {% if audit_logs %}
+            <table class="table table-hover mb-0 align-middle">
                 <thead>
                     <tr>
                         <th>When</th>
                         <th>Action</th>
-                        <th>IP</th>
+                        <th class="text-end">IP</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for log in audit_logs %}
-                    <tr>
-                        <td data-label="When">{{ log.created_at|date:"j M Y, H:i" }}</td>
-                        <td data-label="Action">{{ log.get_action_display }}</td>
-                        <td data-label="IP">{{ log.ip_address|default:"—" }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="3" style="padding:0;">
-                            <div class="empty-state" style="padding:32px 16px;">
-                                <div class="empty-icon">
-                                    <i class="bi bi-clock-history"></i>
-                                </div>
-                                <p class="mb-0">No activity recorded yet.</p>
-                            </div>
+                    <tr data-motion="fade-up"
+                        data-motion-delay="{% widthratio forloop.counter0 1 35 %}"
+                        data-motion-while-hover='{"x":3}'>
+                        <td data-label="When" class="tabular-nums small text-secondary">
+                            {{ log.created_at|date:"j M Y, H:i" }}
+                        </td>
+                        <td data-label="Action" class="fw-medium">
+                            {{ log.get_action_display }}
+                        </td>
+                        <td data-label="IP" class="text-end font-monospace small">
+                            {{ log.ip_address|default:"—" }}
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+            {% else %}
+            <div class="empty-state text-center py-5">
+                <div class="empty-icon mx-auto mb-3"
+                     style="width:64px;height:64px;border-radius:16px;
+                            background:var(--md-surface-bright);
+                            display:flex;align-items:center;justify-content:center;"
+                     data-motion-variant="brandMark"
+                     data-motion-initial="hidden"
+                     data-motion-animate="visible">
+                    <i class="bi bi-clock-history fs-2 text-secondary"></i>
+                </div>
+                <p class="text-secondary small mb-0">No activity recorded yet.</p>
+            </div>
+            {% endif %}
         </div>
     </section>
 
     {# ───────── Danger zone ───────── #}
-    <section class="profile-danger">
+    <section class="profile-danger"
+             data-motion="fade-up" data-motion-delay="360">
         <form method="post"
               action="{% url 'accounts:user_toggle_active' account.pk %}"
               style="width:100%; max-width:320px;">
             {% csrf_token %}
-            <button class="btn btn-outline" type="submit" style="width:100%;">
+            <button class="btn btn-outline" type="submit" style="width:100%;"
+                    data-motion-while-hover='{"y":-2}'
+                    data-motion-while-tap='{"scale":0.97}'
+                    data-ripple>
                 {% if account.is_active %}
-                    <i class="bi bi-slash-circle"></i> Deactivate account
+                    <i class="bi bi-slash-circle me-1"></i> Deactivate account
                 {% else %}
-                    <i class="bi bi-check-circle"></i> Activate account
+                    <i class="bi bi-check-circle me-1"></i> Activate account
                 {% endif %}
             </button>
         </form>
     </section>
 </div>
+
+{% include "partials/dashboard-widgets.html" %}
 {% endblock %}

@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% if object %}Edit enquiry{% else %}New enquiry{% endif %}{% endblock %}
+{% block page_title %}{% if object %}Edit enquiry{% else %}New enquiry{% endif %}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock %}
+
+{% block content %}
+
+{# ─────────── Header ─────────── #}
+<div class="page-header"
+     data-motion="fade-down" data-motion-duration="460">
+  <div>
+    <h1 class="page-title"
+        data-reveal-text
+        data-reveal-delay="40"
+        data-reveal-stagger="22">
+      {% if object %}{{ object.student_name }}{% else %}New enquiry{% endif %}
+    </h1>
+    <p class="text-muted-sm mb-0"
+       data-motion="fade-up" data-motion-delay="200">
+      {% if object %}Update enquiry details{% else %}Capture a lead from the front office{% endif %}
+    </p>
+  </div>
+  <div class="toolbar">
+    <a href="{% url 'admissions:enquiry_list' %}" class="btn btn-secondary"
+       data-motion="fade-up" data-motion-delay="220"
+       data-motion-while-hover='{"y":-2}'
+       data-motion-while-tap='{"scale":0.97}'
+       data-ripple>
+      <i class="bi bi-arrow-left"></i> Back
+    </a>
+  </div>
+</div>
+
+<form method="post" novalidate data-live-form
+      data-motion-orchestrate='{"when":"beforeChildren","staggerChildren":0.08,"delayChildren":0.05}'>
+
+  {% csrf_token %}
+
+  {% if form.non_field_errors %}
+  <div class="alert alert-danger"
+       role="alert"
+       data-motion-variant="notice"
+       data-motion-initial="hidden"
+       data-motion-animate="visible">
+    <i class="bi bi-exclamation-triangle"></i> {{ form.non_field_errors.0 }}
+  </div>
+  {% endif %}
+
+  {# ─────────── Student ─────────── #}
+  <div class="card mb-3"
+       data-motion="fade-up"
+       data-motion-layout>
+    <div class="card-body">
+      {% include "admissions/_form_section.html" with icon="bi-person-badge" title="Student" sub="Who is enquiring" tone="info" %}
+
+      <div class="row g-3"
+           data-motion-orchestrate='{"staggerChildren":0.06,"delayChildren":0.05}'>
+        <div class="col-md-6" data-motion="fade-up">
+          {% include "admissions/_field.html" with field=form.student_name icon="bi-person" %}
+        </div>
+        <div class="col-md-6" data-motion="fade-up">
+          {% include "admissions/_field.html" with field=form.current_class icon="bi-mortarboard" %}
+        </div>
+        <div class="col-md-6" data-motion="fade-up">
+          {% include "admissions/_field.html" with field=form.applying_for icon="bi-bookmark" %}
+        </div>
+        <div class="col-md-6" data-motion="fade-up">
+          {% include "admissions/_field_radio.html" with field=form.boarding_preference icons="bi-sun:bi-moon-stars" %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ─────────── Guardian ─────────── #}
+  <div class="card mb-3"
+       data-motion="fade-up"
+       data-motion-layout>
+    <div class="card-body">
+      {% include "admissions/_form_section.html" with icon="bi-people" title="Guardian" sub="Who to contact about this enquiry" tone="info" %}
+
+      <div class="row g-3"
+           data-motion-orchestrate='{"staggerChildren":0.06,"delayChildren":0.05}'>
+        <div class="col-md-6" data-motion="fade-up">
+          {% include "admissions/_field.html" with field=form.parent_name icon="bi-person" %}
+        </div>
+        <div class="col-md-6" data-motion="fade-up">
+          {% include "admissions/_field.html" with field=form.guardian_phone icon="bi-telephone" %}
+        </div>
+        <div class="col-md-6" data-motion="fade-up">
+          {% include "admissions/_field.html" with field=form.guardian_email icon="bi-envelope" %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ─────────── Enquiry details ─────────── #}
+  <div class="card mb-3"
+       data-motion="fade-up"
+       data-motion-layout>
+    <div class="card-body">
+      {% include "admissions/_form_section.html" with icon="bi-megaphone" title="Enquiry details" sub="When and how it came in" tone="accent" %}
+
+      <div class="row g-3"
+           data-motion-orchestrate='{"staggerChildren":0.06,"delayChildren":0.05}'>
+        <div class="col-md-6" data-motion="fade-up">
+          {% include "admissions/_field.html" with field=form.source icon="bi-broadcast" %}
+        </div>
+        <div class="col-md-6" data-motion="fade-up">
+          {% include "admissions/_field.html" with field=form.enquiry_date icon="bi-calendar-event" %}
+        </div>
+        <div class="col-md-6" data-motion="fade-up">
+          {% include "admissions/_field.html" with field=form.follow_up_due icon="bi-bell" %}
+        </div>
+        <div class="col-12" data-motion="fade-up">
+          {% include "admissions/_field.html" with field=form.notes %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="profile-actions-bar"
+       data-motion="fade-up" data-motion-delay="280">
+    <a href="{% url 'admissions:enquiry_list' %}" class="btn btn-outline"
+       data-motion-while-hover='{"y":-2}'
+       data-motion-while-tap='{"scale":0.97}'
+       data-ripple>
+      Cancel
+    </a>
+    <button type="submit" class="btn btn-primary"
+            data-motion-while-hover='{"y":-2,"scale":1.02}'
+            data-motion-while-tap='{"scale":0.97}'
+            data-ripple>
+      <i class="bi bi-check2"></i>
+      {% if object %}Save changes{% else %}Record enquiry{% endif %}
+    </button>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/admissions-form.js' %}" defer></script>
+{% endblock %}

@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Enquiries{% endblock %}
+{% block page_title %}Enquiries{% endblock %}
+
+{% block content %}
+
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text
+            data-reveal-delay="40"
+            data-reveal-stagger="22">Enquiries</h1>
+        <p class="text-secondary small mb-0">
+            <span class="tabular-nums"
+                  data-counter="{{ page_obj.paginator.count|default:0 }}"
+                  data-counter-duration="800">{{ page_obj.paginator.count|default:0 }}</span>
+            total
+        </p>
+    </div>
+    <a class="btn btn-primary btn-sm toolbar-add"
+       href="{% url 'admissions:enquiry_create' %}"
+       data-motion="fade-up" data-motion-delay="140"
+       data-motion-while-hover='{"y":-2,"scale":1.02}'
+       data-motion-while-tap='{"scale":0.97}'
+       data-ripple>
+        <i class="bi bi-plus-lg me-1"></i> New enquiry
+    </a>
+</div>
+
+<form method="get" class="row g-2 mb-3" role="search"
+      data-motion="fade-up" data-motion-delay="120">
+    <div class="col-12 col-md-6 col-lg-5">
+        <input type="search" name="q" class="input input-search w-100"
+               placeholder="Search name or phone…"
+               value="{{ request.GET.q }}">
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+        <select name="status" class="input w-100">
+            <option value="">All statuses</option>
+            {% for value, label in filter.form.status.field.choices %}
+            <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>
+                {{ label }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+        <select name="source" class="input w-100">
+            <option value="">All sources</option>
+            {% for value, label in filter.form.source.field.choices %}
+            <option value="{{ value }}" {% if request.GET.source == value %}selected{% endif %}>
+                {{ label }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-12 col-md-auto">
+        <button class="btn btn-secondary w-100" type="submit"
+                data-motion-while-hover='{"y":-2}'
+                data-motion-while-tap='{"scale":0.97}'
+                data-ripple>
+            <i class="bi bi-search me-1"></i> Filter
+        </button>
+    </div>
+</form>
+
+<div class="card"
+     data-motion="fade-up" data-motion-delay="180"
+     style="overflow:hidden;">
+    <div class="card-body p-0">
+        {% if enquiries %}
+        <table class="table table-hover mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Guardian</th>
+                    <th>Source</th>
+                    <th>Applying for</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in enquiries %}
+                <tr data-motion="fade-up"
+                    data-motion-delay="{% widthratio forloop.counter0 1 30 %}"
+                    data-motion-while-hover='{"x":3}'>
+                    <td data-label="Student">
+                        <div class="fw-medium">{{ e.student_name }}</div>
+                        <div class="text-secondary small">{{ e.enquiry_date|date:"j M Y" }}</div>
+                    </td>
+                    <td data-label="Guardian">
+                        <div>{{ e.parent_name }}</div>
+                        <div class="text-secondary small">{{ e.guardian_phone }}</div>
+                    </td>
+                    <td data-label="Source">{{ e.get_source_display }}</td>
+                    <td data-label="Applying for">{{ e.applying_for }}</td>
+                    <td data-label="Status">
+                        {% if e.status == 'new' %}
+                        <span class="badge rounded-pill bg-info-subtle text-info-emphasis">
+                            <span class="badge-dot"></span> New
+                        </span>
+                        {% elif e.status == 'followed_up' %}
+                        <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis">
+                            <span class="badge-dot"></span> Followed up
+                        </span>
+                        {% elif e.status == 'converted' %}
+                        <span class="badge rounded-pill bg-success-subtle text-success-emphasis">
+                            <span class="badge-dot"></span> Converted
+                        </span>
+                        {% else %}
+                        <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis">
+                            <span class="badge-dot"></span> Lost
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="actions text-end">
+                        <a class="btn btn-ghost btn-sm btn-icon"
+                           href="{% url 'admissions:enquiry_detail' e.pk %}"
+                           aria-label="View enquiry"
+                           data-motion-while-tap='{"scale":0.9}'>
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        <a class="btn btn-ghost btn-sm btn-icon"
+                           href="{% url 'admissions:enquiry_update' e.pk %}"
+                           aria-label="Edit enquiry"
+                           data-motion-while-tap='{"scale":0.9}'>
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state text-center py-5">
+            <div class="empty-icon mx-auto mb-3"
+                 style="width:64px;height:64px;border-radius:16px;
+                        background:var(--md-surface-bright);
+                        display:flex;align-items:center;justify-content:center;">
+                <i class="bi bi-megaphone fs-2 text-secondary"></i>
+            </div>
+            <h3 class="h6 fw-semibold mb-1">No enquiries found</h3>
+            <p class="text-secondary small mb-3">Try a different search, or record the first enquiry.</p>
+            <a class="btn btn-primary btn-sm"
+               href="{% url 'admissions:enquiry_create' %}"
+               data-motion-while-hover='{"y":-2}'
+               data-motion-while-tap='{"scale":0.97}'
+               data-ripple>
+                <i class="bi bi-plus-lg me-1"></i> New enquiry
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% include "admissions/_pagination.html" with page_obj=page_obj extra_query=extra_query %}
+
+<a href="{% url 'admissions:enquiry_create' %}" class="fab" aria-label="New enquiry"
+   data-motion="scale-in" data-motion-delay="500"
+   data-motion-while-hover='{"scale":1.06}'
+   data-motion-while-tap='{"scale":0.92}'>
+    <i class="bi bi-plus-lg"></i>
+</a>
+
+{% include "partials/dashboard-widgets.html" %}
+{% endblock %}

@@ -1,65 +1,464 @@
 {% extends "base.html" %}
-{% block page_title %}Student Details{% endblock %}
+{% load static %}
+{% block page_title %}{{ student.full_name }}{% endblock %}
+
 {% block content %}
-<div class="row g-4">
-<div class="col-lg-5">
-<div class="card"><div class="card-header d-flex justify-content-between">
-    <h5 class="mb-0 fw-bold">{{ student.full_name }}</h5>
+
+{# ═══════════════════ Page header ═══════════════════ #}
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
     <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text
+            data-reveal-delay="60"
+            data-reveal-stagger="26">{{ student.full_name }}</h1>
+        <p class="text-secondary small mb-0">
+            {{ student.student_id }} · {{ student.class_display|default:"—" }}
+        </p>
+    </div>
+
+    {% if current_role == 'admin' %}
+    <div class="d-flex gap-2"
+         data-motion="fade-up" data-motion-delay="180">
+        <a class="btn btn-secondary btn-sm"
+           href="{% url 'students:update' student.pk %}"
+           data-motion-while-hover='{"y":-2}'
+           data-motion-while-tap='{"scale":0.97}'
+           data-ripple>
+            <i class="bi bi-pencil me-1"></i> Edit
+        </a>
+        <button class="btn btn-secondary btn-sm"
+                type="button"
+                onclick="window.print()"
+                data-motion-while-hover='{"y":-2}'
+                data-motion-while-tap='{"scale":0.97}'
+                data-ripple>
+            <i class="bi bi-printer"></i>
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<div class="row g-4">
+
+    {# ═══════════════════ LEFT COLUMN ═══════════════════ #}
+    <div class="col-lg-5">
+
+        {# ─── Profile card with tilt + spotlight ─── #}
+        <div class="card mb-3"
+             data-motion="fade-up" data-motion-delay="60"
+             data-tilt="3"
+             data-spotlight>
+            <div class="card-body">
+
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    {% if student.photo %}
+                    <img src="{{ student.photo.url }}"
+                         alt="{{ student.full_name }}"
+                         class="rounded-3 flex-shrink-0"
+                         style="width:72px;height:72px;object-fit:cover;"
+                         data-motion="scale-in" data-motion-delay="180">
+                    {% else %}
+                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 fw-bold"
+                         style="width:72px;height:72px;font-size:26px;
+                                background:linear-gradient(135deg,rgba(26,86,50,.14),var(--md-primary));
+                                color:#fff;"
+                         data-motion-variant="brandMark"
+                         data-motion-initial="hidden"
+                         data-motion-animate="visible"
+                         data-motion-delay="160">
+                        {{ student.full_name|slice:":1"|upper }}
+                    </div>
+                    {% endif %}
+
+                    <div class="min-w-0 flex-grow-1">
+                        <div class="fw-bold text-truncate">{{ student.full_name }}</div>
+                        <div class="small text-secondary mb-2">
+                            {{ student.class_display|default:"No class" }}
+                        </div>
+                        <span class="badge rounded-pill
+                            {% if student.is_archived %}bg-secondary-subtle text-secondary-emphasis
+                            {% else %}bg-success-subtle text-success-emphasis{% endif %}">
+                            <i class="bi bi-circle-fill me-1"
+                               style="font-size:6px;vertical-align:middle;"></i>
+                            {{ student.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+
+                {# ─── KPI strip: attendance ring · avg grade · fee progress ─── #}
+                <div class="row g-3 mb-3">
+
+                    {# Attendance ring #}
+                    <div class="col-4">
+                        <div class="text-center">
+                            <div class="position-relative d-inline-block"
+                                 style="color:var(--md-primary);"
+                                 data-motion="scale-in" data-motion-delay="240">
+                                <svg viewBox="0 0 36 36"
+                                     style="width:56px;height:56px;display:block;">
+                                    <circle cx="18" cy="18" r="15.9155"
+                                            fill="none" stroke="currentColor"
+                                            stroke-opacity="0.14" stroke-width="3"/>
+                                    <circle cx="18" cy="18" r="15.9155"
+                                            fill="none" stroke="currentColor" stroke-width="3"
+                                            stroke-linecap="round"
+                                            transform="rotate(-90 18 18)"
+                                            data-ring="{{ student.attendance_percentage|default:0 }}"
+                                            data-ring-delay="500"/>
+                                </svg>
+                            </div>
+                            <div class="small text-secondary mt-1">Attendance</div>
+                            <div class="fw-bold tabular-nums small"
+                                 data-counter="{{ student.attendance_percentage|default:0 }}"
+                                 data-counter-suffix="%" data-counter-decimals="0">0%</div>
+                        </div>
+                    </div>
+
+                    {# Average grade #}
+                    <div class="col-4 text-center">
+                        <div class="d-flex align-items-center justify-content-center"
+                             style="height:56px;color:#0d6efd;"
+                             data-motion-variant="brandMark"
+                             data-motion-initial="hidden"
+                             data-motion-animate="visible"
+                             data-motion-delay="340">
+                            <i class="bi bi-award fs-2"></i>
+                        </div>
+                        <div class="small text-secondary mt-1">Avg Grade</div>
+                        <div class="fw-bold small">
+                            {{ student.average_grade|default:"—" }}
+                        </div>
+                    </div>
+
+                    {# Fee balance #}
+                    <div class="col-4 text-center">
+                        <div class="d-flex align-items-center justify-content-center"
+                             style="height:56px;color:var(--md-error);"
+                             data-motion-variant="brandMark"
+                             data-motion-initial="hidden"
+                             data-motion-animate="visible"
+                             data-motion-delay="440">
+                            <i class="bi bi-wallet2 fs-2"></i>
+                        </div>
+                        <div class="small text-secondary mt-1">Balance</div>
+                        <div class="fw-bold small tabular-nums">
+                            MK <span data-counter="{{ student.balance|default:0 }}"
+                                     data-counter-duration="1200">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                {# Fee progress bar #}
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span class="text-secondary">Fees paid</span>
+                        <span class="fw-medium tabular-nums">
+                            MK {{ student.fees_paid }} · {{ student.fees_percentage }}%
+                        </span>
+                    </div>
+                    <div class="progress" style="height:6px;background:var(--md-surface-3);">
+                        <div class="progress-bar"
+                             data-progress="{{ student.fees_percentage|default:0 }}"
+                             data-progress-delay="620"
+                             data-progress-duration="1100"
+                             style="background:linear-gradient(90deg,var(--md-primary),#2d7a4a);"></div>
+                    </div>
+                </div>
+
+                {# Detail rows — staggered #}
+                <dl class="mb-0"
+                    data-motion-orchestrate='{"staggerChildren":0.04,"delayChildren":0.6}'>
+
+                    <div class="d-flex justify-content-between py-2 border-top"
+                         data-motion="fade-up">
+                        <dt class="small text-secondary mb-0">Student ID</dt>
+                        <dd class="small fw-medium mb-0">{{ student.student_id }}</dd>
+                    </div>
+
+                    <div class="d-flex justify-content-between py-2 border-top"
+                         data-motion="fade-up">
+                        <dt class="small text-secondary mb-0">Gender</dt>
+                        <dd class="small fw-medium mb-0">{{ student.gender|default:"—" }}</dd>
+                    </div>
+
+                    <div class="d-flex justify-content-between py-2 border-top"
+                         data-motion="fade-up">
+                        <dt class="small text-secondary mb-0">Date of Birth</dt>
+                        <dd class="small fw-medium mb-0">{{ student.date_of_birth|default:"—" }}</dd>
+                    </div>
+
+                    <div class="d-flex justify-content-between py-2 border-top"
+                         data-motion="fade-up">
+                        <dt class="small text-secondary mb-0">Guardian</dt>
+                        <dd class="small fw-medium mb-0 text-end">
+                            {{ student.guardian_name|default:"—" }}
+                            {% if student.guardian_phone %}
+                            <br><a href="tel:{{ student.guardian_phone }}"
+                                   class="text-secondary">{{ student.guardian_phone }}</a>
+                            {% endif %}
+                        </dd>
+                    </div>
+
+                    {% if student.enrolled_subjects.all %}
+                    <div class="py-2 border-top"
+                         data-motion="fade-up">
+                        <dt class="small text-secondary mb-2">Enrolled Subjects</dt>
+                        <dd class="mb-0 d-flex flex-wrap gap-1">
+                            {% for subject in student.enrolled_subjects.all %}
+                            <a href="{% url 'syllabus:subject_detail' subject.pk %}"
+                               class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis text-decoration-none"
+                               data-motion="scale-in"
+                               data-motion-delay="{% widthratio forloop.counter0 1 30 %}"
+                               data-motion-while-hover='{"scale":1.08}'>
+                                {{ subject.code }}
+                            </a>
+                            {% endfor %}
+                        </dd>
+                    </div>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+
+        {# ─── Status update (admin) ─── #}
         {% if current_role == 'admin' %}
-        <a class="btn btn-sm btn-outline-secondary" href="{% url 'students:update' student.pk %}"><i class="bi bi-pencil"></i></a>
-        <button class="btn btn-sm btn-outline-secondary" onclick="window.print()"><i class="bi bi-printer"></i></button>
+        <div class="card mb-3"
+             data-motion="fade-up" data-motion-delay="180">
+            <div class="card-header">
+                <h6 class="mb-0 fw-bold">Update Status</h6>
+            </div>
+            <div class="card-body">
+                <form method="post"
+                      action="{% url 'students:archive' student.pk %}"
+                      class="d-flex gap-2">
+                    {% csrf_token %}
+                    <select name="status" class="form-select form-select-sm">
+                        {% for value, label in student.Status.choices %}
+                        <option value="{{ value }}" {% if value == student.status %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <button class="btn btn-sm btn-primary"
+                            type="submit"
+                            data-motion-while-hover='{"y":-1}'
+                            data-motion-while-tap='{"scale":0.97}'
+                            data-ripple>
+                        Update
+                    </button>
+                </form>
+            </div>
+        </div>
         {% endif %}
+
+        {# ─── Guardian contacts ─── #}
+        <div class="card"
+             data-motion="fade-up" data-motion-delay="240">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h6 class="mb-0 fw-bold">Guardian Contacts</h6>
+                {% if current_role == 'admin' %}
+                <a class="btn btn-sm btn-primary"
+                   href="{% url 'students:guardian_add' student.pk %}"
+                   data-motion-while-hover='{"y":-1}'
+                   data-motion-while-tap='{"scale":0.94}'
+                   data-ripple>
+                    <i class="bi bi-plus"></i>
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body p-0">
+                {% if guardian_contacts %}
+                <ul class="list-group list-group-flush">
+                    {% for g in guardian_contacts %}
+                    <li class="list-group-item d-flex align-items-center justify-content-between"
+                        data-motion="fade-up"
+                        data-motion-delay="{% widthratio forloop.counter0 1 40 %}"
+                        data-motion-while-hover='{"x": 3}'>
+                        <div class="d-flex align-items-center gap-3 min-w-0">
+                            <span class="rounded-2 d-flex align-items-center justify-content-center flex-shrink-0"
+                                  style="width:36px;height:36px;
+                                         background:rgba(26,86,50,.12);color:var(--md-primary);">
+                                <i class="bi bi-person-lines-fill"></i>
+                            </span>
+                            <div class="min-w-0">
+                                <div class="fw-medium text-truncate">{{ g.name }}</div>
+                                <div class="small text-secondary text-truncate">
+                                    {{ g.get_relationship_display }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-end small">
+                            <div class="tabular-nums">{{ g.phone_number }}</div>
+                            {% if g.is_primary %}
+                            <span class="badge rounded-pill bg-success-subtle text-success-emphasis">
+                                <i class="bi bi-check-circle me-1"></i>Primary
+                            </span>
+                            {% endif %}
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="empty-state text-center py-4">
+                    <p class="text-secondary small mb-0">No additional contacts</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# ═══════════════════ RIGHT COLUMN ═══════════════════ #}
+    <div class="col-lg-7">
+
+        {# ─── Recent Attendance ─── #}
+        <div class="card mb-3"
+             data-motion="fade-up" data-motion-delay="120">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h6 class="mb-0 fw-bold">Recent Attendance</h6>
+                <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">
+                    {{ recent_attendance|length }}
+                </span>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_attendance %}
+                <table class="table table-sm table-hover mb-0 align-middle">
+                    <thead>
+                        <tr><th>Date</th><th class="text-end">Status</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for a in recent_attendance %}
+                        <tr data-motion="fade-up"
+                            data-motion-delay="{% widthratio forloop.counter0 1 35 %}"
+                            data-motion-while-hover='{"x": 3}'>
+                            <td data-label="Date" class="tabular-nums">{{ a.date }}</td>
+                            <td data-label="Status" class="text-end">
+                                <span class="badge rounded-pill
+                                    {% if a.status == 'present' %}bg-success-subtle text-success-emphasis
+                                    {% elif a.status == 'absent' %}bg-danger-subtle text-danger-emphasis
+                                    {% elif a.status == 'late' %}bg-warning-subtle text-warning-emphasis
+                                    {% else %}bg-secondary-subtle text-secondary-emphasis{% endif %}">
+                                    {{ a.get_status_display }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state text-center py-4">
+                    <p class="text-secondary small mb-0">No attendance recorded</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {# ─── Recent Grades ─── #}
+        <div class="card mb-3"
+             data-motion="fade-up" data-motion-delay="200">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h6 class="mb-0 fw-bold">Recent Grades</h6>
+                <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">
+                    {{ grades|length }}
+                </span>
+            </div>
+            <div class="card-body p-0">
+                {% if grades %}
+                <table class="table table-sm table-hover mb-0 align-middle">
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Exam</th>
+                            <th>Score</th>
+                            <th class="text-end">Grade</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for g in grades %}
+                        <tr data-motion="fade-up"
+                            data-motion-delay="{% widthratio forloop.counter0 1 45 %}"
+                            data-motion-while-hover='{"x": 3}'>
+                            <td data-label="Subject" class="fw-medium">{{ g.subject }}</td>
+                            <td data-label="Exam" class="text-secondary small">{{ g.exam }}</td>
+                            <td data-label="Score">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="tabular-nums fw-medium small">{{ g.score }}%</span>
+                                    <div class="progress flex-grow-1"
+                                         style="height:4px;max-width:70px;background:var(--md-surface-3);">
+                                        <div class="progress-bar"
+                                             data-progress="{{ g.score }}"
+                                             data-progress-delay="{% widthratio forloop.counter0 1 80 %}"
+                                             style="background:var(--md-primary);"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td data-label="Grade" class="text-end">
+                                <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">
+                                    {{ g.grade }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state text-center py-4">
+                    <p class="text-secondary small mb-0">No grades recorded</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {# ─── Fee payments ─── #}
+        <div class="card"
+             data-motion="fade-up" data-motion-delay="280">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h6 class="mb-0 fw-bold">Fee Payment History</h6>
+                <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">
+                    {{ transactions|length }}
+                </span>
+            </div>
+            <div class="card-body p-0">
+                {% if transactions %}
+                <table class="table table-sm table-hover mb-0 align-middle">
+                    <thead>
+                        <tr>
+                            <th>Receipt</th>
+                            <th>Amount</th>
+                            <th>Date</th>
+                            <th class="text-end">Method</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in transactions %}
+                        <tr data-motion="fade-up"
+                            data-motion-delay="{% widthratio forloop.counter0 1 45 %}"
+                            data-motion-while-hover='{"x": 3}'>
+                            <td data-label="Receipt" class="small font-monospace">{{ t.receipt_no }}</td>
+                            <td data-label="Amount" class="tabular-nums fw-medium">
+                                MK {{ t.amount }}
+                            </td>
+                            <td data-label="Date" class="tabular-nums small text-secondary">
+                                {{ t.date }}
+                            </td>
+                            <td data-label="Method" class="text-end">
+                                <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">
+                                    {{ t.method }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state text-center py-4">
+                    <p class="text-secondary small mb-0">No payments recorded</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
     </div>
 </div>
-<div class="card-body">
-    {% if student.photo %}<img src="{{ student.photo.url }}" class="rounded mb-3" style="max-width:120px;">{% endif %}
-    <p><strong>ID:</strong> {{ student.student_id }}</p>
-    <p><strong>Gender:</strong> {{ student.gender }}</p>
-    <p><strong>Class:</strong> {{ student.class_display }}</p>
-    <p><strong>DOB:</strong> {{ student.date_of_birth }}</p>
-    <p><strong>Guardian:</strong> {{ student.guardian_name }} ({{ student.guardian_phone }})</p>
-    <p><strong>Attendance:</strong> {{ student.attendance_percentage }}%</p>
-    <p><strong>Average Grade:</strong> {{ student.average_grade }}</p>
-    <p><strong>Fees Paid:</strong> MK {{ student.fees_paid }} ({{ student.fees_percentage }}%)</p>
-    <p><strong>Balance:</strong> MK {{ student.balance }}</p>
-    <p><strong>Status:</strong> <span class="badge {% if student.is_archived %}bg-secondary{% else %}bg-success{% endif %}">{{ student.get_status_display }}</span></p>
-    <p><strong>Enrolled Subjects:</strong>
-    {% for subject in student.enrolled_subjects.all %}<a href="{% url 'syllabus:subject_detail' subject.pk %}" class="badge bg-light text-dark border text-decoration-none">{{ subject.code }}</a>{% empty %}<span class="text-secondary">None recorded</span>{% endfor %}
-    </p>
-    {% if current_role == 'admin' %}
-    <form method="post" action="{% url 'students:archive' student.pk %}" class="d-flex gap-2 mt-2">
-        {% csrf_token %}
-        <select name="status" class="form-select form-select-sm">
-            {% for value, label in student.Status.choices %}<option value="{{ value }}" {% if value == student.status %}selected{% endif %}>{{ label }}</option>{% endfor %}
-        </select>
-        <button class="btn btn-sm btn-outline-primary" type="submit">Update Status</button>
-    </form>
-    {% endif %}
-</div></div>
 
-<div class="card mt-3"><div class="card-header d-flex justify-content-between">
-    <h6 class="mb-0 fw-bold">Guardian Contacts</h6>
-    {% if current_role == 'admin' %}<a class="btn btn-sm btn-outline-primary" href="{% url 'students:guardian_add' student.pk %}"><i class="bi bi-plus"></i></a>{% endif %}
-</div>
-<div class="card-body p-0"><table class="table table-sm mb-0">
-<thead><tr><th>Name</th><th>Relationship</th><th>Phone</th><th>Primary</th></tr></thead>
-<tbody>{% for g in guardian_contacts %}<tr><td>{{ g.name }}</td><td>{{ g.get_relationship_display }}</td><td>{{ g.phone_number }}</td><td>{% if g.is_primary %}<i class="bi bi-check-circle text-success"></i>{% endif %}</td></tr>{% empty %}<tr><td colspan="4">No additional contacts</td></tr>{% endfor %}</tbody>
-</table></div></div>
-</div>
-
-<div class="col-lg-7">
-<div class="card mb-3"><div class="card-header"><h6 class="mb-0 fw-bold">Recent Attendance</h6></div>
-<div class="card-body p-0"><table class="table table-sm mb-0"><thead><tr><th>Date</th><th>Status</th></tr></thead>
-<tbody>{% for a in recent_attendance %}<tr><td>{{ a.date }}</td><td>{{ a.get_status_display }}</td></tr>{% empty %}<tr><td colspan="2">No attendance recorded</td></tr>{% endfor %}</tbody></table></div></div>
-
-<div class="card mb-3"><div class="card-header"><h6 class="mb-0 fw-bold">Recent Grades</h6></div>
-<div class="card-body p-0"><table class="table table-sm mb-0"><thead><tr><th>Subject</th><th>Exam</th><th>Score</th><th>Grade</th></tr></thead>
-<tbody>{% for g in grades %}<tr><td>{{ g.subject }}</td><td>{{ g.exam }}</td><td>{{ g.score }}%</td><td>{{ g.grade }}</td></tr>{% empty %}<tr><td colspan="4">No grades recorded</td></tr>{% endfor %}</tbody></table></div></div>
-
-<div class="card"><div class="card-header"><h6 class="mb-0 fw-bold">Fee Payment History</h6></div>
-<div class="card-body p-0"><table class="table table-sm mb-0"><thead><tr><th>Receipt</th><th>Amount</th><th>Date</th><th>Method</th></tr></thead>
-<tbody>{% for t in transactions %}<tr><td>{{ t.receipt_no }}</td><td>MK {{ t.amount }}</td><td>{{ t.date }}</td><td>{{ t.method }}</td></tr>{% empty %}<tr><td colspan="4">No payments recorded</td></tr>{% endfor %}</tbody></table></div></div>
-</div>
-</div>
+{% include "partials/dashboard-widgets.html" %}
 {% endblock %}

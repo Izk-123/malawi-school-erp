@@ -1,0 +1,47 @@
+{% load admissions_extras %}
+{% comment %}
+    Radio cards — horizontal pill layout with icon + label.
+
+    Usage:
+        {% include "admissions/_field_radio.html" with field=form.boarding_preference icons="bi-sun:bi-moon-stars" %}
+        {% include "admissions/_field_radio.html" with field=form.stream cols="3" %}
+
+    `icons` is a colon-separated list of Bootstrap icon names, one per option.
+    `cols` may be "1", "2" (default), "3", or "4".
+{% endcomment %}
+<div class="field{% if field.errors %} is-invalid{% endif %}">
+  <label class="field-label">
+    {{ field.label }}{% if field.field.required %}<span class="required">*</span>{% endif %}
+  </label>
+
+  <div class="radio-cards{% if cols %} cols-{{ cols }}{% endif %}">
+    {% for value, label in field.field.choices %}
+      <label class="radio-card">
+        <input type="radio"
+               name="{{ field.name }}"
+               value="{{ value }}"
+               {% if field.value|stringformat:"s" == value|stringformat:"s" %}checked{% endif %}
+               {% if field.field.required and forloop.first %}required{% endif %}>
+        <span class="radio-card-inner">
+          {% if icons %}
+            {% with icons|split:":" as icon_list %}
+              {% with icon_list|at:forloop.counter0 as icon_name %}
+                {% if icon_name %}<i class="bi {{ icon_name }} radio-card-icon" aria-hidden="true"></i>{% endif %}
+              {% endwith %}
+            {% endwith %}
+          {% endif %}
+          <span class="radio-card-label">{{ label }}</span>
+        </span>
+      </label>
+    {% endfor %}
+  </div>
+
+  {% if field.help_text %}
+    <p class="field-help">{{ field.help_text }}</p>
+  {% endif %}
+  {% if field.errors %}
+    <p class="field-error" role="alert">
+      <i class="bi bi-exclamation-circle"></i> {{ field.errors.0 }}
+    </p>
+  {% endif %}
+</div>

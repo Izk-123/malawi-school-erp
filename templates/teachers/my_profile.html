@@ -1,8 +1,131 @@
 {% extends "base.html" %}
-{% load crispy_forms_tags %}
+{% load static crispy_forms_tags %}
 {% block page_title %}My Profile{% endblock %}
+
 {% block content %}
-<div class="row"><div class="col-lg-6">
-<div class="card"><div class="card-body">{% crispy form %}</div></div>
-</div></div>
+
+{# ─── Header ─── #}
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text
+            data-reveal-delay="40"
+            data-reveal-stagger="22">My profile</h1>
+        <p class="text-secondary small mb-0">
+            Update your personal details and contact information.
+        </p>
+    </div>
+</div>
+
+<div class="row g-4">
+
+    {# ─── Profile summary card ─── #}
+    <div class="col-lg-4">
+        <div class="card"
+             data-motion="fade-up" data-motion-delay="60"
+             data-tilt="3"
+             data-spotlight>
+            <div class="card-body text-center">
+
+                <div class="mx-auto mb-3 d-flex align-items-center justify-content-center fw-bold"
+                     style="width:96px;height:96px;border-radius:50%;font-size:36px;
+                            background:linear-gradient(135deg,rgba(26,86,50,.14),var(--md-primary));
+                            color:#fff;
+                            border:3px solid var(--md-surface);
+                            box-shadow:0 4px 16px rgba(0,0,0,0.10);"
+                     data-motion-variant="brandMark"
+                     data-motion-initial="hidden"
+                     data-motion-animate="visible"
+                     data-motion-delay="180">
+                    {{ user.username|slice:":1"|upper }}
+                </div>
+
+                <h5 class="fw-bold mb-1"
+                    data-motion="fade-up" data-motion-delay="260">
+                    {{ user.get_full_name|default:user.username }}
+                </h5>
+
+                <p class="text-secondary small mb-3"
+                   data-motion="fade-up" data-motion-delay="320">
+                    {{ user.email|default:"No email set" }}
+                </p>
+
+                {% if user.get_role_display %}
+                <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis"
+                      data-motion="scale-in" data-motion-delay="380">
+                    <i class="bi bi-shield-check me-1"></i>
+                    {{ user.get_role_display }}
+                </span>
+                {% endif %}
+
+                <div class="mt-4 pt-3 border-top">
+                    <div class="row g-2 text-center"
+                         data-motion-orchestrate='{"staggerChildren":0.08,"delayChildren":0.5}'>
+                        <div class="col-6" data-motion="fade-up">
+                            <div class="small text-secondary">Username</div>
+                            <div class="fw-medium small text-truncate">
+                                {{ user.username }}
+                            </div>
+                        </div>
+                        <div class="col-6" data-motion="fade-up">
+                            <div class="small text-secondary">Status</div>
+                            <div class="fw-medium small">
+                                {% if user.is_active %}
+                                <span class="text-success">
+                                    <i class="bi bi-circle-fill me-1"
+                                       style="font-size:6px;vertical-align:middle;"></i>Active
+                                </span>
+                                {% else %}
+                                <span class="text-secondary">Inactive</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ─── Edit form card ─── #}
+    <div class="col-lg-8">
+        <div class="card"
+             data-motion="fade-up" data-motion-delay="140"
+             data-motion-layout>
+            <div class="card-header">
+                <h6 class="mb-0 fw-bold">Edit profile</h6>
+            </div>
+            <div class="card-body">
+                <div class="crispy-form-wrap"
+                     data-motion-orchestrate='{"staggerChildren":0.03,"delayChildren":0.1}'>
+                    {% crispy form %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const form = document.querySelector('.crispy-form-wrap form');
+    if (!form) return;
+
+    form.querySelectorAll(':scope > div').forEach((row, i) => {
+        row.setAttribute('data-motion', 'fade-up');
+        row.setAttribute('data-motion-delay', String(80 + i * 30));
+    });
+
+    form.querySelectorAll('button[type="submit"], input[type="submit"], a.btn').forEach((b) => {
+        b.setAttribute('data-motion-while-hover', '{"y":-2}');
+        b.setAttribute('data-motion-while-tap',   '{"scale":0.97}');
+        b.setAttribute('data-ripple', '');
+    });
+
+    if (window.Motion?.refresh) window.Motion.refresh(form);
+    if (window.MotionPro?.refresh) window.MotionPro.refresh();
+})();
+</script>
 {% endblock %}

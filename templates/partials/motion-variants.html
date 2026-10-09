@@ -1,0 +1,84 @@
+{% comment %}
+  Variant library — resolved by data-motion-variant="<name>".
+  Each variant is a state machine: { hidden: {...}, visible: {...}, exit: {...} }.
+  Any state can be referenced by name (data-motion-while-hover="hovered", etc.).
+  Per-property transitions override the element-level transition.
+{% endcomment %}
+<script type="application/json" id="motion-variants">
+{
+  "heroCard": {
+    "hidden":  { "opacity": 0, "y": 40, "scale": 0.96 },
+    "visible": { "opacity": 1, "y": 0,  "scale": 1,
+                 "transition": { "type": "spring", "stiffness": 260, "damping": 24 } },
+    "hovered": { "y": -4, "scale": 1.015,
+                 "transition": { "type": "spring", "stiffness": 400, "damping": 18 } },
+    "pressed": { "scale": 0.985,
+                 "transition": { "type": "spring", "stiffness": 600, "damping": 22 } },
+    "exit":    { "opacity": 0, "y": -12, "scale": 0.98,
+                 "transition": { "type": "tween", "duration": 0.18, "ease": "expoIn" } }
+  },
+
+  "brandMark": {
+    "hidden":  { "opacity": 0, "scale": 0.5, "rotate": -12 },
+    "visible": { "opacity": 1, "scale": 1,   "rotate": 0,
+                 "transition": { "type": "spring", "stiffness": 420, "damping": 14 } }
+  },
+
+  "notice": {
+    "hidden":  { "opacity": 0, "y": -18, "scale": 0.96 },
+    "visible": { "opacity": 1, "y": 0,   "scale": 1,
+                 "transition": { "type": "spring", "stiffness": 500, "damping": 26 } },
+    "exit":    { "opacity": 0, "y": -12, "scale": 0.96,
+                 "transition": { "type": "tween", "duration": 0.16 } }
+  },
+
+  "listContainer": {
+    "hidden":  {},
+    "visible": { "transition": { "when": "beforeChildren", "staggerChildren": 0.055, "delayChildren": 0.08 } }
+  },
+  "listItem": {
+    "hidden":  { "opacity": 0, "x": -18 },
+    "visible": { "opacity": 1, "x": 0,
+                 "transition": { "type": "spring", "stiffness": 320, "damping": 26 } },
+    "hovered": { "x": 4,
+                 "transition": { "type": "spring", "stiffness": 500, "damping": 20 } }
+  },
+
+  "field": {
+    "hidden":  { "opacity": 0, "y": 14 },
+    "visible": { "opacity": 1, "y": 0,
+                 "transition": { "type": "spring", "stiffness": 300, "damping": 28 } }
+  },
+
+  "ctaButton": {
+    "hidden":  { "opacity": 0, "y": 16, "scale": 0.98 },
+    "visible": { "opacity": 1, "y": 0,  "scale": 1,
+                 "transition": { "type": "spring", "stiffness": 340, "damping": 22 } },
+    "hovered": { "y": -2, "scale": 1.02, "boxShadow": "0 12px 28px rgba(26,86,50,0.28)",
+                 "transition": { "type": "spring", "stiffness": 500, "damping": 18 } },
+    "pressed": { "scale": 0.97,
+                 "transition": { "type": "spring", "stiffness": 700, "damping": 24 } }
+  },
+
+  "shakingError": {
+    "hidden":  { "opacity": 0, "scale": 0.94 },
+    "visible": { "opacity": 1, "scale": 1,
+                 "transition": { "type": "spring", "stiffness": 600, "damping": 12 } },
+    "exit":    { "opacity": 0, "transition": { "duration": 0.15 } }
+  },
+
+  "modalPanel": {
+    "hidden":  { "opacity": 0, "y": 24, "scale": 0.97 },
+    "visible": { "opacity": 1, "y": 0,  "scale": 1,
+                 "transition": { "type": "spring", "stiffness": 320, "damping": 28 } },
+    "exit":    { "opacity": 0, "y": 16, "scale": 0.98,
+                 "transition": { "type": "tween", "duration": 0.18 } }
+  },
+
+  "modalBackdrop": {
+    "hidden":  { "opacity": 0 },
+    "visible": { "opacity": 1, "transition": { "duration": 0.2 } },
+    "exit":    { "opacity": 0, "transition": { "duration": 0.15 } }
+  }
+}
+</script>

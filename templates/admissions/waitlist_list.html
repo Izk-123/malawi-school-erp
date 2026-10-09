@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Waitlist{% endblock %}
+{% block page_title %}Waitlist{% endblock %}
+
+{% block content %}
+
+{# ─────────── Header ─────────── #}
+<div class="page-header"
+     data-motion="fade-down" data-motion-duration="460">
+  <div>
+    <h1 class="page-title"
+        data-reveal-text
+        data-reveal-delay="40"
+        data-reveal-stagger="22">Waitlist</h1>
+    <p class="text-muted-sm mb-0"
+       data-motion="fade-up" data-motion-delay="200">
+      <span class="tabular-nums"
+            data-counter="{{ page_obj.paginator.count|default:0 }}"
+            data-counter-duration="800">{{ page_obj.paginator.count|default:0 }}</span>
+      entries
+    </p>
+  </div>
+  <div class="toolbar"
+       data-motion="fade-up" data-motion-delay="240">
+    <form method="get" class="d-flex gap-2">
+      <select name="class_name" class="input" style="min-width:140px;"
+              onchange="this.form.submit()"
+              data-motion-while-hover='{"y":-1}'>
+        <option value="">All classes</option>
+        <option value="Form 1" {% if request.GET.class_name == 'Form 1' %}selected{% endif %}>Form 1</option>
+        <option value="Form 2" {% if request.GET.class_name == 'Form 2' %}selected{% endif %}>Form 2</option>
+        <option value="Form 3" {% if request.GET.class_name == 'Form 3' %}selected{% endif %}>Form 3</option>
+        <option value="Form 4" {% if request.GET.class_name == 'Form 4' %}selected{% endif %}>Form 4</option>
+      </select>
+    </form>
+  </div>
+</div>
+
+{# ─────────── Table ─────────── #}
+<div class="card"
+     style="padding:0; overflow:hidden;"
+     data-motion="fade-up" data-motion-delay="140">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Applicant</th>
+        <th>Class</th>
+        <th>Added</th>
+        <th style="width:72px;"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in entries %}
+      <tr data-motion="fade-up"
+          data-motion-delay="{% widthratio forloop.counter0 1 35 %}"
+          data-motion-while-hover='{"x":3}'>
+        <td data-label="#" class="tabular-nums">
+          <span class="avatar avatar-sm"
+                data-motion="scale-in"
+                data-motion-delay="{% widthratio forloop.counter0 1 35 %}">
+            {{ e.position }}
+          </span>
+        </td>
+        <td data-label="Applicant">
+          <div class="fw-medium">{{ e.applicant.full_name }}</div>
+          <div class="text-muted-sm">
+            {{ e.applicant.applicant_code }} · {{ e.applicant.guardian_phone }}
+          </div>
+        </td>
+        <td data-label="Class">{{ e.class_name }}{{ e.stream }}</td>
+        <td data-label="Added">{{ e.added_at|date:"j M Y" }}</td>
+        <td class="actions">
+          <a class="btn btn-ghost btn-sm btn-icon"
+             href="{% url 'admissions:applicant_detail' e.applicant.pk %}"
+             aria-label="View applicant"
+             data-motion-while-tap='{"scale":0.9}'>
+            <i class="bi bi-eye"></i>
+          </a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5" style="padding:0;">
+          <div class="empty-state"
+               data-motion="scale-in" data-motion-delay="200">
+            <div class="empty-icon"
+                 data-motion-variant="brandMark"
+                 data-motion-initial="hidden"
+                 data-motion-animate="visible">
+              <i class="bi bi-list-ol"></i>
+            </div>
+            <h3 data-motion="fade-up" data-motion-delay="280">Waitlist is empty</h3>
+            <p data-motion="fade-up" data-motion-delay="340">
+              Applicants are added to the waitlist from their profile page.
+            </p>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% include "admissions/_pagination.html" with page_obj=page_obj extra_query=extra_query %}
+
+{% include "partials/dashboard-widgets.html" %}
+{% endblock %}

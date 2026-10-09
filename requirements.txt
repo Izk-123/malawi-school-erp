@@ -17,3 +17,5 @@ django-money>=3.5
 reportlab>=4.2
 django-mptt>=0.16
 django-tables2>=2.7
+
+

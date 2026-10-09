@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% load static %}
+{% block page_title %}Medication Stock{% endblock %}
+
+{% block content %}
+
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text data-reveal-delay="40" data-reveal-stagger="22">Medication Stock</h1>
+        <p class="text-secondary small mb-0">
+            <span class="tabular-nums" data-counter="{{ stock_items|length }}">{{ stock_items|length }}</span> items tracked
+        </p>
+    </div>
+</div>
+
+<div class="card" data-motion="fade-up" data-motion-delay="120" style="overflow:hidden;">
+    <div class="card-body p-0">
+        {% if stock_items %}
+        <table class="table table-hover mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Name</th><th>Quantity</th>
+                    <th>Reorder</th><th>Expiry</th><th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in stock_items %}
+                <tr data-motion="fade-up"
+                    data-motion-delay="{% widthratio forloop.counter0 1 40 %}">
+                    <td data-label="Name" class="fw-medium">{{ m.name }}</td>
+                    <td data-label="Quantity" class="tabular-nums">{{ m.quantity }}</td>
+                    <td data-label="Reorder" class="tabular-nums text-secondary">{{ m.reorder_level }}</td>
+                    <td data-label="Expiry" class="tabular-nums small">{{ m.expiry_date|default:"—" }}</td>
+                    <td data-label="Status">
+                        {% if m.needs_reorder %}
+                        <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis">Reorder</span>
+                        {% else %}
+                        <span class="badge rounded-pill bg-success-subtle text-success-emphasis">OK</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state text-center py-5">
+            <div class="empty-icon mx-auto mb-3">
+                <i class="bi bi-capsule fs-2 text-secondary"></i>
+            </div>
+            <h3 class="h6 fw-semibold mb-1">No stock recorded</h3>
+            <p class="text-secondary small mb-0">Add medications to track inventory.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% include "partials/dashboard-widgets.html" %}
+{% endblock %}

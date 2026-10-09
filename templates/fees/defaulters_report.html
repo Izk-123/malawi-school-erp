@@ -1,17 +1,120 @@
 {% extends "base.html" %}
+{% load static %}
 {% block page_title %}Fee Defaulters{% endblock %}
+
 {% block content %}
-<form class="row g-2 mb-3" method="get">
-    <div class="col-md-3">
-        <select name="class_name" class="form-select form-select-sm" onchange="this.form.submit()">
-            <option value="">All classes</option>
-            {% for c in classes %}<option value="{{ c }}" {% if request.GET.class_name == c %}selected{% endif %}>{{ c }}</option>{% endfor %}
-        </select>
+
+{# ───── Header ───── #}
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text data-reveal-delay="40" data-reveal-stagger="22">Fee Defaulters</h1>
+        <p class="text-secondary small mb-0">
+            <span class="tabular-nums"
+                  data-counter="{{ students|length }}">{{ students|length }}</span>
+            {{ students|length|pluralize:"student,students" }} with outstanding balances
+        </p>
+    </div>
+    <a class="btn btn-secondary btn-sm"
+       href="{% url 'fees:export_transactions' %}?class_name={{ request.GET.class_name|default:'' }}"
+       data-motion="fade-up" data-motion-delay="140"
+       data-motion-while-hover='{"y":-2}'
+       data-motion-while-tap='{"scale":0.97}'
+       data-ripple>
+        <i class="bi bi-download me-1"></i> Export
+    </a>
+</div>
+
+{# ───── Class filter ───── #}
+<form class="card mb-4" method="get"
+      data-motion="fade-up" data-motion-delay="100">
+    <div class="card-body">
+        <div class="row g-2 align-items-center">
+            <div class="col-12 col-md-4">
+                <label class="form-label small text-secondary fw-semibold mb-1">Class</label>
+                <select name="class_name"
+                        class="form-select"
+                        onchange="this.form.submit()">
+                    <option value="">All classes</option>
+                    {% for c in classes %}
+                    <option value="{{ c }}"
+                            {% if request.GET.class_name == c %}selected{% endif %}>
+                        {{ c }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
     </div>
 </form>
-<div class="card"><div class="card-header"><h5 class="mb-0 fw-bold">Defaulters ({{ students|length }})</h5></div>
-<div class="card-body p-0"><table class="table table-hover mb-0">
-<thead><tr><th>Student</th><th>Class</th><th>Guardian Phone</th><th>Balance</th></tr></thead>
-<tbody>{% for s in students %}<tr><td>{{ s.full_name }}</td><td>{{ s.class_display }}</td><td>{{ s.guardian_phone }}</td><td>MK {{ s.balance }}</td></tr>{% empty %}<tr><td colspan="4">No defaulters found</td></tr>{% endfor %}</tbody>
-</table></div></div>
+
+{# ───── Defaulters table ───── #}
+<div class="card"
+     data-motion="fade-up" data-motion-delay="200"
+     style="overflow:hidden;">
+    <div class="card-body p-0">
+        {% if students %}
+        <table class="table table-hover mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Class</th>
+                    <th>Guardian Phone</th>
+                    <th class="text-end">Balance</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in students %}
+                <tr data-motion="fade-up"
+                    data-motion-delay="{% widthratio forloop.counter0 1 30 %}"
+                    data-motion-while-hover='{"x":3}'>
+                    <td data-label="Student">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="avatar avatar-sm">{{ s.full_name|slice:":1"|upper }}</span>
+                            <span class="fw-medium">{{ s.full_name }}</span>
+                        </div>
+                    </td>
+                    <td data-label="Class">{{ s.class_display|default:"—" }}</td>
+                    <td data-label="Guardian Phone" class="tabular-nums small">
+                        {% if s.guardian_phone %}
+                        <a href="tel:{{ s.guardian_phone }}" class="text-decoration-none">
+                            {{ s.guardian_phone }}
+                        </a>
+                        {% else %}
+                        <span class="text-secondary">—</span>
+                        {% endif %}
+                    </td>
+                    <td data-label="Balance" class="text-end tabular-nums fw-semibold text-danger">
+                        MK {{ s.balance }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state text-center py-5">
+            <div class="empty-icon mx-auto mb-3"
+                 style="width:64px;height:64px;border-radius:16px;
+                        background:var(--md-surface-bright);
+                        display:flex;align-items:center;justify-content:center;"
+                 data-motion-variant="brandMark"
+                 data-motion-initial="hidden"
+                 data-motion-animate="visible">
+                <i class="bi bi-check-circle fs-2 text-success"></i>
+            </div>
+            <h3 class="h6 fw-semibold mb-1">No defaulters found</h3>
+            <p class="text-secondary small mb-0">
+                {% if request.GET.class_name %}
+                All students in this class are up to date.
+                {% else %}
+                Every student is up to date on fees. 🎉
+                {% endif %}
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% include "partials/dashboard-widgets.html" %}
 {% endblock %}

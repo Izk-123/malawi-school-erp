@@ -1,12 +1,88 @@
 {% extends "base.html" %}
+{% load static %}
 {% block page_title %}Leave Approvals{% endblock %}
+
 {% block content %}
-<div class="card"><div class="card-body p-0"><table class="table table-hover mb-0">
-<thead><tr><th>Staff</th><th>Type</th><th>Dates</th><th>Reason</th><th>Actions</th></tr></thead>
-<tbody>{% for l in leave_requests %}<tr><td>{{ l.staff.full_name }}</td><td>{{ l.get_leave_type_display }}</td><td>{{ l.start_date }} to {{ l.end_date }}</td><td>{{ l.reason|truncatewords:10 }}</td>
-<td><form method="post" action="{% url 'staff:decide_leave' l.pk %}" class="d-flex gap-1">{% csrf_token %}
-<button name="decision" value="approved" class="btn btn-sm btn-success">Approve</button>
-<button name="decision" value="rejected" class="btn btn-sm btn-danger">Reject</button>
-</form></td></tr>{% empty %}<tr><td colspan="5">No pending requests.</td></tr>{% endfor %}</tbody>
-</table></div></div>
+
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text data-reveal-delay="40" data-reveal-stagger="22">Leave Approvals</h1>
+        <p class="text-secondary small mb-0">Requests awaiting your decision.</p>
+    </div>
+</div>
+
+<div class="card"
+     data-motion="fade-up" data-motion-delay="120"
+     style="overflow:hidden;">
+    <div class="card-body p-0">
+        {% if leave_requests %}
+        <table class="table table-hover mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Staff</th>
+                    <th>Type</th>
+                    <th>Dates</th>
+                    <th>Reason</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for l in leave_requests %}
+                <tr data-motion="fade-up"
+                    data-motion-delay="{% widthratio forloop.counter0 1 45 %}">
+                    <td data-label="Staff">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="avatar avatar-sm">{{ l.staff.full_name|slice:":1"|upper }}</span>
+                            <span class="fw-medium">{{ l.staff.full_name }}</span>
+                        </div>
+                    </td>
+                    <td data-label="Type">{{ l.get_leave_type_display }}</td>
+                    <td data-label="Dates" class="tabular-nums small">
+                        {{ l.start_date }} &rarr; {{ l.end_date }}
+                    </td>
+                    <td data-label="Reason" class="text-secondary small">
+                        {{ l.reason|truncatewords:10 }}
+                    </td>
+                    <td class="actions text-end">
+                        <form method="post" action="{% url 'staff:decide_leave' l.pk %}"
+                              class="d-inline-flex gap-1 justify-content-end">
+                            {% csrf_token %}
+                            <button name="decision" value="approved"
+                                    class="btn btn-sm btn-primary"
+                                    data-motion-while-hover='{"y":-1}'
+                                    data-motion-while-tap='{"scale":0.94}' data-ripple>
+                                <i class="bi bi-check-lg"></i> Approve
+                            </button>
+                            <button name="decision" value="rejected"
+                                    class="btn btn-sm btn-danger"
+                                    data-motion-while-hover='{"y":-1}'
+                                    data-motion-while-tap='{"scale":0.94}' data-ripple>
+                                <i class="bi bi-x-lg"></i> Reject
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state text-center py-5">
+            <div class="empty-icon mx-auto mb-3"
+                 style="width:64px;height:64px;border-radius:16px;
+                        background:var(--md-surface-bright);
+                        display:flex;align-items:center;justify-content:center;"
+                 data-motion-variant="brandMark"
+                 data-motion-initial="hidden" data-motion-animate="visible">
+                <i class="bi bi-check-circle fs-2 text-secondary"></i>
+            </div>
+            <h3 class="h6 fw-semibold mb-1">All caught up</h3>
+            <p class="text-secondary small mb-0">No pending requests.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% include "partials/dashboard-widgets.html" %}
 {% endblock %}

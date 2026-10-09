@@ -1,21 +1,295 @@
 {% extends "base.html" %}
-{% block page_title %}Teacher Details{% endblock %}
+{% load static %}
+{% block page_title %}{{ teacher.full_name }}{% endblock %}
+
 {% block content %}
-<div class="row g-4">
-<div class="col-lg-5"><div class="card"><div class="card-body">
-{% if teacher.photo %}<img src="{{ teacher.photo.url }}" class="rounded mb-3" style="max-width:120px;">{% endif %}
-<p><strong>ID:</strong> {{ teacher.teacher_id }}</p>
-<p><strong>Name:</strong> {{ teacher.full_name }}</p>
-<p><strong>Primary Subject:</strong> {{ teacher.subject }}</p>
-<p><strong>Also Teaches:</strong> {% for s in teacher.subjects.all %}{{ s.name }}{% if not forloop.last %}, {% endif %}{% empty %}-{% endfor %}</p>
-<p><strong>Qualification:</strong> {{ teacher.qualification }}</p>
-<p><strong>Phone:</strong> {{ teacher.phone_number }}</p>
-<p><strong>Email:</strong> {{ teacher.email }}</p>
-<p><strong>Status:</strong> <span class="badge bg-success">{{ teacher.get_status_display }}</span></p>
-<p><strong>Classes:</strong> {% for a in teacher.assignments.all %}<a href="{% url 'teachers:class_roster' a.class_name a.stream %}">{{ a.class_display }}</a> ({{ a.subject }}){% if not forloop.last %}, {% endif %}{% empty %}Not assigned{% endfor %}</p>
-</div></div></div>
-<div class="col-lg-7"><div class="card"><div class="card-header"><h6 class="mb-0 fw-bold">Teaching Schedule (This Term)</h6></div>
-<div class="card-body p-0"><table class="table table-sm mb-0"><thead><tr><th>Day</th><th>Time</th><th>Subject</th><th>Class</th></tr></thead>
-<tbody>{% for p in schedule %}<tr><td>{{ p.day }}</td><td>{{ p.time_range }}</td><td>{{ p.subject }}</td><td>{{ p.class_display }}</td></tr>{% empty %}<tr><td colspan="4">No periods scheduled</td></tr>{% endfor %}</tbody></table></div></div></div>
+
+{# ═══════════════════ Header ═══════════════════ #}
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text
+            data-reveal-delay="60"
+            data-reveal-stagger="26">{{ teacher.full_name }}</h1>
+        <p class="text-secondary small mb-0">
+            {{ teacher.teacher_id }} · {{ teacher.subject|default:"—" }}
+        </p>
+    </div>
+
+    {% if current_role == 'admin' %}
+    <div class="d-flex gap-2"
+         data-motion="fade-up" data-motion-delay="180">
+        <a class="btn btn-secondary btn-sm"
+           href="{% url 'teachers:update' teacher.pk %}"
+           data-motion-while-hover='{"y":-2}'
+           data-motion-while-tap='{"scale":0.97}'
+           data-ripple>
+            <i class="bi bi-pencil me-1"></i> Edit
+        </a>
+        <button class="btn btn-secondary btn-sm"
+                type="button"
+                onclick="window.print()"
+                data-motion-while-hover='{"y":-2}'
+                data-motion-while-tap='{"scale":0.97}'
+                data-ripple>
+            <i class="bi bi-printer"></i>
+        </button>
+    </div>
+    {% endif %}
 </div>
+
+<div class="row g-4">
+
+    {# ═══════════════════ LEFT ═══════════════════ #}
+    <div class="col-lg-5">
+
+        {# ─── Profile card with tilt + spotlight ─── #}
+        <div class="card mb-3"
+             data-motion="fade-up" data-motion-delay="60"
+             data-tilt="3"
+             data-spotlight>
+            <div class="card-body">
+
+                {# Avatar + name + status #}
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    {% if teacher.photo %}
+                    <img src="{{ teacher.photo.url }}"
+                         alt="{{ teacher.full_name }}"
+                         class="rounded-3 flex-shrink-0"
+                         style="width:72px;height:72px;object-fit:cover;"
+                         data-motion="scale-in" data-motion-delay="180">
+                    {% else %}
+                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 fw-bold"
+                         style="width:72px;height:72px;font-size:26px;
+                                background:linear-gradient(135deg,rgba(13,110,253,.14),#0d6efd);
+                                color:#fff;"
+                         data-motion-variant="brandMark"
+                         data-motion-initial="hidden"
+                         data-motion-animate="visible"
+                         data-motion-delay="160">
+                        {{ teacher.full_name|slice:":1"|upper }}
+                    </div>
+                    {% endif %}
+
+                    <div class="min-w-0 flex-grow-1">
+                        <div class="fw-bold text-truncate">{{ teacher.full_name }}</div>
+                        <div class="small text-secondary mb-2">
+                            {{ teacher.qualification|default:"—" }}
+                        </div>
+                        <span class="badge rounded-pill
+                            {% if teacher.status == 'active' %}bg-success-subtle text-success-emphasis
+                            {% else %}bg-secondary-subtle text-secondary-emphasis{% endif %}">
+                            <i class="bi bi-circle-fill me-1"
+                               style="font-size:6px;vertical-align:middle;"></i>
+                            {{ teacher.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+
+                {# Quick stats: classes + subjects #}
+                <div class="row g-3 mb-4">
+                    <div class="col-6">
+                        <div class="text-center">
+                            <div class="d-flex align-items-center justify-content-center"
+                                 style="height:56px;color:var(--md-primary);"
+                                 data-motion-variant="brandMark"
+                                 data-motion-initial="hidden"
+                                 data-motion-animate="visible"
+                                 data-motion-delay="260">
+                                <i class="bi bi-easel2 fs-2"></i>
+                            </div>
+                            <div class="small text-secondary mt-1">Classes</div>
+                            <div class="fw-bold tabular-nums"
+                                 data-counter="{{ teacher.assignments.all|length|default:0 }}">0</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center">
+                            <div class="d-flex align-items-center justify-content-center"
+                                 style="height:56px;color:#0d6efd;"
+                                 data-motion-variant="brandMark"
+                                 data-motion-initial="hidden"
+                                 data-motion-animate="visible"
+                                 data-motion-delay="360">
+                                <i class="bi bi-book fs-2"></i>
+                            </div>
+                            <div class="small text-secondary mt-1">Extra subjects</div>
+                            <div class="fw-bold tabular-nums"
+                                 data-counter="{{ teacher.subjects.all|length|default:0 }}">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                {# Detail rows, staggered #}
+                <dl class="mb-0"
+                    data-motion-orchestrate='{"staggerChildren":0.04,"delayChildren":0.5}'>
+                    <div class="d-flex justify-content-between py-2 border-top"
+                         data-motion="fade-up">
+                        <dt class="small text-secondary mb-0">Teacher ID</dt>
+                        <dd class="small fw-medium mb-0">{{ teacher.teacher_id }}</dd>
+                    </div>
+
+                    <div class="d-flex justify-content-between py-2 border-top"
+                         data-motion="fade-up">
+                        <dt class="small text-secondary mb-0">Primary subject</dt>
+                        <dd class="small fw-medium mb-0">{{ teacher.subject|default:"—" }}</dd>
+                    </div>
+
+                    {% if teacher.subjects.all %}
+                    <div class="py-2 border-top"
+                         data-motion="fade-up">
+                        <dt class="small text-secondary mb-2">Also teaches</dt>
+                        <dd class="mb-0 d-flex flex-wrap gap-1">
+                            {% for s in teacher.subjects.all %}
+                            <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis"
+                                  data-motion="scale-in"
+                                  data-motion-delay="{% widthratio forloop.counter0 1 30 %}"
+                                  data-motion-while-hover='{"scale":1.08}'>
+                                {{ s.name }}
+                            </span>
+                            {% endfor %}
+                        </dd>
+                    </div>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-between py-2 border-top"
+                         data-motion="fade-up">
+                        <dt class="small text-secondary mb-0">Qualification</dt>
+                        <dd class="small fw-medium mb-0">{{ teacher.qualification|default:"—" }}</dd>
+                    </div>
+
+                    <div class="d-flex justify-content-between py-2 border-top"
+                         data-motion="fade-up">
+                        <dt class="small text-secondary mb-0">Phone</dt>
+                        <dd class="small fw-medium mb-0">
+                            {% if teacher.phone_number %}
+                            <a href="tel:{{ teacher.phone_number }}" class="text-secondary">
+                                {{ teacher.phone_number }}
+                            </a>
+                            {% else %}—{% endif %}
+                        </dd>
+                    </div>
+
+                    <div class="d-flex justify-content-between py-2 border-top"
+                         data-motion="fade-up">
+                        <dt class="small text-secondary mb-0">Email</dt>
+                        <dd class="small fw-medium mb-0 text-end">
+                            {% if teacher.email %}
+                            <a href="mailto:{{ teacher.email }}" class="text-secondary">
+                                {{ teacher.email }}
+                            </a>
+                            {% else %}—{% endif %}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+
+        {# ─── Teaching assignments ─── #}
+        <div class="card"
+             data-motion="fade-up" data-motion-delay="200">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h6 class="mb-0 fw-bold">Assigned classes</h6>
+                <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">
+                    {{ teacher.assignments.all|length }}
+                </span>
+            </div>
+            <div class="card-body p-0">
+                {% if teacher.assignments.all %}
+                <ul class="list-group list-group-flush">
+                    {% for a in teacher.assignments.all %}
+                    <li class="list-group-item"
+                        data-motion="fade-up"
+                        data-motion-delay="{% widthratio forloop.counter0 1 45 %}">
+                        <a href="{% url 'teachers:class_roster' a.class_name a.stream %}"
+                           class="d-flex align-items-center gap-3 text-decoration-none text-reset"
+                           data-motion-while-hover='{"x":4}'
+                           data-motion-while-tap='{"scale":0.98}'>
+                            <span class="rounded-2 d-flex align-items-center justify-content-center flex-shrink-0"
+                                  style="width:36px;height:36px;
+                                         background:rgba(26,86,50,.12);color:var(--md-primary);">
+                                <i class="bi bi-book"></i>
+                            </span>
+                            <div class="min-w-0 flex-grow-1">
+                                <div class="fw-medium text-truncate">{{ a.class_display }}</div>
+                                <div class="small text-secondary text-truncate">{{ a.subject }}</div>
+                            </div>
+                            <i class="bi bi-chevron-right small text-secondary"></i>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="empty-state text-center py-4">
+                    <p class="text-secondary small mb-0">Not assigned to any class</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# ═══════════════════ RIGHT ═══════════════════ #}
+    <div class="col-lg-7">
+        <div class="card"
+             data-motion="fade-up" data-motion-delay="120">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h6 class="mb-0 fw-bold">Teaching Schedule <span class="text-secondary small">· this term</span></h6>
+                <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">
+                    {{ schedule|length }} {{ schedule|length|pluralize:"period,periods" }}
+                </span>
+            </div>
+            <div class="card-body p-0">
+                {% if schedule %}
+                <table class="table table-sm table-hover mb-0 align-middle">
+                    <thead>
+                        <tr>
+                            <th>Day</th>
+                            <th>Time</th>
+                            <th>Subject</th>
+                            <th class="text-end">Class</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in schedule %}
+                        <tr data-motion="fade-up"
+                            data-motion-delay="{% widthratio forloop.counter0 1 35 %}"
+                            data-motion-while-hover='{"x": 3}'>
+                            <td data-label="Day">
+                                <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">
+                                    {{ p.day }}
+                                </span>
+                            </td>
+                            <td data-label="Time" class="tabular-nums small">
+                                {{ p.time_range }}
+                            </td>
+                            <td data-label="Subject" class="fw-medium">{{ p.subject }}</td>
+                            <td data-label="Class" class="text-end text-secondary">
+                                {{ p.class_display }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state text-center py-5"
+                     data-motion="scale-in" data-motion-delay="240">
+                    <div class="empty-icon mx-auto mb-3"
+                         style="width:64px;height:64px;border-radius:16px;
+                                background:var(--md-surface-bright);
+                                display:flex;align-items:center;justify-content:center;">
+                        <i class="bi bi-calendar-x fs-2 text-secondary"></i>
+                    </div>
+                    <h3 class="h6 fw-semibold mb-1">No periods scheduled</h3>
+                    <p class="text-secondary small mb-0">
+                        This teacher has no periods for the current term.
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include "partials/dashboard-widgets.html" %}
 {% endblock %}

@@ -1,0 +1,182 @@
+{% load static %}
+{% if visible %}
+<div class="card mb-3"
+     data-motion="fade-up" data-motion-delay="180">
+
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-shield-check text-secondary"></i>
+            <h6 class="mb-0 fw-bold">Teacher TCM compliance</h6>
+        </div>
+        <a href="/admin/teachers/teacher/?tcm_status__exact=registered"
+           class="small text-secondary">
+            Manage <i class="bi bi-arrow-right small"></i>
+        </a>
+    </div>
+
+    <div class="card-body">
+
+        {# ─── Alert row: the numbers that matter ─── #}
+        {% if blocked %}
+        <div class="alert alert-danger d-flex align-items-start gap-2 py-2 mb-3"
+             role="alert">
+            <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1"></i>
+            <div class="small">
+                <strong>{{ blocked }} teacher{{ blocked|pluralize }}</strong>
+                cannot be assigned to a class — expired, suspended, or
+                not registered with the Teaching Council of Malawi.
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-success d-flex align-items-start gap-2 py-2 mb-3"
+             role="alert">
+            <i class="bi bi-check-circle-fill flex-shrink-0 mt-1"></i>
+            <div class="small">
+                All registered teachers have a valid TCM license on file.
+            </div>
+        </div>
+        {% endif %}
+
+        {# ─── Counts strip ─── #}
+        <div class="row g-2 mb-3">
+
+            <div class="col-6 col-md-3">
+                <div class="text-center p-2 rounded-2"
+                     style="background:rgba(20,83,45,.08);">
+                    <div class="h5 fw-bold mb-0 tabular-nums"
+                         style="color:#14532d;">
+                        {{ counts.valid|default:0 }}
+                    </div>
+                    <div class="small" style="color:#14532d;">Valid</div>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <div class="text-center p-2 rounded-2"
+                     style="background:rgba(120,53,15,.08);">
+                    <div class="h5 fw-bold mb-0 tabular-nums"
+                         style="color:#78350f;">
+                        {{ counts.expiring_soon|default:0 }}
+                    </div>
+                    <div class="small" style="color:#78350f;">
+                        Expiring ≤{{ horizon_days }}d
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <div class="text-center p-2 rounded-2"
+                     style="background:rgba(127,29,29,.08);">
+                    <div class="h5 fw-bold mb-0 tabular-nums"
+                         style="color:#7f1d1d;">
+                        {{ counts.expired|default:0 }}
+                    </div>
+                    <div class="small" style="color:#7f1d1d;">Expired</div>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <div class="text-center p-2 rounded-2"
+                     style="background:rgba(55,65,81,.08);">
+                    <div class="h5 fw-bold mb-0 tabular-nums"
+                         style="color:#374151;">
+                        {{ counts.not_registered|default:0 }}
+                    </div>
+                    <div class="small" style="color:#374151;">
+                        Not registered
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# ─── Secondary warnings ─── #}
+        {% if counts.suspended or counts.missing_expiry %}
+        <div class="d-flex flex-wrap gap-2 mb-3 small text-secondary">
+            {% if counts.suspended %}
+            <span>
+                <i class="bi bi-slash-circle"></i>
+                {{ counts.suspended }} suspended
+            </span>
+            {% endif %}
+            {% if counts.missing_expiry %}
+            <span>
+                <i class="bi bi-question-circle"></i>
+                {{ counts.missing_expiry }} registered with no expiry on file
+            </span>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {# ─── Attention table ─── #}
+        {% if attention %}
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Teacher</th>
+                        <th>Status</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in attention %}
+                    <tr>
+                        <td>
+                            <div class="fw-medium small">
+                                {{ row.teacher.full_name }}
+                            </div>
+                            <div class="text-secondary small font-monospace">
+                                {{ row.teacher.teacher_id }}
+                            </div>
+                        </td>
+                        <td>
+                            {% if row.tone == 'danger' %}
+                            <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis">
+                                {{ row.note }}
+                            </span>
+                            {% elif row.tone == 'warning' %}
+                            <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis">
+                                {{ row.note }}
+                            </span>
+                            {% elif row.tone == 'info' %}
+                            <span class="badge rounded-pill bg-info-subtle text-info-emphasis">
+                                {{ row.note }}
+                            </span>
+                            {% else %}
+                            <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">
+                                {{ row.note }}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'teachers:detail' row.teacher.pk %}"
+                               class="btn btn-sm btn-ghost text-secondary"
+                               title="Open teacher record">
+                                <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if counts.total > attention_limit %}
+        <div class="text-center small text-secondary mt-2">
+            Showing {{ attention_limit }} of {{ counts.total }} teachers
+            needing attention —
+            <a href="/admin/teachers/teacher/?tcm_status__exact=expired">
+                see all
+            </a>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center text-secondary small py-3">
+            <i class="bi bi-check2-circle me-1"></i>
+            Nothing needs attention right now.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}

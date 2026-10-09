@@ -1,4 +1,44 @@
 {% extends "base.html" %}
-{% load crispy_forms_tags %}
+{% load static crispy_forms_tags %}
 {% block page_title %}My Profile{% endblock %}
-{% block content %}<div class="card"><div class="card-body">{% crispy form %}</div></div>{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text data-reveal-delay="40" data-reveal-stagger="22">My Profile</h1>
+        <p class="text-secondary small mb-0">Update your personal details.</p>
+    </div>
+</div>
+<div class="card"
+     data-motion="fade-up" data-motion-delay="120"
+     data-motion-layout>
+    <div class="card-body">
+        <div class="crispy-form-wrap"
+             data-motion-orchestrate='{"staggerChildren":0.03,"delayChildren":0.1}'>
+            {% crispy form %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const form = document.querySelector('.crispy-form-wrap form');
+    if (!form) return;
+    form.querySelectorAll(':scope > div').forEach((row, i) => {
+        row.setAttribute('data-motion', 'fade-up');
+        row.setAttribute('data-motion-delay', String(60 + i * 30));
+    });
+    form.querySelectorAll('button[type="submit"], input[type="submit"], a.btn').forEach((b) => {
+        b.setAttribute('data-motion-while-hover', '{"y":-2}');
+        b.setAttribute('data-motion-while-tap',   '{"scale":0.97}');
+        b.setAttribute('data-ripple', '');
+    });
+    if (window.Motion?.refresh) window.Motion.refresh(form);
+    if (window.MotionPro?.refresh) window.MotionPro.refresh();
+})();
+</script>
+{% endblock %}

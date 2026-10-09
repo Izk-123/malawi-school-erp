@@ -2,22 +2,46 @@
 {% block title %}Email verified{% endblock %}
 
 {% block content %}
-<div class="auth-steps" role="progressbar" aria-valuenow="2" aria-valuemin="1" aria-valuemax="3">
-    <span class="auth-step completed"><i class="bi bi-check"></i></span>
-    <span class="auth-step-line completed"></span>
-    <span class="auth-step active">2</span>
-    <span class="auth-step-line"></span>
-    <span class="auth-step">3</span>
+
+<div class="auth-steps"
+     role="progressbar"
+     aria-valuenow="2" aria-valuemin="1" aria-valuemax="3"
+     data-motion-orchestrate='{"staggerChildren":0.06,"delayChildren":0.05}'>
+    <span class="auth-step completed" data-motion="pop">
+        <i class="bi bi-check"></i>
+    </span>
+    <span class="auth-step-line completed" data-motion="fade-in"></span>
+    <span class="auth-step active" data-motion="pop" data-motion-delay="80">2</span>
+    <span class="auth-step-line" data-motion="fade-in" data-motion-delay="140"></span>
+    <span class="auth-step" data-motion="pop" data-motion-delay="200">3</span>
 </div>
 
 <div class="auth-state">
-    <div class="auth-state-icon success"><i class="bi bi-check-circle"></i></div>
-    <h1 class="auth-state-title">Email verified</h1>
-    <p class="auth-state-body">
+
+    <div class="auth-state-icon success"
+         data-motion-variant="brandMark"
+         data-motion-initial="hidden"
+         data-motion-animate="visible"
+         data-motion-delay="80">
+        <i class="bi bi-check-circle"></i>
+    </div>
+
+    <h1 class="auth-state-title"
+        data-reveal-text data-reveal-delay="160" data-reveal-stagger="22">
+        Email verified
+    </h1>
+
+    <p class="auth-state-body" data-motion="fade-up" data-motion-delay="240">
         Your email is confirmed. Next: verify your phone number so we can
         send you important alerts.
     </p>
-    <a href="{% url 'accounts:phone_request' %}" class="btn btn-primary btn-auth">
+
+    <a href="{% url 'accounts:phone_request' %}"
+       class="btn btn-primary btn-auth"
+       data-motion="fade-up" data-motion-delay="320"
+       data-motion-while-hover='{"y":-2,"scale":1.01}'
+       data-motion-while-tap='{"scale":0.97}'
+       data-ripple>
         Verify phone number
     </a>
 </div>

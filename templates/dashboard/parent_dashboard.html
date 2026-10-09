@@ -1,16 +1,160 @@
 {% extends "base.html" %}
-{% block page_title %}Dashboard{% endblock %}
+{% load static %}
+{% block page_title %}Parent Dashboard{% endblock %}
+
 {% block content %}
+
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text
+            data-reveal-delay="40"
+            data-reveal-stagger="22">Welcome, {{ user.get_full_name|default:user.username }}</h1>
+        <p class="text-secondary small mb-0">Your children's progress at a glance.</p>
+    </div>
+</div>
+
 <div class="row g-3 mb-4">
-    <div class="col-md-4"><div class="card"><div class="card-body"><h5>{{ children|length }}</h5><p class="text-secondary small mb-0">Children Enrolled</p></div></div></div>
-    <div class="col-md-4"><div class="card"><div class="card-body"><h5>{{ avg_attendance }}%</h5><p class="text-secondary small mb-0">Average Attendance</p></div></div></div>
-    <div class="col-md-4"><div class="card"><div class="card-body"><h5>MK {{ total_balance }}</h5><p class="text-secondary small mb-0">Total Fee Balance</p></div></div></div>
+
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card h-100"
+             data-motion="fade-up" data-motion-delay="60"
+             data-motion-while-hover='{"y":-3,"scale":1.005}'>
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:52px;height:52px;background:rgba(26,86,50,.14);color:var(--md-primary);"
+                     data-motion-variant="brandMark"
+                     data-motion-initial="hidden"
+                     data-motion-animate="visible"
+                     data-motion-delay="260">
+                    <i class="bi bi-people fs-5"></i>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="h3 fw-bold mb-0 tabular-nums"
+                         data-counter="{{ children|length|default:0 }}">0</div>
+                    <div class="small text-secondary">Children Enrolled</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card h-100"
+             data-motion="fade-up" data-motion-delay="140"
+             data-motion-while-hover='{"y":-3,"scale":1.005}'>
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:52px;height:52px;background:rgba(13,110,253,.12);color:#0d6efd;"
+                     data-motion-variant="brandMark"
+                     data-motion-initial="hidden"
+                     data-motion-animate="visible"
+                     data-motion-delay="340">
+                    <i class="bi bi-clipboard-check fs-5"></i>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="h3 fw-bold mb-0 tabular-nums"
+                         data-counter="{{ avg_attendance|default:0 }}"
+                         data-counter-suffix="%"
+                         data-counter-decimals="1">0%</div>
+                    <div class="small text-secondary">Average Attendance</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card h-100"
+             data-motion="fade-up" data-motion-delay="220"
+             data-motion-while-hover='{"y":-3,"scale":1.005}'>
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:52px;height:52px;background:rgba(249,168,37,.18);color:#c67c00;"
+                     data-motion-variant="brandMark"
+                     data-motion-initial="hidden"
+                     data-motion-animate="visible"
+                     data-motion-delay="420">
+                    <i class="bi bi-wallet2 fs-5"></i>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="h3 fw-bold mb-0 tabular-nums">
+                        <span data-counter="{{ total_balance|default:0 }}"
+                              data-counter-prefix="MK "
+                              data-counter-duration="1200">MK 0</span>
+                    </div>
+                    <div class="small text-secondary">Total Fee Balance</div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-<div class="card">
-    <div class="card-header"><h6 class="fw-bold">My Children</h6></div>
-    <div class="card-body p-0"><table class="table table-hover mb-0">
-        <thead><tr><th>Name</th><th>Class</th><th>Attendance</th><th>Balance</th></tr></thead>
-        <tbody>{% for c in children %}<tr><td>{{ c.full_name }}</td><td>{{ c.class_display }}</td><td>{{ c.attendance_percentage }}%</td><td>MK {{ c.balance }}</td></tr>{% empty %}<tr><td colspan="4">No children linked to your account yet.</td></tr>{% endfor %}</tbody>
-    </table></div>
+
+<div class="card"
+     data-motion="fade-up" data-motion-delay="260"
+     style="overflow:hidden;">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <h6 class="fw-bold mb-0">My Children</h6>
+        <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">
+            {{ children|length }}
+        </span>
+    </div>
+    <div class="card-body p-0">
+        {% if children %}
+        <table class="table table-hover mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Class</th>
+                    <th>Attendance</th>
+                    <th>Balance</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in children %}
+                <tr data-motion="fade-up"
+                    data-motion-delay="{% widthratio forloop.counter0 1 55 %}"
+                    data-motion-while-hover='{"x":3}'>
+                    <td data-label="Name">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="avatar avatar-sm">{{ c.full_name|slice:":1"|upper }}</span>
+                            <span class="fw-medium">{{ c.full_name }}</span>
+                        </div>
+                    </td>
+                    <td data-label="Class">{{ c.class_display|default:"—" }}</td>
+                    <td data-label="Attendance">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="tabular-nums fw-medium">{{ c.attendance_percentage }}%</span>
+                            <div class="progress flex-grow-1" style="height:4px;max-width:80px;background:var(--md-surface-3);">
+                                <div class="progress-bar"
+                                     data-progress="{{ c.attendance_percentage }}"
+                                     data-progress-delay="{% widthratio forloop.counter0 1 90 %}"
+                                     style="background:var(--md-primary);"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td data-label="Balance" class="tabular-nums fw-medium">
+                        MK {{ c.balance }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state text-center py-5">
+            <div class="empty-icon mx-auto mb-3"
+                 style="width:64px;height:64px;border-radius:16px;
+                        background:var(--md-surface-bright);
+                        display:flex;align-items:center;justify-content:center;">
+                <i class="bi bi-person-plus fs-2 text-secondary"></i>
+            </div>
+            <h3 class="h6 fw-semibold mb-1">No children linked</h3>
+            <p class="text-secondary small mb-0">
+                Children linked to your account will appear here.
+            </p>
+        </div>
+        {% endif %}
+    </div>
 </div>
+
+{% include "partials/dashboard-widgets.html" %}
 {% endblock %}

@@ -1,29 +1,160 @@
 {% extends "base.html" %}
+{% load static django_tables2 %}
 {% block page_title %}Student Management{% endblock %}
+
 {% block content %}
-<div class="card">
-    <div class="card-header d-flex justify-content-between flex-wrap gap-2">
-        <h5 class="mb-0 fw-bold">Student List ({{ table.paginator.count }})</h5>
-        <div class="d-flex gap-2 flex-wrap">
-            <form class="d-flex gap-2 flex-wrap" method="get">
-                <input type="text" name="q" class="form-control form-control-sm" placeholder="Search name/ID/guardian..." value="{{ request.GET.q }}">
-                <select name="class_name" class="form-select form-select-sm" style="width:120px;">
-                    <option value="">All Classes</option>
-                    {% for c in "1234" %}<option value="Form {{ c }}" {% if request.GET.class_name == "Form "|add:c %}selected{% endif %}>Form {{ c }}</option>{% endfor %}
-                </select>
-                <select name="status" class="form-select form-select-sm" style="width:120px;">
-                    <option value="">All Status</option>
-                    {% for value, label in filter.form.status.field.choices %}<option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
-                </select>
-                <button class="btn btn-sm btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
-            </form>
-            {% if current_role == 'admin' %}
-            <a href="{% url 'students:promote' %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-arrow-up-circle me-1"></i>Promote</a>
-            <a href="{% url 'reports:export_csv' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-download me-1"></i>Export CSV</a>
-            <a href="{% url 'students:create' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-circle me-1"></i>Add Student</a>
-            {% endif %}
-        </div>
+
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text
+            data-reveal-delay="40"
+            data-reveal-stagger="22">Students</h1>
+        <p class="text-secondary small mb-0">
+            <span class="tabular-nums"
+                  data-counter="{{ table.paginator.count }}"
+                  data-counter-duration="900">{{ table.paginator.count }}</span>
+            enrolled {{ table.paginator.count|pluralize:"student,students" }}
+        </p>
     </div>
-    <div class="card-body p-0">{% load django_tables2 %}{% render_table table %}</div>
+
+    {% if current_role == 'admin' %}
+    <div class="d-flex gap-2 flex-wrap"
+         data-motion="fade-up" data-motion-delay="140">
+        <a href="{% url 'reports:export_csv' %}"
+           class="btn btn-secondary btn-sm"
+           data-motion-while-hover='{"y":-2}'
+           data-motion-while-tap='{"scale":0.97}'
+           data-ripple>
+            <i class="bi bi-download me-1"></i> Export
+        </a>
+        <a href="{% url 'students:promote' %}"
+           class="btn btn-secondary btn-sm"
+           data-motion-while-hover='{"y":-2}'
+           data-motion-while-tap='{"scale":0.97}'
+           data-ripple>
+            <i class="bi bi-arrow-up-circle me-1"></i> Promote
+        </a>
+        <a href="{% url 'students:create' %}"
+           class="btn btn-primary btn-sm"
+           data-motion-while-hover='{"y":-2,"scale":1.02}'
+           data-motion-while-tap='{"scale":0.97}'
+           data-ripple>
+            <i class="bi bi-plus-circle me-1"></i> Add Student
+        </a>
+    </div>
+    {% endif %}
 </div>
+
+<div class="card mb-3"
+     data-motion="fade-up" data-motion-delay="120">
+    <div class="card-body">
+        <form class="row g-2 align-items-center" method="get">
+
+            <div class="col-12 col-md-6 col-lg-5">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-transparent border-end-0">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" name="q"
+                           class="form-control border-start-0 ps-0"
+                           placeholder="Search name, ID, or guardian…"
+                           value="{{ request.GET.q|default:'' }}">
+                </div>
+            </div>
+
+            <div class="col-6 col-md-3 col-lg-2">
+                <select name="class_name" class="form-select form-select-sm">
+                    <option value="">All Classes</option>
+                    {% for c in "1234" %}
+                    <option value="Form {{ c }}"
+                            {% if request.GET.class_name == "Form "|add:c %}selected{% endif %}>
+                        Form {{ c }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-6 col-md-3 col-lg-2">
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">All Status</option>
+                    {% for value, label in filter.form.status.field.choices %}
+                    <option value="{{ value }}"
+                            {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-12 col-md-auto d-flex gap-2">
+                <button class="btn btn-primary btn-sm flex-fill"
+                        type="submit"
+                        data-motion-while-hover='{"y":-1}'
+                        data-motion-while-tap='{"scale":0.97}'
+                        data-ripple>
+                    <i class="bi bi-funnel me-1"></i> Filter
+                </button>
+                {% if request.GET.q or request.GET.class_name or request.GET.status %}
+                <a href="{% url 'students:list' %}"
+                   class="btn btn-ghost btn-sm text-secondary"
+                   data-motion-while-tap='{"scale":0.94}'>
+                    <i class="bi bi-x-lg"></i>
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card"
+     data-motion="fade-up" data-motion-delay="200"
+     style="overflow:hidden;">
+    <div class="card-body p-0" id="studentTableWrap">
+        {% render_table table %}
+    </div>
+</div>
+
+{% include "partials/dashboard-widgets.html" %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const wrap = document.getElementById('studentTableWrap');
+    if (!wrap) return;
+
+    // Decorate django_tables2 rows client-side
+    const rows = wrap.querySelectorAll('table tbody tr');
+    rows.forEach((tr, i) => {
+        if (tr.querySelector('td[colspan]')) return;
+        tr.setAttribute('data-motion', 'fade-up');
+        tr.setAttribute('data-motion-delay', String(40 + i * 30));
+        tr.setAttribute('data-motion-while-hover', '{"x": 3}');
+    });
+
+    // Add data-label from the corresponding <th> to each <td> so mobile
+    // card-stacking works out of the box.
+    const headers = [];
+    wrap.querySelectorAll('table thead th').forEach((th) => {
+        headers.push((th.textContent || '').trim());
+    });
+    if (headers.length) {
+        wrap.querySelectorAll('table tbody tr').forEach((tr) => {
+            tr.querySelectorAll('td').forEach((td, idx) => {
+                if (!td.hasAttribute('data-label') && headers[idx]) {
+                    td.setAttribute('data-label', headers[idx]);
+                }
+            });
+        });
+    }
+
+    wrap.querySelectorAll('.btn, a.btn').forEach((b) => {
+        b.setAttribute('data-ripple', '');
+        b.setAttribute('data-motion-while-tap', '{"scale":0.94}');
+    });
+
+    if (window.Motion && window.Motion.refresh) window.Motion.refresh(wrap);
+    if (window.MotionPro && window.MotionPro.refresh) window.MotionPro.refresh();
+})();
+</script>
 {% endblock %}

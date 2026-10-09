@@ -12,7 +12,13 @@ urlpatterns = [
 
     # Live-validation endpoints (used by profile edit)
     path('api/check-email/', views.check_email, name='check_email'),
-
+    
+    # Governance: invitation claim flow (doc §4)
+    path('claim/<str:token>/', views.ClaimInvitationView.as_view(), name='claim_invitation'),
+    
+    # Parent journey: fallback entry via the printed admission code
+    path('claim-by-code/', views.ClaimByCodeView.as_view(), name='claim_by_code'),
+    
     # Email verification (AC-07c/e)
     path('verify-email/pending/', views.verify_email_pending, name='verify_email_pending'),
     path('verify-email/resend/', views.resend_email, name='resend_email'),

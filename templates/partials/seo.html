@@ -1,0 +1,98 @@
+{% load static %}
+{% comment %}
+  SEO partial — safe against missing context variables.
+
+  Why {% firstof %} and not |default:var?
+    |default:var_name  → Django resolves var_name; if absent → VariableDoesNotExist
+    {% firstof a b c %} → missing vars are simply falsy; never raises
+
+  Override per-page by passing any of these in the view context:
+    seo_description, seo_keywords, seo_robots,
+    og_type, og_title, og_description, og_image, og_locale, page_title
+{% endcomment %}
+
+{# --- Resolve all fallbacks safely up front ------------------------------- #}
+{% firstof seo_description "Malawi School ERP — manage students, grades, fees and attendance from any device. Maphunziro Athu, Our Education." as meta_description %}
+{% firstof seo_keywords    "school management, Malawi ERP, secondary school, students, grades, fees, attendance, education" as meta_keywords %}
+{% firstof seo_robots      "index, follow" as meta_robots %}
+
+{% firstof og_type         "website"      as meta_og_type %}
+{% firstof og_title page_title "Malawi School ERP" as meta_og_title %}
+{% firstof og_description seo_description "Manage students, grades, fees and attendance — all in one place." as meta_og_description %}
+{% firstof og_locale       "en_MW"        as meta_og_locale %}
+
+{% comment %}
+  OG image: if a page provides one it must be an absolute URL.
+  Otherwise fall back to the static default, made absolute with the
+  current scheme + host.
+{% endcomment %}
+{% static 'img/og-cover.png' as default_og_path %}
+{% with default_og_absolute=request.scheme|add:"://"|add:request.get_host|add:default_og_path %}
+  {% firstof og_image default_og_absolute as meta_og_image %}
+
+  {# --- Core SEO ------------------------------------------------------- #}
+  <meta name="description" content="{{ meta_description }}">
+  <meta name="keywords"    content="{{ meta_keywords }}">
+  <meta name="author"      content="Malawi School ERP">
+  <meta name="robots"      content="{{ meta_robots }}">
+  <meta name="theme-color" content="#1a5632" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+  <link rel="canonical"    href="{{ request.build_absolute_uri }}">
+
+  {# --- Open Graph ----------------------------------------------------- #}
+  <meta property="og:type"        content="{{ meta_og_type }}">
+  <meta property="og:site_name"   content="Malawi School ERP">
+  <meta property="og:title"       content="{{ meta_og_title }}">
+  <meta property="og:description" content="{{ meta_og_description }}">
+  <meta property="og:url"         content="{{ request.build_absolute_uri }}">
+  <meta property="og:image"       content="{{ meta_og_image }}">
+  <meta property="og:image:width"  content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale"      content="{{ meta_og_locale }}">
+
+  {# --- Twitter -------------------------------------------------------- #}
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="{{ meta_og_title }}">
+  <meta name="twitter:description" content="{{ meta_og_description }}">
+  <meta name="twitter:image"       content="{{ meta_og_image }}">
+{% endwith %}
+
+{# --- Performance hints ------------------------------------------------- #}
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+{# --- Structured data: WebApplication ---------------------------------- #}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Malawi School ERP",
+  "alternateName": "Mzuzu Secondary ERP",
+  "applicationCategory": "EducationalApplication",
+  "operatingSystem": "Web, Android, iOS",
+  "url": "{{ request.scheme }}://{{ request.get_host }}",
+  "description": "School management for Malawi secondary schools — students, grades, fees, attendance, and parent communication.",
+  "inLanguage": "en-MW",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "MWK" },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Malawi School ERP",
+    "url": "{{ request.scheme }}://{{ request.get_host }}"
+  }
+}
+</script>
+
+{% if user.is_authenticated %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "{{ request.scheme }}://{{ request.get_host }}/" },
+    { "@type": "ListItem", "position": 2, "name": "{{ meta_og_title }}" }
+  ]
+}
+</script>
+{% endif %}

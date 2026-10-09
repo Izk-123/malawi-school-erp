@@ -1,20 +1,193 @@
 {% extends "base.html" %}
-{% block page_title %}Dashboard{% endblock %}
+{% load static %}
+{% block page_title %}My Dashboard{% endblock %}
+
 {% block content %}
 {% if student %}
+
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text
+            data-reveal-delay="40"
+            data-reveal-stagger="22">Hi, {{ student.full_name|default:user.get_full_name|default:user.username }}</h1>
+        <p class="text-secondary small mb-0">Here's your academic snapshot.</p>
+    </div>
+    <span class="badge rounded-pill bg-success-subtle text-success-emphasis align-self-start"
+          data-motion="scale-in" data-motion-delay="200">
+        <i class="bi bi-circle-fill me-1" style="font-size:6px;vertical-align:middle;"></i>
+        Enrolled
+    </span>
+</div>
+
 <div class="row g-3 mb-4">
-    <div class="col-md-4"><div class="card"><div class="card-body"><h5>{{ student.attendance_percentage }}%</h5><p class="text-secondary small mb-0">My Attendance</p></div></div></div>
-    <div class="col-md-4"><div class="card"><div class="card-body"><h5>{{ student.average_grade }}</h5><p class="text-secondary small mb-0">Average Grade</p></div></div></div>
-    <div class="col-md-4"><div class="card"><div class="card-body"><h5>MK {{ student.balance }}</h5><p class="text-secondary small mb-0">Fee Balance</p></div></div></div>
+
+    {# Attendance #}
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card h-100"
+             data-motion="fade-up" data-motion-delay="60"
+             data-motion-while-hover='{"y":-3,"scale":1.005}'>
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="flex-shrink-0" style="color:var(--md-primary);">
+                    <svg viewBox="0 0 36 36" style="width:56px;height:56px;display:block;">
+                        <circle cx="18" cy="18" r="15.9155" fill="none"
+                                stroke="currentColor" stroke-opacity="0.14" stroke-width="3"/>
+                        <circle cx="18" cy="18" r="15.9155" fill="none"
+                                stroke="currentColor" stroke-width="3"
+                                stroke-linecap="round"
+                                transform="rotate(-90 18 18)"
+                                data-ring="{{ student.attendance_percentage|default:0 }}"
+                                data-ring-delay="500"/>
+                    </svg>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="h3 fw-bold mb-0 tabular-nums"
+                         data-counter="{{ student.attendance_percentage|default:0 }}"
+                         data-counter-suffix="%"
+                         data-counter-decimals="0">0%</div>
+                    <div class="small text-secondary">My Attendance</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Average grade #}
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card h-100"
+             data-motion="fade-up" data-motion-delay="140"
+             data-motion-while-hover='{"y":-3,"scale":1.005}'>
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:52px;height:52px;background:rgba(13,110,253,.12);color:#0d6efd;"
+                     data-motion-variant="brandMark"
+                     data-motion-initial="hidden"
+                     data-motion-animate="visible"
+                     data-motion-delay="360">
+                    <i class="bi bi-award fs-5"></i>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="h3 fw-bold mb-0 tabular-nums">
+                        {{ student.average_grade|default:"—" }}
+                    </div>
+                    <div class="small text-secondary">Average Grade</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Fee balance #}
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card h-100"
+             data-motion="fade-up" data-motion-delay="220"
+             data-motion-while-hover='{"y":-3,"scale":1.005}'>
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:52px;height:52px;background:rgba(220,38,38,.12);color:var(--md-error);"
+                     data-motion-variant="brandMark"
+                     data-motion-initial="hidden"
+                     data-motion-animate="visible"
+                     data-motion-delay="440">
+                    <i class="bi bi-wallet2 fs-5"></i>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="h3 fw-bold mb-0 tabular-nums">
+                        <span data-counter="{{ student.balance|default:0 }}"
+                              data-counter-prefix="MK "
+                              data-counter-duration="1100">MK 0</span>
+                    </div>
+                    <div class="small text-secondary">Fee Balance</div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-<div class="card">
-    <div class="card-header"><h6 class="fw-bold">My Recent Grades</h6></div>
-    <div class="card-body p-0"><table class="table mb-0">
-        <thead><tr><th>Subject</th><th>Exam</th><th>Score</th><th>Grade</th></tr></thead>
-        <tbody>{% for g in grades %}<tr><td>{{ g.subject }}</td><td>{{ g.exam }}</td><td>{{ g.score }}%</td><td>{{ g.grade }}</td></tr>{% empty %}<tr><td colspan="4">No grades yet</td></tr>{% endfor %}</tbody>
-    </table></div>
+
+{# Grades table #}
+<div class="card"
+     data-motion="fade-up" data-motion-delay="260"
+     style="overflow:hidden;">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <h6 class="fw-bold mb-0">My Recent Grades</h6>
+        <a href="#" class="btn btn-sm btn-ghost text-secondary"
+           data-motion-while-tap='{"scale":0.94}'>
+            View all <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+    </div>
+    <div class="card-body p-0">
+        {% if grades %}
+        <table class="table table-hover mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Subject</th>
+                    <th>Exam</th>
+                    <th>Score</th>
+                    <th>Grade</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for g in grades %}
+                <tr data-motion="fade-up"
+                    data-motion-delay="{% widthratio forloop.counter0 1 50 %}">
+                    <td data-label="Subject" class="fw-medium">{{ g.subject }}</td>
+                    <td data-label="Exam" class="text-secondary">{{ g.exam }}</td>
+                    <td data-label="Score">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="tabular-nums fw-medium">{{ g.score }}%</span>
+                            <div class="progress flex-grow-1" style="height:4px;max-width:80px;background:var(--md-surface-3);">
+                                <div class="progress-bar"
+                                     data-progress="{{ g.score }}"
+                                     data-progress-delay="{% widthratio forloop.counter0 1 90 %}"
+                                     style="background:var(--md-primary);"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td data-label="Grade">
+                        <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">
+                            {{ g.grade }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state text-center py-5">
+            <div class="empty-icon mx-auto mb-3"
+                 style="width:64px;height:64px;border-radius:16px;
+                        background:var(--md-surface-bright);
+                        display:flex;align-items:center;justify-content:center;">
+                <i class="bi bi-journal-text fs-2 text-secondary"></i>
+            </div>
+            <h3 class="h6 fw-semibold mb-1">No grades yet</h3>
+            <p class="text-secondary small mb-0">Your grades will appear here once teachers publish them.</p>
+        </div>
+        {% endif %}
+    </div>
 </div>
+
 {% else %}
-<div class="alert alert-warning">No student profile is linked to your account yet. Ask an administrator to link it.</div>
+
+<div class="card border-warning-subtle"
+     data-motion="scale-in" data-motion-duration="480">
+    <div class="card-body text-center py-5">
+        <div class="mx-auto mb-3 d-flex align-items-center justify-content-center"
+             style="width:72px;height:72px;border-radius:20px;
+                    background:var(--status-warning-bg);color:var(--status-warning-fg);"
+             data-motion-variant="brandMark"
+             data-motion-initial="hidden"
+             data-motion-animate="visible">
+            <i class="bi bi-person-x fs-2"></i>
+        </div>
+        <h3 class="h5 fw-bold mb-2">No student profile linked</h3>
+        <p class="text-secondary small mb-0">
+            Your account isn't linked to a student record yet.
+            Contact an administrator to link your profile.
+        </p>
+    </div>
+</div>
+
 {% endif %}
+
+{% include "partials/dashboard-widgets.html" %}
 {% endblock %}

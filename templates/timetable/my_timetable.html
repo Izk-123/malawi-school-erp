@@ -1,11 +1,260 @@
 {% extends "base.html" %}
+{% load static %}
 {% block page_title %}My Timetable{% endblock %}
+
 {% block content %}
-<div class="card">
-    <div class="card-header"><h5 class="mb-0 fw-bold">My Timetable{% if student %} - {{ student.class_display }}{% endif %}</h5></div>
-    <div class="card-body p-0"><table class="table table-bordered mb-0">
-        <thead><tr><th>Day</th><th>Periods</th></tr></thead>
-        <tbody>{% for day in days %}<tr><td class="fw-bold">{{ day }}</td><td>{% for p in periods %}{% if p.day == day %}<span class="badge bg-light text-dark border me-1 mb-1">{{ p.time_range }} &middot; {{ p.subject }}</span>{% endif %}{% endfor %}</td></tr>{% endfor %}</tbody>
-    </table></div>
+{% now "l" as today_name %}
+
+{# ───── Header ───── #}
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text data-reveal-delay="40" data-reveal-stagger="22">My Timetable</h1>
+        <p class="text-secondary small mb-0">
+            {% if student %}{{ student.class_display }} · {% endif %}{{ periods|length }}
+            {{ periods|length|pluralize:"period,periods" }} this week
+        </p>
+    </div>
 </div>
+
+{# ───── Week overview ───── #}
+{% if periods %}
+<div class="row g-3 mb-4">
+
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card h-100"
+             data-motion="fade-up" data-motion-delay="140"
+             data-motion-while-hover='{"y":-3,"scale":1.005}'>
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:52px;height:52px;
+                            background:color-mix(in srgb, var(--md-primary) 14%, transparent);
+                            color:var(--md-primary);"
+                     data-motion-variant="brandMark"
+                     data-motion-initial="hidden"
+                     data-motion-animate="visible"
+                     data-motion-delay="280">
+                    <i class="bi bi-calendar-week fs-5"></i>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="h3 fw-bold mb-0 tabular-nums"
+                         data-counter="{{ periods|length }}"
+                         data-counter-duration="1000">0</div>
+                    <div class="small text-secondary">Periods this week</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card h-100"
+             data-motion="fade-up" data-motion-delay="200"
+             data-motion-while-hover='{"y":-3,"scale":1.005}'>
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:52px;height:52px;
+                            background:rgba(13,110,253,.12);color:#0d6efd;"
+                     data-motion-variant="brandMark"
+                     data-motion-initial="hidden"
+                     data-motion-animate="visible"
+                     data-motion-delay="360">
+                    <i class="bi bi-calendar-check fs-5"></i>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="h3 fw-bold mb-0">{{ today_name }}</div>
+                    <div class="small text-secondary">Today</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if student %}
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card h-100"
+             data-motion="fade-up" data-motion-delay="260">
+            <div class="card-body d-flex flex-column justify-content-center">
+                <div class="small text-secondary fw-semibold text-uppercase mb-2"
+                     style="letter-spacing:.04em;font-size:11px;">My class</div>
+                <div class="h5 fw-bold mb-0">{{ student.class_display }}</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+{# ───── Week grid ───── #}
+<div class="row g-3"
+     data-motion-orchestrate='{"staggerChildren":0.06,"delayChildren":0.1}'>
+    {% for day in days %}
+    <div class="col-12 col-lg-6"
+         data-motion="fade-up">
+        <div class="card h-100 timetable-day {% if day == today_name %}timetable-today{% endif %}"
+             data-motion-while-hover='{"y":-2}'
+             data-motion-layout>
+
+            {# Day header #}
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h6 class="fw-bold mb-0 d-flex align-items-center gap-2">
+                    {{ day }}
+                    {% if day == today_name %}
+                    <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis"
+                          style="font-size:10px;">
+                        <i class="bi bi-dot"></i> Today
+                    </span>
+                    {% endif %}
+                </h6>
+                <i class="bi bi-calendar3 small text-secondary"></i>
+            </div>
+
+            {# Periods #}
+            <ul class="list-group list-group-flush timetable-list">
+                {% for p in periods %}{% if p.day == day %}
+                <li class="list-group-item period-item"
+                    data-motion="fade-up"
+                    data-motion-delay="{% widthratio forloop.counter0 1 40 %}">
+
+                    <div class="period-row">
+                        <span class="period-time">{{ p.time_range }}</span>
+                        <span class="period-subject">{{ p.subject }}</span>
+                        <span class="period-teacher">
+                            <i class="bi bi-person small"></i>
+                            <span class="text-truncate">
+                                {{ p.teacher.full_name|default:"TBA" }}
+                            </span>
+                        </span>
+                    </div>
+                </li>
+                {% endif %}{% endfor %}
+
+                {# Empty placeholder #}
+                <li class="list-group-item empty-placeholder">
+                    <div class="empty-state text-center py-4">
+                        <div class="empty-icon mx-auto mb-2"
+                             style="width:48px;height:48px;border-radius:12px;
+                                    background:var(--md-surface-bright);
+                                    display:flex;align-items:center;justify-content:center;
+                                    color:var(--md-on-surface-variant);">
+                            <i class="bi bi-cup-hot"></i>
+                        </div>
+                        <div class="small text-secondary">Free day — no classes</div>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{# ───── Global empty state ───── #}
+{% if not periods %}
+<div class="card"
+     data-motion="scale-in" data-motion-duration="440">
+    <div class="card-body text-center py-5">
+        <div class="mx-auto mb-3 d-flex align-items-center justify-content-center"
+             style="width:72px;height:72px;border-radius:20px;
+                    background:var(--md-surface-bright);
+                    color:var(--md-on-surface-variant);"
+             data-motion-variant="brandMark"
+             data-motion-initial="hidden"
+             data-motion-animate="visible">
+            <i class="bi bi-calendar-x fs-2"></i>
+        </div>
+        <h3 class="h5 fw-bold mb-2">No timetable yet</h3>
+        <p class="text-secondary small mb-0">
+            Your timetable will appear here once your class schedule is set.
+        </p>
+    </div>
+</div>
+{% endif %}
+
+{% include "partials/dashboard-widgets.html" %}
+{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ───── Timetable day card ───── */
+.timetable-day {
+    overflow: hidden;
+}
+.timetable-today {
+    border-color: color-mix(in srgb, var(--md-primary) 35%, var(--md-outline-variant));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--md-primary) 10%, transparent);
+}
+
+/* ───── Period row: [time] [subject] ......... [teacher] ───── */
+.period-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 12px;
+    min-height: 32px;
+}
+.period-time {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--md-surface-bright);
+    color: var(--md-on-surface-variant);
+    font-size: 11px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    flex-shrink: 0;
+    border: 1px solid var(--md-outline-variant);
+}
+.period-subject {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--md-on-surface);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+.period-teacher {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--md-on-surface-variant);
+    max-width: 140px;
+    flex-shrink: 0;
+}
+
+/* ───── Empty placeholder: shown only when no periods in the day ───── */
+.empty-placeholder { display: none; padding: 0; }
+.period-item ~ .empty-placeholder { display: none; }
+.timetable-list > .empty-placeholder:first-child:last-child { display: block; }
+
+/* ───── Mobile: teacher drops to its own row on very narrow screens ───── */
+@media (max-width: 480px) {
+    .period-row {
+        grid-template-columns: auto 1fr;
+        gap: 8px 12px;
+    }
+    .period-teacher {
+        grid-column: 1 / -1;
+        max-width: 100%;
+        padding-left: 2px;
+    }
+}
+
+/* ───── Dark mode ───── */
+[data-theme="dark"] .period-time,
+[data-bs-theme="dark"] .period-time {
+    background: var(--md-surface-2);
+    color: var(--md-on-surface-variant);
+    border-color: var(--md-outline-variant);
+}
+
+/* ───── Reduced motion ───── */
+html.no-motion .timetable-day,
+html[data-reduced-motion="true"] .timetable-day {
+    transition: none !important;
+}
+</style>
 {% endblock %}

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load static %}
+{% block page_title %}Sick Bay Log{% endblock %}
+
+{% block content %}
+
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text data-reveal-delay="40" data-reveal-stagger="22">Sick Bay Log</h1>
+        <p class="text-secondary small mb-0">
+            <span class="tabular-nums" data-counter="{{ visits|length }}">{{ visits|length }}</span> visits recorded
+        </p>
+    </div>
+    <a class="btn btn-primary btn-sm"
+       href="{% url 'staff:record_sickbay_visit' %}"
+       data-motion="fade-up" data-motion-delay="140"
+       data-motion-while-hover='{"y":-2,"scale":1.02}'
+       data-motion-while-tap='{"scale":0.97}' data-ripple>
+        <i class="bi bi-plus-lg me-1"></i> Record Visit
+    </a>
+</div>
+
+<div class="card" data-motion="fade-up" data-motion-delay="120" style="overflow:hidden;">
+    <div class="card-body p-0">
+        {% if visits %}
+        <table class="table table-hover mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Student</th><th>Date</th>
+                    <th>Symptoms</th><th>Referred</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in visits %}
+                <tr data-motion="fade-up"
+                    data-motion-delay="{% widthratio forloop.counter0 1 40 %}">
+                    <td data-label="Student">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="avatar avatar-sm">{{ v.student.full_name|slice:":1"|upper }}</span>
+                            <span class="fw-medium">{{ v.student.full_name }}</span>
+                        </div>
+                    </td>
+                    <td data-label="Date" class="tabular-nums small">
+                        {{ v.visit_date|date:"Y-m-d H:i" }}
+                    </td>
+                    <td data-label="Symptoms" class="text-secondary small">
+                        {{ v.symptoms|truncatewords:10 }}
+                    </td>
+                    <td data-label="Referred">
+                        {% if v.referred %}
+                        <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis">Yes</span>
+                        {% else %}
+                        <span class="badge rounded-pill bg-success-subtle text-success-emphasis">No</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state text-center py-5">
+            <div class="empty-icon mx-auto mb-3">
+                <i class="bi bi-heart-pulse fs-2 text-secondary"></i>
+            </div>
+            <h3 class="h6 fw-semibold mb-1">No visits recorded</h3>
+            <p class="text-secondary small mb-3">Record a visit when a student checks in.</p>
+            <a class="btn btn-primary btn-sm"
+               href="{% url 'staff:record_sickbay_visit' %}">Record Visit</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% include "partials/dashboard-widgets.html" %}
+{% endblock %}

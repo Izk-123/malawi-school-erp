@@ -1,9 +1,73 @@
 {% extends "base.html" %}
+{% load static %}
 {% block page_title %}My Leave{% endblock %}
+
 {% block content %}
-<a href="{% url 'staff:request_leave' %}" class="btn btn-primary btn-sm mb-3">Request Leave</a>
-<div class="card"><div class="card-body p-0"><table class="table table-hover mb-0">
-<thead><tr><th>Type</th><th>Dates</th><th>Days</th><th>Status</th></tr></thead>
-<tbody>{% for l in leave_requests %}<tr><td>{{ l.get_leave_type_display }}</td><td>{{ l.start_date }} to {{ l.end_date }}</td><td>{{ l.days }}</td><td><span class="badge {% if l.status == 'approved' %}bg-success{% elif l.status == 'rejected' %}bg-danger{% else %}bg-warning text-dark{% endif %}">{{ l.get_status_display }}</span></td></tr>{% empty %}<tr><td colspan="4">No leave requests yet.</td></tr>{% endfor %}</tbody>
-</table></div></div>
+
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text data-reveal-delay="40" data-reveal-stagger="22">My Leave</h1>
+        <p class="text-secondary small mb-0">Your leave history and pending requests.</p>
+    </div>
+    <a class="btn btn-primary btn-sm"
+       href="{% url 'staff:leave_create' %}"
+       data-motion="fade-up" data-motion-delay="140"
+       data-motion-while-hover='{"y":-2,"scale":1.02}'
+       data-motion-while-tap='{"scale":0.97}' data-ripple>
+        <i class="bi bi-plus-lg me-1"></i> Request Leave
+    </a>
+</div>
+
+<div class="card"
+     data-motion="fade-up" data-motion-delay="120"
+     style="overflow:hidden;">
+    <div class="card-body p-0">
+        {% if leave_requests %}
+        <table class="table table-hover mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Dates</th>
+                    <th>Days</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for l in leave_requests %}
+                <tr data-motion="fade-up"
+                    data-motion-delay="{% widthratio forloop.counter0 1 45 %}">
+                    <td data-label="Type" class="fw-medium">{{ l.get_leave_type_display }}</td>
+                    <td data-label="Dates" class="tabular-nums small">
+                        {{ l.start_date }} &rarr; {{ l.end_date }}
+                    </td>
+                    <td data-label="Days" class="tabular-nums">{{ l.days }}</td>
+                    <td data-label="Status">
+                        {% if l.status == 'approved' %}
+                        <span class="badge rounded-pill bg-success-subtle text-success-emphasis">Approved</span>
+                        {% elif l.status == 'rejected' %}
+                        <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis">Rejected</span>
+                        {% else %}
+                        <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis">Pending</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state text-center py-5">
+            <div class="empty-icon mx-auto mb-3">
+                <i class="bi bi-calendar-plus fs-2 text-secondary"></i>
+            </div>
+            <h3 class="h6 fw-semibold mb-1">No leave requests yet</h3>
+            <p class="text-secondary small mb-3">Submit your first request to get started.</p>
+            <a class="btn btn-primary btn-sm" href="{% url 'staff:leave_create' %}">Request Leave</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% include "partials/dashboard-widgets.html" %}
 {% endblock %}

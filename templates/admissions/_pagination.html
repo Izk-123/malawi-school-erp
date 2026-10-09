@@ -1,0 +1,28 @@
+{% if page_obj.has_other_pages %}
+<nav class="d-flex align-items-center justify-content-center gap-3 mt-4"
+     aria-label="Pagination"
+     data-motion="fade-up" data-motion-delay="240">
+  {% if page_obj.has_previous %}
+    <a class="btn btn-secondary btn-sm"
+       href="?page={{ page_obj.previous_page_number }}{{ extra_query }}"
+       data-motion-while-hover='{"x":-2}'
+       data-motion-while-tap='{"scale":0.94}'
+       data-ripple>
+      <i class="bi bi-chevron-left"></i> Previous
+    </a>
+  {% endif %}
+  <span class="text-muted-sm tabular-nums"
+        data-motion="fade-in" data-motion-delay="100">
+    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+  </span>
+  {% if page_obj.has_next %}
+    <a class="btn btn-secondary btn-sm"
+       href="?page={{ page_obj.next_page_number }}{{ extra_query }}"
+       data-motion-while-hover='{"x":2}'
+       data-motion-while-tap='{"scale":0.94}'
+       data-ripple>
+      Next <i class="bi bi-chevron-right"></i>
+    </a>
+  {% endif %}
+</nav>
+{% endif %}

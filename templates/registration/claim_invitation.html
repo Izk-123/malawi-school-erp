@@ -1,0 +1,442 @@
+{% extends "registration/base_auth.html" %}
+{% load static %}
+
+{% block title %}Set your password{% endblock %}
+
+{% block content %}
+
+<div class="auth-steps"
+     role="progressbar"
+     aria-valuenow="2" aria-valuemin="1" aria-valuemax="3"
+     data-motion-orchestrate='{"staggerChildren":0.06,"delayChildren":0.05}'>
+    <span class="auth-step completed" data-motion="pop">
+        <i class="bi bi-check"></i>
+    </span>
+    <span class="auth-step-line completed" data-motion="fade-in"></span>
+    <span class="auth-step active" data-motion="pop" data-motion-delay="80">2</span>
+    <span class="auth-step-line" data-motion="fade-in" data-motion-delay="140"></span>
+    <span class="auth-step" data-motion="pop" data-motion-delay="200">3</span>
+</div>
+
+<h1 class="auth-form-title"
+    data-reveal-text data-reveal-delay="120" data-reveal-stagger="22">
+    Welcome{% if invitation.invited_first_name %}, {{ invitation.invited_first_name }}{% endif %}
+</h1>
+<p class="auth-form-sub" style="margin-bottom:20px;"
+   data-motion="fade-up" data-motion-delay="200">
+    The school has set up a <strong>{{ invitation.get_purpose_display }}</strong>
+    for you on the Malawi School ERP.
+    Set a password below to activate it.
+</p>
+
+{# Invitation summary card #}
+<div class="alert alert-info d-flex align-items-start gap-3"
+     role="status"
+     style="margin-bottom:20px;"
+     data-motion="fade-up" data-motion-delay="260">
+    <i class="bi bi-info-circle flex-shrink-0" aria-hidden="true"></i>
+    <div class="min-w-0 small">
+        {% if invitation.student %}
+        <div>
+            <strong>Student:</strong> {{ invitation.student.full_name }}
+            <span class="text-secondary">({{ invitation.student.student_id }})</span>
+        </div>
+        {% elif invitation.teacher %}
+        <div>
+            <strong>Teacher:</strong> {{ invitation.teacher.full_name }}
+            <span class="text-secondary">({{ invitation.teacher.teacher_id }})</span>
+        </div>
+        {% elif invitation.staff %}
+        <div>
+            <strong>Staff:</strong> {{ invitation.staff.full_name }}
+            <span class="text-secondary">({{ invitation.staff.staff_id }})</span>
+        </div>
+        {% endif %}
+        {% if invitation.invited_phone %}
+        <div class="mt-1"><strong>Sent to:</strong> {{ invitation.invited_phone }}</div>
+        {% elif invitation.invited_email %}
+        <div class="mt-1"><strong>Sent to:</strong> {{ invitation.invited_email }}</div>
+        {% endif %}
+        <div class="mt-1 tabular-nums">
+            <strong>Expires:</strong> {{ invitation.expires_at|date:"j M Y, H:i" }}
+        </div>
+    </div>
+</div>
+
+{% if form.non_field_errors %}
+<div class="alert alert-danger"
+     role="alert"
+     data-motion-variant="shakingError"
+     data-motion-initial="hidden"
+     data-motion-animate="visible">
+    <i class="bi bi-exclamation-triangle"></i>
+    <div>{{ form.non_field_errors.0 }}</div>
+</div>
+{% endif %}
+
+<form method="post" class="auth-form" novalidate
+      data-motion-orchestrate='{"staggerChildren":0.06,"delayChildren":0.05}'>
+
+    {% csrf_token %}
+
+    <div class="field" data-motion="fade-up">
+        <label class="field-label" for="id_new_password1">Choose a password</label>
+        <div class="field-password">
+            <input id="id_new_password1"
+                   name="new_password1"
+                   type="password"
+                   class="field-input"
+                   autocomplete="new-password"
+                   autofocus
+                   required>
+            <button type="button"
+                    class="field-eye"
+                    data-pwd-toggle="id_new_password1"
+                    aria-label="Show password"
+                    data-motion-while-tap='{"scale":0.9}'>
+                <i class="bi bi-eye"></i>
+            </button>
+        </div>
+        <div class="password-strength" data-strength-target="id_new_password1"></div>
+        <p class="field-help">At least 8 characters, mixing letters and numbers.</p>
+        {% if form.new_password1.errors %}
+        <p class="field-error" role="alert">
+            <i class="bi bi-exclamation-circle"></i> {{ form.new_password1.errors.0 }}
+        </p>
+        {% endif %}
+    </div>
+
+    <div class="field" data-motion="fade-up">
+        <label class="field-label" for="id_new_password2">Confirm password</label>
+        <div class="field-password">
+            <input id="id_new_password2"
+                   name="new_password2"
+                   type="password"
+                   class="field-input"
+                   autocomplete="new-password"
+                   required>
+            <button type="button"
+                    class="field-eye"
+                    data-pwd-toggle="id_new_password2"
+                    aria-label="Show password"
+                    data-motion-while-tap='{"scale":0.9}'>
+                <i class="bi bi-eye"></i>
+            </button>
+        </div>
+        {% if form.new_password2.errors %}
+        <p class="field-error" role="alert">
+            <i class="bi bi-exclamation-circle"></i> {{ form.new_password2.errors.0 }}
+        </p>
+        {% endif %}
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-auth"
+            data-motion="fade-up"
+            data-motion-while-hover='{"y":-2,"scale":1.01}'
+            data-motion-while-tap='{"scale":0.97}'
+            data-ripple>
+        Activate my account
+    </button>
+
+    <div class="auth-links" data-motion="fade-up">
+        This invitation link can only be used once.
+        If something looks wrong,
+        <a href="{% url 'accounts:login' %}">go back to login</a>
+        and contact the school office.
+    </div>
+</form>
+{% endblock %}{% extends "registration/base_auth.html" %}
+{% load static %}
+
+{% block title %}Set your password{% endblock %}
+
+{% block content %}
+
+<div class="auth-steps"
+     role="progressbar"
+     aria-valuenow="2" aria-valuemin="1" aria-valuemax="3"
+     data-motion-orchestrate='{"staggerChildren":0.06,"delayChildren":0.05}'>
+    <span class="auth-step completed" data-motion="pop">
+        <i class="bi bi-check"></i>
+    </span>
+    <span class="auth-step-line completed" data-motion="fade-in"></span>
+    <span class="auth-step active" data-motion="pop" data-motion-delay="80">2</span>
+    <span class="auth-step-line" data-motion="fade-in" data-motion-delay="140"></span>
+    <span class="auth-step" data-motion="pop" data-motion-delay="200">3</span>
+</div>
+
+<h1 class="auth-form-title"
+    data-reveal-text data-reveal-delay="120" data-reveal-stagger="22">
+    Welcome{% if invitation.invited_first_name %}, {{ invitation.invited_first_name }}{% endif %}
+</h1>
+<p class="auth-form-sub" style="margin-bottom:20px;"
+   data-motion="fade-up" data-motion-delay="200">
+    The school has set up a <strong>{{ invitation.get_purpose_display }}</strong>
+    for you on the Malawi School ERP.
+    Set a password below to activate it.
+</p>
+
+{# Invitation summary card #}
+<div class="alert alert-info d-flex align-items-start gap-3"
+     role="status"
+     style="margin-bottom:20px;"
+     data-motion="fade-up" data-motion-delay="260">
+    <i class="bi bi-info-circle flex-shrink-0" aria-hidden="true"></i>
+    <div class="min-w-0 small">
+        {% if invitation.student %}
+        <div>
+            <strong>Student:</strong> {{ invitation.student.full_name }}
+            <span class="text-secondary">({{ invitation.student.student_id }})</span>
+        </div>
+        {% elif invitation.teacher %}
+        <div>
+            <strong>Teacher:</strong> {{ invitation.teacher.full_name }}
+            <span class="text-secondary">({{ invitation.teacher.teacher_id }})</span>
+        </div>
+        {% elif invitation.staff %}
+        <div>
+            <strong>Staff:</strong> {{ invitation.staff.full_name }}
+            <span class="text-secondary">({{ invitation.staff.staff_id }})</span>
+        </div>
+        {% endif %}
+        {% if invitation.invited_phone %}
+        <div class="mt-1"><strong>Sent to:</strong> {{ invitation.invited_phone }}</div>
+        {% elif invitation.invited_email %}
+        <div class="mt-1"><strong>Sent to:</strong> {{ invitation.invited_email }}</div>
+        {% endif %}
+        <div class="mt-1 tabular-nums">
+            <strong>Expires:</strong> {{ invitation.expires_at|date:"j M Y, H:i" }}
+        </div>
+    </div>
+</div>
+
+{% if form.non_field_errors %}
+<div class="alert alert-danger"
+     role="alert"
+     data-motion-variant="shakingError"
+     data-motion-initial="hidden"
+     data-motion-animate="visible">
+    <i class="bi bi-exclamation-triangle"></i>
+    <div>{{ form.non_field_errors.0 }}</div>
+</div>
+{% endif %}
+
+<form method="post" class="auth-form" novalidate
+      data-motion-orchestrate='{"staggerChildren":0.06,"delayChildren":0.05}'>
+
+    {% csrf_token %}
+
+    <div class="field" data-motion="fade-up">
+        <label class="field-label" for="id_new_password1">Choose a password</label>
+        <div class="field-password">
+            <input id="id_new_password1"
+                   name="new_password1"
+                   type="password"
+                   class="field-input"
+                   autocomplete="new-password"
+                   autofocus
+                   required>
+            <button type="button"
+                    class="field-eye"
+                    data-pwd-toggle="id_new_password1"
+                    aria-label="Show password"
+                    data-motion-while-tap='{"scale":0.9}'>
+                <i class="bi bi-eye"></i>
+            </button>
+        </div>
+        <div class="password-strength" data-strength-target="id_new_password1"></div>
+        <p class="field-help">At least 8 characters, mixing letters and numbers.</p>
+        {% if form.new_password1.errors %}
+        <p class="field-error" role="alert">
+            <i class="bi bi-exclamation-circle"></i> {{ form.new_password1.errors.0 }}
+        </p>
+        {% endif %}
+    </div>
+
+    <div class="field" data-motion="fade-up">
+        <label class="field-label" for="id_new_password2">Confirm password</label>
+        <div class="field-password">
+            <input id="id_new_password2"
+                   name="new_password2"
+                   type="password"
+                   class="field-input"
+                   autocomplete="new-password"
+                   required>
+            <button type="button"
+                    class="field-eye"
+                    data-pwd-toggle="id_new_password2"
+                    aria-label="Show password"
+                    data-motion-while-tap='{"scale":0.9}'>
+                <i class="bi bi-eye"></i>
+            </button>
+        </div>
+        {% if form.new_password2.errors %}
+        <p class="field-error" role="alert">
+            <i class="bi bi-exclamation-circle"></i> {{ form.new_password2.errors.0 }}
+        </p>
+        {% endif %}
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-auth"
+            data-motion="fade-up"
+            data-motion-while-hover='{"y":-2,"scale":1.01}'
+            data-motion-while-tap='{"scale":0.97}'
+            data-ripple>
+        Activate my account
+    </button>
+
+    <div class="auth-links" data-motion="fade-up">
+        This invitation link can only be used once.
+        If something looks wrong,
+        <a href="{% url 'accounts:login' %}">go back to login</a>
+        and contact the school office.
+    </div>
+</form>
+{% endblock %}{% extends "registration/base_auth.html" %}
+{% load static %}
+
+{% block title %}Set your password{% endblock %}
+
+{% block content %}
+
+<div class="auth-steps"
+     role="progressbar"
+     aria-valuenow="2" aria-valuemin="1" aria-valuemax="3"
+     data-motion-orchestrate='{"staggerChildren":0.06,"delayChildren":0.05}'>
+    <span class="auth-step completed" data-motion="pop">
+        <i class="bi bi-check"></i>
+    </span>
+    <span class="auth-step-line completed" data-motion="fade-in"></span>
+    <span class="auth-step active" data-motion="pop" data-motion-delay="80">2</span>
+    <span class="auth-step-line" data-motion="fade-in" data-motion-delay="140"></span>
+    <span class="auth-step" data-motion="pop" data-motion-delay="200">3</span>
+</div>
+
+<h1 class="auth-form-title"
+    data-reveal-text data-reveal-delay="120" data-reveal-stagger="22">
+    Welcome{% if invitation.invited_first_name %}, {{ invitation.invited_first_name }}{% endif %}
+</h1>
+<p class="auth-form-sub" style="margin-bottom:20px;"
+   data-motion="fade-up" data-motion-delay="200">
+    The school has set up a <strong>{{ invitation.get_purpose_display }}</strong>
+    for you on the Malawi School ERP.
+    Set a password below to activate it.
+</p>
+
+{# Invitation summary card #}
+<div class="alert alert-info d-flex align-items-start gap-3"
+     role="status"
+     style="margin-bottom:20px;"
+     data-motion="fade-up" data-motion-delay="260">
+    <i class="bi bi-info-circle flex-shrink-0" aria-hidden="true"></i>
+    <div class="min-w-0 small">
+        {% if invitation.student %}
+        <div>
+            <strong>Student:</strong> {{ invitation.student.full_name }}
+            <span class="text-secondary">({{ invitation.student.student_id }})</span>
+        </div>
+        {% elif invitation.teacher %}
+        <div>
+            <strong>Teacher:</strong> {{ invitation.teacher.full_name }}
+            <span class="text-secondary">({{ invitation.teacher.teacher_id }})</span>
+        </div>
+        {% elif invitation.staff %}
+        <div>
+            <strong>Staff:</strong> {{ invitation.staff.full_name }}
+            <span class="text-secondary">({{ invitation.staff.staff_id }})</span>
+        </div>
+        {% endif %}
+        {% if invitation.invited_phone %}
+        <div class="mt-1"><strong>Sent to:</strong> {{ invitation.invited_phone }}</div>
+        {% elif invitation.invited_email %}
+        <div class="mt-1"><strong>Sent to:</strong> {{ invitation.invited_email }}</div>
+        {% endif %}
+        <div class="mt-1 tabular-nums">
+            <strong>Expires:</strong> {{ invitation.expires_at|date:"j M Y, H:i" }}
+        </div>
+    </div>
+</div>
+
+{% if form.non_field_errors %}
+<div class="alert alert-danger"
+     role="alert"
+     data-motion-variant="shakingError"
+     data-motion-initial="hidden"
+     data-motion-animate="visible">
+    <i class="bi bi-exclamation-triangle"></i>
+    <div>{{ form.non_field_errors.0 }}</div>
+</div>
+{% endif %}
+
+<form method="post" class="auth-form" novalidate
+      data-motion-orchestrate='{"staggerChildren":0.06,"delayChildren":0.05}'>
+
+    {% csrf_token %}
+
+    <div class="field" data-motion="fade-up">
+        <label class="field-label" for="id_new_password1">Choose a password</label>
+        <div class="field-password">
+            <input id="id_new_password1"
+                   name="new_password1"
+                   type="password"
+                   class="field-input"
+                   autocomplete="new-password"
+                   autofocus
+                   required>
+            <button type="button"
+                    class="field-eye"
+                    data-pwd-toggle="id_new_password1"
+                    aria-label="Show password"
+                    data-motion-while-tap='{"scale":0.9}'>
+                <i class="bi bi-eye"></i>
+            </button>
+        </div>
+        <div class="password-strength" data-strength-target="id_new_password1"></div>
+        <p class="field-help">At least 8 characters, mixing letters and numbers.</p>
+        {% if form.new_password1.errors %}
+        <p class="field-error" role="alert">
+            <i class="bi bi-exclamation-circle"></i> {{ form.new_password1.errors.0 }}
+        </p>
+        {% endif %}
+    </div>
+
+    <div class="field" data-motion="fade-up">
+        <label class="field-label" for="id_new_password2">Confirm password</label>
+        <div class="field-password">
+            <input id="id_new_password2"
+                   name="new_password2"
+                   type="password"
+                   class="field-input"
+                   autocomplete="new-password"
+                   required>
+            <button type="button"
+                    class="field-eye"
+                    data-pwd-toggle="id_new_password2"
+                    aria-label="Show password"
+                    data-motion-while-tap='{"scale":0.9}'>
+                <i class="bi bi-eye"></i>
+            </button>
+        </div>
+        {% if form.new_password2.errors %}
+        <p class="field-error" role="alert">
+            <i class="bi bi-exclamation-circle"></i> {{ form.new_password2.errors.0 }}
+        </p>
+        {% endif %}
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-auth"
+            data-motion="fade-up"
+            data-motion-while-hover='{"y":-2,"scale":1.01}'
+            data-motion-while-tap='{"scale":0.97}'
+            data-ripple>
+        Activate my account
+    </button>
+
+    <div class="auth-links" data-motion="fade-up">
+        This invitation link can only be used once.
+        If something looks wrong,
+        <a href="{% url 'accounts:login' %}">go back to login</a>
+        and contact the school office.
+    </div>
+</form>
+{% endblock %}

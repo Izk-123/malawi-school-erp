@@ -1,23 +1,159 @@
 {% extends "base.html" %}
+{% load static %}
 {% block page_title %}Daily Collection Report{% endblock %}
+
 {% block content %}
-<form class="row g-2 mb-3" method="get">
-    <div class="col-md-3"><input type="date" class="form-control form-control-sm" name="date" value="{{ date|date:'Y-m-d' }}" onchange="this.form.submit()"></div>
+
+{# ───── Header ───── #}
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text data-reveal-delay="40" data-reveal-stagger="22">Daily Collection</h1>
+        <p class="text-secondary small mb-0 tabular-nums">{{ date }}</p>
+    </div>
+    <a class="btn btn-secondary btn-sm"
+       href="{% url 'fees:export_transactions' %}?date={{ date|date:'Y-m-d' }}"
+       data-motion="fade-up" data-motion-delay="140"
+       data-motion-while-hover='{"y":-2}'
+       data-motion-while-tap='{"scale":0.97}'
+       data-ripple>
+        <i class="bi bi-download me-1"></i> Export
+    </a>
+</div>
+
+{# ───── Date picker ───── #}
+<form class="card mb-4" method="get"
+      data-motion="fade-up" data-motion-delay="100">
+    <div class="card-body">
+        <div class="row g-2 align-items-center">
+            <div class="col-12 col-md-4">
+                <label class="form-label small text-secondary fw-semibold mb-1">Date</label>
+                <input type="date"
+                       class="form-control"
+                       name="date"
+                       value="{{ date|date:'Y-m-d' }}"
+                       onchange="this.form.submit()">
+            </div>
+        </div>
+    </div>
 </form>
-<div class="row g-3 mb-4">
-{% for method, total in totals_by_method.items %}
-<div class="col-md-3"><div class="card"><div class="card-body"><h5>{{ total }}</h5><p class="text-secondary small mb-0">{{ method }}</p></div></div></div>
-{% endfor %}
-<div class="col-md-3"><div class="card border-primary"><div class="card-body"><h5>{{ grand_total }}</h5><p class="text-secondary small mb-0">Total ({{ date }})</p></div></div></div>
+
+{# ───── Totals by method ───── #}
+<div class="row g-3 mb-4"
+     data-motion-orchestrate='{"staggerChildren":0.08,"delayChildren":0.1}'>
+
+    {% for method, total in totals_by_method.items %}
+    <div class="col-12 col-sm-6 col-md-4 col-lg-3"
+         data-motion="fade-up">
+        <div class="card h-100"
+             data-motion-while-hover='{"y":-3,"scale":1.005}'>
+            <div class="card-body">
+                <div class="small text-secondary fw-semibold text-uppercase mb-2"
+                     style="letter-spacing:.04em;font-size:11px;">{{ method }}</div>
+                <div class="h4 fw-bold mb-0 tabular-nums">
+                    <span data-counter="{{ total|default:0 }}"
+                          data-counter-prefix="MK "
+                          data-counter-duration="1100">MK 0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <div class="col-12 col-sm-6 col-md-4 col-lg-3"
+         data-motion="fade-up">
+        <div class="card h-100 border-primary-subtle"
+             style="background:linear-gradient(135deg,
+                     color-mix(in srgb, var(--md-primary) 8%, transparent) 0%,
+                     var(--md-surface) 100%);"
+             data-motion-while-hover='{"y":-3,"scale":1.005}'>
+            <div class="card-body">
+                <div class="small text-secondary fw-semibold text-uppercase mb-2"
+                     style="letter-spacing:.04em;font-size:11px;">
+                    Grand Total
+                </div>
+                <div class="h4 fw-bold mb-0 tabular-nums text-primary">
+                    <span data-counter="{{ grand_total|default:0 }}"
+                          data-counter-prefix="MK "
+                          data-counter-duration="1400">MK 0</span>
+                </div>
+                <div class="small text-secondary mt-1 tabular-nums">{{ date }}</div>
+            </div>
+        </div>
+    </div>
 </div>
+
+{# ───── Transactions by method ───── #}
 {% for method, txns in by_method.items %}
-<div class="card mb-3">
-    <div class="card-header"><h6 class="mb-0 fw-bold">{{ method }}</h6></div>
-    <div class="card-body p-0"><table class="table table-hover mb-0">
-    <thead><tr><th>Receipt</th><th>Student</th><th>Amount</th><th>Recorded By</th></tr></thead>
-    <tbody>{% for t in txns %}<tr><td><a href="{% url 'fees:receipt' t.pk %}">{{ t.receipt_no }}</a></td><td>{{ t.student.full_name }}</td><td>{{ t.amount }}</td><td>{{ t.recorded_by|default:"-" }}</td></tr>{% endfor %}</tbody>
-    </table></div>
+<div class="card mb-3"
+     data-motion="fade-up" data-motion-delay="{% widthratio forloop.counter0 1 120 %}"
+     style="overflow:hidden;">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <h6 class="fw-bold mb-0">{{ method }}</h6>
+        <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">
+            {{ txns|length }} {{ txns|length|pluralize:"transaction,transactions" }}
+        </span>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Receipt</th>
+                    <th>Student</th>
+                    <th class="text-end">Amount</th>
+                    <th class="text-end">Recorded By</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in txns %}
+                <tr data-motion="fade-up"
+                    data-motion-delay="{% widthratio forloop.counter0 1 30 %}"
+                    data-motion-while-hover='{"x":3}'>
+                    <td data-label="Receipt" class="font-monospace small">
+                        <a href="{% url 'fees:receipt' t.pk %}" class="text-decoration-none">
+                            {{ t.receipt_no }}
+                        </a>
+                    </td>
+                    <td data-label="Student">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="avatar avatar-sm">{{ t.student.full_name|slice:":1"|upper }}</span>
+                            <span class="fw-medium">{{ t.student.full_name }}</span>
+                        </div>
+                    </td>
+                    <td data-label="Amount" class="text-end tabular-nums fw-semibold text-success">
+                        MK {{ t.amount }}
+                    </td>
+                    <td data-label="Recorded By" class="text-end small text-secondary">
+                        {{ t.recorded_by|default:"—" }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
-{% empty %}<p class="text-secondary">No collections recorded for this date.</p>
+{% empty %}
+
+<div class="card"
+     data-motion="scale-in" data-motion-duration="440">
+    <div class="card-body text-center py-5">
+        <div class="mx-auto mb-3 d-flex align-items-center justify-content-center"
+             style="width:72px;height:72px;border-radius:20px;
+                    background:var(--md-surface-bright);
+                    color:var(--md-on-surface-variant);"
+             data-motion-variant="brandMark"
+             data-motion-initial="hidden"
+             data-motion-animate="visible">
+            <i class="bi bi-calendar-x fs-2"></i>
+        </div>
+        <h3 class="h5 fw-bold mb-2">No collections recorded</h3>
+        <p class="text-secondary small mb-0">
+            There were no fee payments on {{ date }}.
+        </p>
+    </div>
+</div>
 {% endfor %}
+
+{% include "partials/dashboard-widgets.html" %}
 {% endblock %}

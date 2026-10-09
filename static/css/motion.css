@@ -1,0 +1,97 @@
+/* ==========================================================================
+   motion.css — pre-hydration initial states + CSS-only fallbacks.
+   The JS engine takes over once it boots; from that point inline styles
+   from motion.js win everything. This file exists so the very first paint
+   (before deferred JS runs) already has elements in their "initial" pose.
+   ========================================================================== */
+
+:root {
+  --mo-fast:   180ms;
+  --mo-base:   320ms;
+  --mo-slow:   520ms;
+  --mo-slower: 720ms;
+
+  /* Curves used only by CSS-only fallbacks + non-JS users */
+  --spring-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+  --spring-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-expo:  cubic-bezier(0.7, 0, 0.84, 0);
+}
+
+/* --------------------------------------------------------------------------
+   1. Pre-hydration initial states
+   Only when JS is confirmed running (html.js) AND the element hasn't yet
+   been hydrated by motion.js (data-motion-ready is set by the engine).
+   -------------------------------------------------------------------------- */
+html.js [data-motion]:not([data-motion-ready]),
+html.js [data-motion-variant]:not([data-motion-ready]) {
+  opacity: 0;
+  will-change: opacity, transform, filter;
+  transform: translate3d(0, 0, 0);
+}
+
+/* Preset-specific initial poses (mirror PRESETS in motion.js) */
+html.js [data-motion="fade-up"]:not([data-motion-ready])      { transform: translate3d(0, 24px, 0); }
+html.js [data-motion="fade-down"]:not([data-motion-ready])    { transform: translate3d(0, -24px, 0); }
+html.js [data-motion="slide-right"]:not([data-motion-ready])  { transform: translate3d(-32px, 0, 0); }
+html.js [data-motion="slide-left"]:not([data-motion-ready])   { transform: translate3d(32px, 0, 0); }
+html.js [data-motion="scale-in"]:not([data-motion-ready])     { transform: scale(0.94); }
+html.js [data-motion="pop"]:not([data-motion-ready])          { transform: scale(0.6); }
+html.js [data-motion="blur-in"]:not([data-motion-ready])      { filter: blur(12px); transform: translate3d(0, 8px, 0); }
+
+/* --------------------------------------------------------------------------
+   2. Reduced motion — kill everything. The engine reads the same media query.
+   -------------------------------------------------------------------------- */
+html[data-reduced-motion="true"] [data-motion],
+html[data-reduced-motion="true"] [data-motion-variant],
+html.no-motion [data-motion],
+html.no-motion [data-motion-variant] {
+  opacity: 1 !important;
+  transform: none !important;
+  filter: none !important;
+  transition: none !important;
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.js [data-motion],
+  html.js [data-motion-variant] {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   3. Exit — before navigation. Engine adds .mo-exiting to <html>, then
+   waits for the exit animations to settle before flipping the URL.
+   -------------------------------------------------------------------------- */
+html.mo-exiting {
+  /* avoid FOUC while engine runs exit timelines */
+  overflow: hidden;
+}
+
+/* --------------------------------------------------------------------------
+   4. View Transitions API — page-to-page fade when engine hands off
+   -------------------------------------------------------------------------- */
+@view-transition { navigation: auto; }
+::view-transition-old(root) { animation: mo-vt-out 200ms var(--ease-in-expo); }
+::view-transition-new(root) { animation: mo-vt-in  280ms var(--spring-smooth); }
+@keyframes mo-vt-out { to   { opacity: 0; transform: translateY(-6px) scale(0.995); filter: blur(4px); } }
+@keyframes mo-vt-in  { from { opacity: 0; transform: translateY(6px)  scale(0.995); filter: blur(4px); } }
+
+/* --------------------------------------------------------------------------
+   5. Layout-transition hint — engine adds [data-mo-flip] during measure
+   -------------------------------------------------------------------------- */
+[data-mo-flip] { transition: none !important; }
+
+/* --------------------------------------------------------------------------
+   6. Shimmer for skeletons (Framer-style loading)
+   -------------------------------------------------------------------------- */
+.mo-shimmer {
+  background: linear-gradient(90deg,
+    var(--md-surface-1) 25%, var(--md-surface-3) 50%, var(--md-surface-1) 75%);
+  background-size: 200% 100%;
+  animation: mo-shimmer 1.6s var(--spring-smooth) infinite;
+}
+@keyframes mo-shimmer { from { background-position:  200% 0; } to { background-position: -200% 0; } }

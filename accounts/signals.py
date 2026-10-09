@@ -79,3 +79,11 @@ def record_password_history(user, raw_password):
     # Trim to the last 10 entries so the table doesn't grow unbounded.
     ids_to_keep = PasswordHistory.objects.filter(user=user).order_by('-created_at').values_list('id', flat=True)[:10]
     PasswordHistory.objects.filter(user=user).exclude(id__in=list(ids_to_keep)).delete()
+
+@receiver(post_save, sender=User)
+def sync_role_group(sender, instance, **kwargs):
+    """AC-16/17: every user belongs to at least their role Group. Extra
+    groups (registry_clerk, hr_officer, head_teacher) added by admins are
+    preserved — the role group is a floor, not a ceiling."""
+    group, _ = Group.objects.get_or_create(name=instance.role)
+    instance.groups.add(group)   # was .set([group])

@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Interview · {{ applicant.full_name }}{% endblock %}
+{% block page_title %}Interview{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock %}
+
+{% block content %}
+
+{# ─────────── Header ─────────── #}
+<div class="page-header"
+     data-motion="fade-down" data-motion-duration="460">
+  <div>
+    <h1 class="page-title"
+        data-reveal-text
+        data-reveal-delay="40"
+        data-reveal-stagger="22">Interview · {{ applicant.full_name }}</h1>
+    <p class="text-muted-sm mb-0"
+       data-motion="fade-up" data-motion-delay="200">
+      {{ applicant.applicant_code }}
+    </p>
+  </div>
+  <div class="toolbar">
+    <a href="{% url 'admissions:applicant_detail' applicant.pk %}" class="btn btn-secondary"
+       data-motion="fade-up" data-motion-delay="220"
+       data-motion-while-hover='{"y":-2}'
+       data-motion-while-tap='{"scale":0.97}'
+       data-ripple>
+      <i class="bi bi-arrow-left"></i> Back
+    </a>
+  </div>
+</div>
+
+<form method="post" novalidate data-live-form
+      data-motion-orchestrate='{"when":"beforeChildren","staggerChildren":0.08,"delayChildren":0.05}'>
+
+  {% csrf_token %}
+
+  {% if form.non_field_errors %}
+  <div class="alert alert-danger" role="alert"
+       data-motion-variant="notice"
+       data-motion-initial="hidden"
+       data-motion-animate="visible">
+    <i class="bi bi-exclamation-triangle"></i> {{ form.non_field_errors.0 }}
+  </div>
+  {% endif %}
+
+  {# ─────────── Scheduling ─────────── #}
+  <div class="card mb-3"
+       data-motion="fade-up"
+       data-motion-layout>
+    <div class="card-body">
+      {% include "admissions/_form_section.html" with icon="bi-calendar-check" title="Scheduling" sub="When and where the interview happens" tone="info" %}
+      <div class="row g-3"
+           data-motion-orchestrate='{"staggerChildren":0.06,"delayChildren":0.05}'>
+        <div class="col-md-6" data-motion="fade-up">
+          {% include "admissions/_field.html" with field=form.scheduled_for icon="bi-calendar-event" %}
+        </div>
+        <div class="col-md-6" data-motion="fade-up">
+          {% include "admissions/_field.html" with field=form.location icon="bi-geo-alt" %}
+        </div>
+        <div class="col-md-6" data-motion="fade-up">
+          {% include "admissions/_field.html" with field=form.interviewer icon="bi-person-video" %}
+        </div>
+        <div class="col-md-6" data-motion="fade-up">
+          {% include "admissions/_field.html" with field=form.recommendation %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ─────────── Scores ─────────── #}
+  <div class="card mb-3"
+       data-motion="fade-up"
+       data-motion-layout>
+    <div class="card-body">
+      {% include "admissions/_form_section.html" with icon="bi-star" title="Interview scores" sub="Rate both the student and the parent" tone="accent" %}
+
+      <div class="row g-4"
+           data-motion-orchestrate='{"staggerChildren":0.1,"delayChildren":0.05}'>
+        <div class="col-md-6" data-motion="fade-up">
+          <label class="field-label">Student · out of 10</label>
+          {{ form.student_score }}
+          <div data-stars="{{ form.student_score.id_for_label }}"
+               data-max="10" class="mt-2"
+               data-motion="fade-up" data-motion-delay="240"></div>
+        </div>
+        <div class="col-md-6" data-motion="fade-up">
+          <label class="field-label">Parent · out of 10</label>
+          {{ form.parent_score }}
+          <div data-stars="{{ form.parent_score.id_for_label }}"
+               data-max="10" class="mt-2"
+               data-motion="fade-up" data-motion-delay="320"></div>
+        </div>
+      </div>
+
+      <div class="callout info mt-3"
+           data-motion="fade-up" data-motion-delay="380">
+        <i class="bi bi-info-circle"></i>
+        <div>
+          Scores feed the composite automatically.
+          Student weight <strong>20%</strong>, parent weight <strong>15%</strong>.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ─────────── Notes ─────────── #}
+  <div class="card mb-3"
+       data-motion="fade-up"
+       data-motion-layout>
+    <div class="card-body">
+      {% include "admissions/_form_section.html" with icon="bi-chat-left-text" title="Notes" sub="Observations and follow-ups" tone="info" %}
+      {% include "admissions/_field.html" with field=form.notes %}
+    </div>
+  </div>
+
+  <div class="profile-actions-bar"
+       data-motion="fade-up" data-motion-delay="320">
+    <a href="{% url 'admissions:applicant_detail' applicant.pk %}" class="btn btn-outline"
+       data-motion-while-hover='{"y":-2}'
+       data-motion-while-tap='{"scale":0.97}'
+       data-ripple>
+      Cancel
+    </a>
+    <button type="submit" class="btn btn-primary"
+            data-motion-while-hover='{"y":-2,"scale":1.02}'
+            data-motion-while-tap='{"scale":0.97}'
+            data-ripple>
+      <i class="bi bi-check2"></i> Save interview
+    </button>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/admissions-form.js' %}" defer></script>
+{% endblock %}

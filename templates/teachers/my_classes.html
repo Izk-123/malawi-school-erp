@@ -1,9 +1,112 @@
 {% extends "base.html" %}
+{% load static %}
 {% block page_title %}My Classes{% endblock %}
+
 {% block content %}
-<div class="card"><div class="card-header"><h5 class="mb-0 fw-bold">My Classes</h5></div>
-<div class="card-body p-0"><table class="table table-hover mb-0">
-<thead><tr><th>Class</th><th>Subject</th><th>Students</th><th>Roster</th></tr></thead>
-<tbody>{% for a in assignments %}<tr><td>{{ a.class_display }}</td><td>{{ a.subject }}</td><td>{{ a.student_count }}</td><td><a class="btn btn-sm btn-outline-primary" href="{% url 'teachers:class_roster' a.class_name a.stream %}"><i class="bi bi-list-ul"></i></a></td></tr>{% empty %}<tr><td colspan="4">No classes assigned</td></tr>{% endfor %}</tbody>
-</table></div></div>
+
+{# ─── Header ─── #}
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text
+            data-reveal-delay="40"
+            data-reveal-stagger="22">My classes</h1>
+        <p class="text-secondary small mb-0">
+            <span class="tabular-nums"
+                  data-counter="{{ assignments|length }}"
+                  data-counter-duration="800">{{ assignments|length }}</span>
+            {{ assignments|length|pluralize:"class,classes" }} assigned to you
+        </p>
+    </div>
+</div>
+
+{% if assignments %}
+
+{# ─── Class cards (grid) ─── #}
+<div class="row g-3">
+    {% for a in assignments %}
+    <div class="col-md-6 col-xl-4"
+         data-motion="fade-up"
+         data-motion-delay="{% widthratio forloop.counter0 1 80 %}">
+        <div class="card h-100"
+             data-tilt="4"
+             data-spotlight
+             data-motion-while-hover='{"y":-3}'>
+
+            <div class="card-body d-flex flex-column">
+
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
+                         style="width:52px;height:52px;
+                                background:linear-gradient(135deg,rgba(26,86,50,.14),var(--md-primary));
+                                color:#fff;font-size:22px;"
+                         data-motion-variant="brandMark"
+                         data-motion-initial="hidden"
+                         data-motion-animate="visible"
+                         data-motion-delay="{% widthratio forloop.counter0 1 120 %}">
+                        <i class="bi bi-book"></i>
+                    </div>
+                    <div class="min-w-0 flex-grow-1">
+                        <div class="fw-bold text-truncate">
+                            {{ a.class_display|default:a.class_name }}
+                        </div>
+                        <div class="small text-secondary text-truncate">
+                            {{ a.subject|default:"No subject" }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <i class="bi bi-people text-secondary"></i>
+                    <span class="fw-medium tabular-nums"
+                          data-counter="{{ a.student_count|default:0 }}"
+                          data-counter-duration="900">0</span>
+                    <span class="text-secondary small">
+                        {{ a.student_count|default:0|pluralize:"student,students" }}
+                    </span>
+                </div>
+
+                <a href="{% url 'teachers:class_roster' a.class_name a.stream %}"
+                   class="btn btn-primary w-100 mt-auto"
+                   data-motion-while-hover='{"y":-1,"scale":1.01}'
+                   data-motion-while-tap='{"scale":0.97}'
+                   data-ripple>
+                    <i class="bi bi-list-ul me-1"></i> View roster
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% else %}
+
+{# ─── Empty state ─── #}
+<div class="card"
+     data-motion="scale-in" data-motion-duration="440">
+    <div class="card-body text-center py-5">
+        <div class="mx-auto mb-3 d-flex align-items-center justify-content-center"
+             style="width:80px;height:80px;border-radius:24px;
+                    background:var(--md-surface-bright);
+                    color:var(--md-on-surface-variant);"
+             data-motion-variant="brandMark"
+             data-motion-initial="hidden"
+             data-motion-animate="visible">
+            <i class="bi bi-easel2 fs-1"></i>
+        </div>
+        <h3 class="h5 fw-bold mb-2"
+            data-motion="fade-up" data-motion-delay="240">
+            No classes assigned yet
+        </h3>
+        <p class="text-secondary small mb-0"
+           data-motion="fade-up" data-motion-delay="320">
+            Ask an administrator to assign you to one or more classes.
+        </p>
+    </div>
+</div>
+
+{% endif %}
+
+{% include "partials/dashboard-widgets.html" %}
 {% endblock %}

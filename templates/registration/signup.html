@@ -1,119 +1,178 @@
 {% extends "registration/base_auth.html" %}
 {% load static %}
 
-{% block title %}Create account{% endblock %}
+{% block title %}Create parent account{% endblock %}
 
 {% block content %}
-<h1 class="auth-form-title" style="text-align:center;">Create your account</h1>
-<p class="auth-form-sub" style="text-align:center;margin-bottom:20px;">
-    For students and parents. Teacher and staff accounts are created by the school.
+<h1 class="auth-form-title" style="text-align:center;"
+    data-motion="fade-up" data-motion-delay="40">Create your parent account</h1>
+<p class="auth-form-sub" style="text-align:center;margin-bottom:20px;"
+   data-motion="fade-up" data-motion-delay="90">
+    Use the student ID and admission code from your child's admission letter.
+    Teacher and staff accounts are created by the school.
 </p>
 
 {% if form.non_field_errors %}
-<div class="alert alert-danger" role="alert">
+<div class="alert alert-danger" role="alert"
+     data-motion="fade-down" data-motion-delay="120">
     <i class="bi bi-exclamation-triangle"></i>
     <div>{{ form.non_field_errors.0 }}</div>
 </div>
 {% endif %}
 
-<form method="post" class="auth-form" novalidate>
+<form method="post" class="auth-form" novalidate data-motion-stagger="55">
     {% csrf_token %}
 
-    {# Role selection — restricted to Student/Parent by the form #}
-    <div class="field">
-        <label class="field-label" for="id_role">I am a…</label>
-        <select id="id_role" name="role" class="field-input" required>
-            <option value="student" {% if form.role.value == 'student' %}selected{% endif %}>Student</option>
-            <option value="parent"  {% if form.role.value == 'parent'  %}selected{% endif %}>Parent / Guardian</option>
-        </select>
-    </div>
-
-    <div class="field">
-        <label class="field-label" for="id_username">Username</label>
-        <input id="id_username" name="username" type="text" class="field-input"
-               autocomplete="username" autocapitalize="none" required
-               value="{{ form.username.value|default:'' }}">
-        {% if form.username.errors %}
-        <p class="field-error" role="alert"><i class="bi bi-exclamation-circle"></i> {{ form.username.errors.0 }}</p>
+    <div class="field" data-motion="fade-up">
+        <label class="field-label" for="id_student_id">Student ID</label>
+        <input id="id_student_id" name="student_id" type="text" class="field-input"
+               autocomplete="off" autocapitalize="characters" spellcheck="false"
+               placeholder="STU-2025-001" required
+               value="{{ form.student_id.value|default:'' }}">
+        <p class="field-help">Found on the admission letter.</p>
+        {% if form.student_id.errors %}
+        <p class="field-error" role="alert">
+            <i class="bi bi-exclamation-circle"></i> {{ form.student_id.errors.0 }}
+        </p>
         {% endif %}
     </div>
 
-    <div class="field">
+    <div class="field" data-motion="fade-up">
+        <label class="field-label" for="id_admission_code">Admission code</label>
+        <input id="id_admission_code" name="admission_code" type="text" class="field-input"
+               autocomplete="off" autocapitalize="characters" spellcheck="false"
+               maxlength="12" placeholder="8-character code" required
+               value="{{ form.admission_code.value|default:'' }}">
+        <p class="field-help">The one-time code on the admission letter.</p>
+        {% if form.admission_code.errors %}
+        <p class="field-error" role="alert">
+            <i class="bi bi-exclamation-circle"></i> {{ form.admission_code.errors.0 }}
+        </p>
+        {% endif %}
+    </div>
+
+    <div class="field" data-motion="fade-up">
+        <label class="field-label" for="id_first_name">First name</label>
+        <input id="id_first_name" name="first_name" type="text" class="field-input"
+               autocomplete="given-name" required
+               value="{{ form.first_name.value|default:'' }}">
+        {% if form.first_name.errors %}
+        <p class="field-error" role="alert">
+            <i class="bi bi-exclamation-circle"></i> {{ form.first_name.errors.0 }}
+        </p>
+        {% endif %}
+    </div>
+
+    <div class="field" data-motion="fade-up">
+        <label class="field-label" for="id_last_name">Last name</label>
+        <input id="id_last_name" name="last_name" type="text" class="field-input"
+               autocomplete="family-name" required
+               value="{{ form.last_name.value|default:'' }}">
+        {% if form.last_name.errors %}
+        <p class="field-error" role="alert">
+            <i class="bi bi-exclamation-circle"></i> {{ form.last_name.errors.0 }}
+        </p>
+        {% endif %}
+    </div>
+
+    <div class="field" data-motion="fade-up">
+        <label class="field-label" for="id_username">Username</label>
+        <input id="id_username" name="username" type="text" class="field-input"
+               autocomplete="username" autocapitalize="none" autocorrect="off"
+               spellcheck="false" required
+               value="{{ form.username.value|default:'' }}">
+        <p class="field-help">You'll use this to log in. Letters, digits, and @/./+/-/_ only.</p>
+        {% if form.username.errors %}
+        <p class="field-error" role="alert">
+            <i class="bi bi-exclamation-circle"></i> {{ form.username.errors.0 }}
+        </p>
+        {% endif %}
+    </div>
+
+    <div class="field" data-motion="fade-up">
         <label class="field-label" for="id_email">Email</label>
         <input id="id_email" name="email" type="email" class="field-input"
                autocomplete="email" inputmode="email" required
                value="{{ form.email.value|default:'' }}">
         <p class="field-help">We'll send a verification link to this email.</p>
         {% if form.email.errors %}
-        <p class="field-error" role="alert"><i class="bi bi-exclamation-circle"></i> {{ form.email.errors.0 }}</p>
+        <p class="field-error" role="alert">
+            <i class="bi bi-exclamation-circle"></i> {{ form.email.errors.0 }}
+        </p>
         {% endif %}
     </div>
 
-    <div class="field">
-        <label class="field-label" for="id_first_name">First name</label>
-        <input id="id_first_name" name="first_name" type="text" class="field-input"
-               autocomplete="given-name" required value="{{ form.first_name.value|default:'' }}">
-    </div>
-
-    <div class="field">
-        <label class="field-label" for="id_last_name">Last name</label>
-        <input id="id_last_name" name="last_name" type="text" class="field-input"
-               autocomplete="family-name" required value="{{ form.last_name.value|default:'' }}">
-    </div>
-
-    <div class="field">
+    <div class="field" data-motion="fade-up">
         <label class="field-label" for="id_phone_number">Phone number</label>
         <div class="field-phone">
             <span class="field-prefix">+265</span>
             <input id="id_phone_number" name="phone_number" type="tel" class="field-input"
                    inputmode="numeric" pattern="[0-9]{9}" maxlength="9"
-                   placeholder="991234567"
+                   placeholder="991234567" autocomplete="tel-national" required
                    value="{{ form.phone_number.value|default:''|cut:'+265' }}">
         </div>
-        <p class="field-help">We'll send a 6-digit code to verify this number.</p>
-    </div>
-
-    <div class="field">
-        <label class="field-label" for="id_password1">Password</label>
-        <div class="field-password">
-            <input id="id_password1" name="password1" type="password" class="field-input"
-                   autocomplete="new-password" required>
-            <button type="button" class="field-eye"
-                    data-pwd-toggle="id_password1" aria-label="Show password">
-                <i class="bi bi-eye"></i>
-            </button>
-        </div>
-        <div class="password-strength" id="strength" data-strength-target="id_password1"></div>
-        <p class="field-help">At least 8 characters, with letters and numbers.</p>
-        {% if form.password1.errors %}
-        <p class="field-error" role="alert"><i class="bi bi-exclamation-circle"></i> {{ form.password1.errors.0 }}</p>
+        <p class="field-help">Must match the guardian number on file for that student.</p>
+        {% if form.phone_number.errors %}
+        <p class="field-error" role="alert">
+            <i class="bi bi-exclamation-circle"></i> {{ form.phone_number.errors.0 }}
+        </p>
         {% endif %}
     </div>
 
-    <div class="field">
+    <div class="field" data-motion="fade-up">
+        <label class="field-label" for="id_password1">Password</label>
+        <div class="field-password">
+            <input id="id_password1" name="password1" type="password"
+                   class="field-input" autocomplete="new-password" required>
+            <button type="button" class="field-eye" data-pwd-toggle="id_password1"
+                    aria-label="Show password" data-motion-tap="squish">
+                <i class="bi bi-eye"></i>
+            </button>
+        </div>
+        <div class="password-strength" data-strength-target="id_password1"></div>
+        <p class="field-help">At least 8 characters, with letters and numbers.</p>
+        {% if form.password1.errors %}
+        <p class="field-error" role="alert">
+            <i class="bi bi-exclamation-circle"></i> {{ form.password1.errors.0 }}
+        </p>
+        {% endif %}
+    </div>
+
+    <div class="field" data-motion="fade-up">
         <label class="field-label" for="id_password2">Confirm password</label>
         <div class="field-password">
-            <input id="id_password2" name="password2" type="password" class="field-input"
-                   autocomplete="new-password" required>
-            <button type="button" class="field-eye"
-                    data-pwd-toggle="id_password2" aria-label="Show password">
+            <input id="id_password2" name="password2" type="password"
+                   class="field-input" autocomplete="new-password" required>
+            <button type="button" class="field-eye" data-pwd-toggle="id_password2"
+                    aria-label="Show password" data-motion-tap="squish">
                 <i class="bi bi-eye"></i>
             </button>
         </div>
         {% if form.password2.errors %}
-        <p class="field-error" role="alert"><i class="bi bi-exclamation-circle"></i> {{ form.password2.errors.0 }}</p>
+        <p class="field-error" role="alert">
+            <i class="bi bi-exclamation-circle"></i> {{ form.password2.errors.0 }}
+        </p>
         {% endif %}
     </div>
 
-    <label class="checkbox">
+    <label class="checkbox" data-motion="fade-up">
         <input type="checkbox" name="terms" required>
-        <span>I agree to the <a href="/terms/">terms</a> and <a href="/privacy/">privacy policy</a>.</span>
+        <span>
+            I agree to the <a href="/terms/">terms</a> and
+            <a href="/privacy/">privacy policy</a>.
+        </span>
     </label>
 
-    <button type="submit" class="btn btn-primary btn-auth">Create account</button>
+    <button type="submit" class="btn btn-primary btn-auth"
+            data-motion="fade-up"
+            data-motion-hover="glow"
+            data-motion-tap="press">
+        Create parent account
+    </button>
 
-    <div class="auth-links">
-        Already have an account? <a href="{% url 'accounts:login' %}">Log in</a>
+    <div class="auth-links" data-motion="fade-up">
+        Already have an account?
+        <a href="{% url 'accounts:login' %}">Log in</a>
     </div>
 </form>
 {% endblock %}

@@ -1,21 +1,89 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light" data-bs-theme="light">
 <head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Access Denied</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+    <title>Access Denied · Malawi School ERP</title>
+
+    {# SEO — noindex on error pages #}
+    {% include "partials/seo.html" %}
+    <meta name="robots" content="noindex, nofollow">
+
+    {# Motion boot — theme + reduced-motion before paint #}
+    <script>
+    (function () {
+        var html = document.documentElement;
+        html.classList.add('js');
+
+        var saved = null;
+        try { saved = localStorage.getItem('mse.theme'); } catch (e) {}
+        var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var theme = saved || (prefersDark ? 'dark' : 'light');
+        html.setAttribute('data-theme', theme);
+        html.setAttribute('data-bs-theme', theme);
+
+        var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        html.dataset.reducedMotion = reduced ? 'true' : 'false';
+        if (reduced) html.classList.add('no-motion');
+    })();
+    </script>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/custom.css' %}">
+    <link rel="stylesheet" href="{% static 'css/theme.css' %}">
+    <link rel="stylesheet" href="{% static 'css/_dark.css' %}">
+    <link rel="stylesheet" href="{% static 'css/motion.css' %}">
 </head>
 <body>
+
+{# Variant library #}
+{% include "partials/motion-variants.html" %}
+
 <div class="login-container">
-    <div class="login-card text-center">
-        <i class="bi bi-shield-lock text-danger" style="font-size:3rem;"></i>
-        <h4 class="fw-bold mt-3">Access Denied</h4>
-        <p class="text-secondary">You don't have permission to view this page. This attempt has been logged.</p>
-        <a class="btn btn-primary" href="{% url 'accounts:dashboard' %}">Back to Dashboard</a>
+    <div class="login-card text-center"
+         data-motion="scale-in"
+         data-motion-duration="480"
+         data-motion-layout>
+
+        {# Icon: keyframed bouncy entry, then settles #}
+        <i class="bi bi-shield-lock text-danger"
+           style="font-size:3rem;display:inline-block;"
+           data-motion-keyframes='[
+             { "opacity":0, "scale":0.4,  "rotate":-14 },
+             { "opacity":1, "scale":1.15, "rotate":6   },
+             { "opacity":1, "scale":0.95, "rotate":-2  },
+             { "opacity":1, "scale":1,    "rotate":0   }
+           ]'
+           data-motion-transition='{ "duration": 0.9, "times": [0, 0.45, 0.75, 1] }'></i>
+
+        <h4 class="fw-bold mt-3"
+            data-motion="fade-up"
+            data-motion-delay="280">
+            Access Denied
+        </h4>
+
+        <p class="text-secondary"
+           data-motion="fade-up"
+           data-motion-delay="360">
+            You don't have permission to view this page. This attempt has been logged.
+        </p>
+
+        <a class="btn btn-primary"
+           href="{% url 'accounts:dashboard' %}"
+           data-motion-variant="ctaButton"
+           data-motion-initial="hidden"
+           data-motion-animate="visible"
+           data-motion-delay="440"
+           data-motion-while-hover="hovered"
+           data-motion-while-tap="pressed">
+            Back to Dashboard
+        </a>
     </div>
 </div>
+
+<script src="{% static 'js/motion.js' %}" defer></script>
 </body>
 </html>

@@ -1,11 +1,98 @@
 {% extends "base.html" %}
+{% load static %}
 {% block page_title %}Attendance Summary{% endblock %}
+
 {% block content %}
-<div class="card"><div class="card-header"><h5 class="mb-0 fw-bold">Attendance Summary</h5></div>
-<div class="card-body p-0"><table class="table table-hover mb-0">
-<thead><tr><th>Student</th><th>Class</th><th>Attendance %</th><th></th></tr></thead>
-<tbody>{% for s in students %}<tr><td>{{ s.full_name }}</td><td>{{ s.class_display }}</td><td>{{ s.attendance_percentage }}%</td>
-<td>{% if current_role == 'parent' %}<a class="btn btn-sm btn-outline-primary" href="{% url 'attendance:child_attendance' s.pk %}"><i class="bi bi-eye"></i></a>{% endif %}</td>
-</tr>{% endfor %}</tbody>
-</table></div></div>
+
+{# ───── Header ───── #}
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text data-reveal-delay="40" data-reveal-stagger="22">Attendance Summary</h1>
+        <p class="text-secondary small mb-0">
+            <span class="tabular-nums"
+                  data-counter="{{ students|length }}">{{ students|length }}</span>
+            {{ students|length|pluralize:"student,students" }}
+        </p>
+    </div>
+</div>
+
+{# ───── Students table ───── #}
+<div class="card"
+     data-motion="fade-up" data-motion-delay="120"
+     style="overflow:hidden;">
+    <div class="card-body p-0">
+        {% if students %}
+        <table class="table table-hover mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Class</th>
+                    <th class="text-end">Attendance %</th>
+                    <th class="text-end"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in students %}
+                <tr data-motion="fade-up"
+                    data-motion-delay="{% widthratio forloop.counter0 1 30 %}"
+                    data-motion-while-hover='{"x": 3}'>
+                    <td data-label="Student">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="avatar avatar-sm">{{ s.full_name|slice:":1"|upper }}</span>
+                            <span class="fw-medium">{{ s.full_name }}</span>
+                        </div>
+                    </td>
+                    <td data-label="Class">{{ s.class_display|default:"—" }}</td>
+                    <td data-label="Attendance %" class="text-end">
+                        <div class="d-flex align-items-center justify-content-end gap-2">
+                            <span class="tabular-nums fw-semibold">{{ s.attendance_percentage }}%</span>
+                            <div class="progress flex-shrink-0"
+                                 style="height:4px;width:60px;background:var(--md-surface-3);">
+                                <div class="progress-bar"
+                                     data-progress="{{ s.attendance_percentage }}"
+                                     data-progress-delay="{% widthratio forloop.counter0 1 60 %}"
+                                     data-progress-duration="900"
+                                     style="background:var(--md-primary);"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="actions text-end">
+                        {% if current_role == 'parent' %}
+                        <a class="btn btn-sm btn-secondary"
+                           href="{% url 'attendance:child_attendance' s.pk %}"
+                           aria-label="View {{ s.full_name }}'s attendance"
+                           data-motion-while-hover='{"y":-1}'
+                           data-motion-while-tap='{"scale":0.94}'
+                           data-ripple>
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state text-center py-5">
+            <div class="empty-icon mx-auto mb-3"
+                 style="width:64px;height:64px;border-radius:16px;
+                        background:var(--md-surface-bright);
+                        display:flex;align-items:center;justify-content:center;"
+                 data-motion-variant="brandMark"
+                 data-motion-initial="hidden"
+                 data-motion-animate="visible">
+                <i class="bi bi-people fs-2 text-secondary"></i>
+            </div>
+            <h3 class="h6 fw-semibold mb-1">No students found</h3>
+            <p class="text-secondary small mb-0">
+                Students linked to your account will appear here.
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% include "partials/dashboard-widgets.html" %}
 {% endblock %}

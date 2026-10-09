@@ -1,57 +1,112 @@
 {% extends "registration/base_auth.html" %}
+{% load static %}
 
-{% block title %}Student Registration - Malawi School ERP{% endblock %}
+{% block title %}Student Registration{% endblock %}
 
-{% block form_fields %}
-<div class="row">
-    <div class="col-md-6 mb-3">
-        <label class="form-label fw-semibold">Username</label>
-        <input type="text" name="username" class="form-control" required autofocus>
-    </div>
-    <div class="col-md-6 mb-3">
-        <label class="form-label fw-semibold">Email</label>
-        <input type="email" name="email" class="form-control" required>
-    </div>
-</div>
-<div class="row">
-    <div class="col-md-6 mb-3">
-        <label class="form-label fw-semibold">First name</label>
-        <input type="text" name="first_name" class="form-control" required>
-    </div>
-    <div class="col-md-6 mb-3">
-        <label class="form-label fw-semibold">Last name</label>
-        <input type="text" name="last_name" class="form-control" required>
-    </div>
-</div>
-<div class="row">
-    <div class="col-md-6 mb-3">
-        <label class="form-label fw-semibold">Phone number</label>
-        <input type="text" name="phone_number" class="form-control" required>
-    </div>
-    <div class="col-md-6 mb-3">
-        <label class="form-label fw-semibold">Guardian name</label>
-        <input type="text" name="guardian_name" class="form-control" required>
-    </div>
-</div>
-<div class="mb-3">
-    <label class="form-label fw-semibold">Guardian phone</label>
-    <input type="text" name="guardian_phone" class="form-control" required>
-</div>
-<div class="row">
-    <div class="col-md-6 mb-3">
-        <label class="form-label fw-semibold">Password</label>
-        <input type="password" name="password1" class="form-control" required>
-    </div>
-    <div class="col-md-6 mb-3">
-        <label class="form-label fw-semibold">Confirm password</label>
-        <input type="password" name="password2" class="form-control" required>
-    </div>
-</div>
-{% endblock %}
+{% block content %}
 
-{% block submit_label %}Register as Student{% endblock %}
+<h1 class="auth-form-title"
+    data-reveal-text data-reveal-delay="40" data-reveal-stagger="22">
+    Register as a student
+</h1>
+<p class="auth-form-sub" style="margin-bottom:20px;"
+   data-motion="fade-up" data-motion-delay="140">
+    Create your account to view grades, attendance, and fees.
+</p>
 
-{% block extra_links %}
-    Already have an account? <a href="{% url 'accounts:login' %}">Login here</a><br>
-    Are you a parent? <a href="{% url 'accounts:register_parent' %}">Register as parent</a>
+<form method="post" novalidate
+      data-motion-orchestrate='{"staggerChildren":0.05,"delayChildren":0.05}'>
+    {% csrf_token %}
+
+    <div class="field" data-motion="fade-up">
+        <label class="field-label" for="id_username">Username</label>
+        <input id="id_username" name="username" type="text" class="field-input"
+               autocomplete="username" autocapitalize="none" autocorrect="off"
+               spellcheck="false" required autofocus>
+    </div>
+
+    <div class="field" data-motion="fade-up">
+        <label class="field-label" for="id_email">Email</label>
+        <input id="id_email" name="email" type="email" class="field-input"
+               autocomplete="email" inputmode="email" required>
+    </div>
+
+    <div class="field" data-motion="fade-up">
+        <label class="field-label" for="id_first_name">First name</label>
+        <input id="id_first_name" name="first_name" type="text" class="field-input"
+               autocomplete="given-name" required>
+    </div>
+
+    <div class="field" data-motion="fade-up">
+        <label class="field-label" for="id_last_name">Last name</label>
+        <input id="id_last_name" name="last_name" type="text" class="field-input"
+               autocomplete="family-name" required>
+    </div>
+
+    <div class="field" data-motion="fade-up">
+        <label class="field-label" for="id_phone_number">Phone number</label>
+        <div class="field-phone">
+            <span class="field-prefix">+265</span>
+            <input id="id_phone_number" name="phone_number" type="tel"
+                   class="field-input" inputmode="numeric" pattern="[0-9]{9}"
+                   maxlength="9" placeholder="991234567" required>
+        </div>
+    </div>
+
+    <div class="field" data-motion="fade-up">
+        <label class="field-label" for="id_guardian_name">Guardian name</label>
+        <input id="id_guardian_name" name="guardian_name" type="text"
+               class="field-input" autocomplete="name" required>
+    </div>
+
+    <div class="field" data-motion="fade-up">
+        <label class="field-label" for="id_guardian_phone">Guardian phone</label>
+        <div class="field-phone">
+            <span class="field-prefix">+265</span>
+            <input id="id_guardian_phone" name="guardian_phone" type="tel"
+                   class="field-input" inputmode="numeric" pattern="[0-9]{9}"
+                   maxlength="9" placeholder="991234567" required>
+        </div>
+    </div>
+
+    <div class="field" data-motion="fade-up">
+        <label class="field-label" for="id_password1">Password</label>
+        <div class="field-password">
+            <input id="id_password1" name="password1" type="password"
+                   class="field-input" autocomplete="new-password" required>
+            <button type="button" class="field-eye"
+                    data-pwd-toggle="id_password1" aria-label="Show password"
+                    data-motion-while-tap='{"scale":0.9}'>
+                <i class="bi bi-eye"></i>
+            </button>
+        </div>
+        <div class="password-strength" data-strength-target="id_password1"></div>
+    </div>
+
+    <div class="field" data-motion="fade-up">
+        <label class="field-label" for="id_password2">Confirm password</label>
+        <div class="field-password">
+            <input id="id_password2" name="password2" type="password"
+                   class="field-input" autocomplete="new-password" required>
+            <button type="button" class="field-eye"
+                    data-pwd-toggle="id_password2" aria-label="Show password"
+                    data-motion-while-tap='{"scale":0.9}'>
+                <i class="bi bi-eye"></i>
+            </button>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-auth"
+            data-motion="fade-up"
+            data-motion-while-hover='{"y":-2,"scale":1.01}'
+            data-motion-while-tap='{"scale":0.97}'
+            data-ripple>
+        Register as Student
+    </button>
+
+    <div class="auth-links" data-motion="fade-up">
+        Already have an account? <a href="{% url 'accounts:login' %}">Login here</a><br>
+        Are you a parent? <a href="{% url 'accounts:register_parent' %}">Register as parent</a>
+    </div>
+</form>
 {% endblock %}

@@ -1,43 +1,84 @@
 {% extends "registration/base_auth.html" %}
+
 {% block title %}Enter verification code{% endblock %}
 
 {% block content %}
-<div class="auth-steps" role="progressbar" aria-valuenow="2" aria-valuemin="1" aria-valuemax="3">
-    <span class="auth-step completed"><i class="bi bi-check"></i></span>
-    <span class="auth-step-line completed"></span>
-    <span class="auth-step active">2</span>
-    <span class="auth-step-line"></span>
-    <span class="auth-step">3</span>
+
+{# Progress steps — orchestrated #}
+<div class="auth-steps"
+     role="progressbar"
+     aria-valuenow="2" aria-valuemin="1" aria-valuemax="3"
+     data-motion-orchestrate='{"staggerChildren":0.06,"delayChildren":0.05}'>
+    <span class="auth-step completed" data-motion="pop">
+        <i class="bi bi-check"></i>
+    </span>
+    <span class="auth-step-line completed" data-motion="fade-in"></span>
+    <span class="auth-step active" data-motion="pop" data-motion-delay="80">2</span>
+    <span class="auth-step-line" data-motion="fade-in" data-motion-delay="140"></span>
+    <span class="auth-step" data-motion="pop" data-motion-delay="200">3</span>
 </div>
 
 <div class="auth-state">
-    <div class="auth-state-icon"><i class="bi bi-shield-lock"></i></div>
-    <h1 class="auth-state-title">Enter the 6-digit code</h1>
-    <p class="auth-state-body">
+
+    <div class="auth-state-icon"
+         data-motion-variant="brandMark"
+         data-motion-initial="hidden"
+         data-motion-animate="visible"
+         data-motion-delay="80">
+        <i class="bi bi-shield-lock"></i>
+    </div>
+
+    <h1 class="auth-state-title"
+        data-reveal-text data-reveal-delay="160" data-reveal-stagger="22">
+        Enter the 6-digit code
+    </h1>
+
+    <p class="auth-state-body" data-motion="fade-up" data-motion-delay="240">
         Sent to <strong>{{ phone_number }}</strong>
     </p>
 
     {% if error %}
-    <div class="alert alert-danger" role="alert" style="width:100%;">
+    <div class="alert alert-danger"
+         role="alert"
+         style="width:100%;"
+         data-motion-variant="shakingError"
+         data-motion-initial="hidden"
+         data-motion-animate="visible"
+         data-motion-delay="280">
         <i class="bi bi-exclamation-triangle"></i> {{ error }}
     </div>
     {% endif %}
 
-    <form method="post" class="otp-form" autocomplete="off" style="margin-top:12px;">
+    <form method="post" class="otp-form" autocomplete="off"
+          style="margin-top:12px;"
+          data-motion="fade-up" data-motion-delay="320">
         {% csrf_token %}
         <input type="hidden" name="phone" value="{{ phone_number }}">
-        <div class="otp-inputs" role="group" aria-label="6-digit verification code">
-            <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" aria-label="Digit 1" autofocus>
-            <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" aria-label="Digit 2">
-            <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" aria-label="Digit 3">
-            <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" aria-label="Digit 4">
-            <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" aria-label="Digit 5">
-            <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" aria-label="Digit 6">
+
+        <div class="otp-inputs"
+             role="group"
+             aria-label="6-digit verification code"
+             data-motion-orchestrate='{"staggerChildren":0.05,"delayChildren":0.05}'>
+            <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" aria-label="Digit 1" autofocus data-motion="pop">
+            <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" aria-label="Digit 2" data-motion="pop">
+            <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" aria-label="Digit 3" data-motion="pop">
+            <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" aria-label="Digit 4" data-motion="pop">
+            <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" aria-label="Digit 5" data-motion="pop">
+            <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" aria-label="Digit 6" data-motion="pop">
         </div>
-        <button type="submit" class="btn btn-primary btn-auth">Verify</button>
+
+        <button type="submit" class="btn btn-primary btn-auth"
+                data-motion="fade-up" data-motion-delay="120"
+                data-motion-while-hover='{"y":-2,"scale":1.01}'
+                data-motion-while-tap='{"scale":0.97}'
+                data-ripple>
+            Verify
+        </button>
     </form>
 
-    <div class="otp-resend" data-resend-seconds="60">
+    <div class="otp-resend"
+         data-resend-seconds="60"
+         data-motion="fade-in" data-motion-delay="420">
         Didn't get it?
         <form method="post" action="{% url 'accounts:phone_request' %}" style="display:inline;">
             {% csrf_token %}

@@ -1,10 +1,84 @@
 {% extends "base.html" %}
+{% load static %}
 {% block page_title %}Delete Student{% endblock %}
+
 {% block content %}
-<div class="card"><div class="card-body">
-<p>Are you sure you want to delete <strong>{{ object.full_name }}</strong>?</p>
-<form method="post">{% csrf_token %}
-<button class="btn btn-danger" type="submit">Delete</button>
-<a class="btn btn-outline-secondary" href="{% url 'students:list' %}">Cancel</a>
-</form></div></div>
+<div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8">
+
+        <div class="card border-danger-subtle"
+             data-motion="scale-in"
+             data-motion-duration="440"
+             data-motion-layout>
+
+            <div class="card-body text-center py-5">
+
+                {# Warning icon — bouncy pop-in #}
+                <div class="mx-auto mb-4 d-flex align-items-center justify-content-center"
+                     style="width:88px;height:88px;border-radius:24px;
+                            background:var(--status-danger-bg);color:var(--status-danger-fg);"
+                     data-motion-keyframes='[
+                        { "opacity":0, "scale":0.4, "rotate":-12 },
+                        { "opacity":1, "scale":1.12, "rotate":6 },
+                        { "opacity":1, "scale":0.96, "rotate":-2 },
+                        { "opacity":1, "scale":1,    "rotate":0 }
+                     ]'
+                     data-motion-transition='{ "duration": 0.85, "times": [0, 0.45, 0.75, 1] }'>
+                    <i class="bi bi-exclamation-triangle-fill fs-1"></i>
+                </div>
+
+                <h3 class="h4 fw-bold mb-2"
+                    data-motion="fade-up" data-motion-delay="240">
+                    Delete this student?
+                </h3>
+
+                <p class="text-secondary mb-4"
+                   data-motion="fade-up" data-motion-delay="320">
+                    You're about to permanently remove
+                    <strong class="text-danger">{{ object.full_name }}</strong>
+                    and all associated records (grades, attendance, fees history).
+                    <br>
+                    <span class="small">This action cannot be undone.</span>
+                </p>
+
+                {# Student summary chip #}
+                <div class="d-inline-flex align-items-center gap-3 px-3 py-2 mb-4 rounded-3"
+                     style="background:var(--md-surface-1);border:1px solid var(--md-outline-variant);"
+                     data-motion="fade-up" data-motion-delay="400">
+                    <span class="avatar">{{ object.full_name|slice:":1"|upper }}</span>
+                    <div class="text-start">
+                        <div class="fw-semibold small">{{ object.full_name }}</div>
+                        <div class="text-secondary small">
+                            {{ object.student_id }} · {{ object.class_display|default:"—" }}
+                        </div>
+                    </div>
+                </div>
+
+                <form method="post"
+                      data-motion="fade-up" data-motion-delay="480"
+                      data-motion-stagger="60">
+                    {% csrf_token %}
+
+                    <div class="d-flex flex-column flex-sm-row gap-2 justify-content-center">
+                        <a class="btn btn-secondary order-2 order-sm-1"
+                           href="{% url 'students:list' %}"
+                           data-motion-while-hover='{"y":-2}'
+                           data-motion-while-tap='{"scale":0.97}'
+                           data-ripple>
+                            <i class="bi bi-arrow-left me-1"></i> Cancel
+                        </a>
+                        <button class="btn btn-danger order-1 order-sm-2"
+                                type="submit"
+                                data-motion-while-hover='{"y":-2,"scale":1.02}'
+                                data-motion-while-tap='{"scale":0.96}'
+                                data-ripple>
+                            <i class="bi bi-trash3 me-1"></i> Yes, delete permanently
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
 {% endblock %}

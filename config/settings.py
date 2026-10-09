@@ -7,12 +7,18 @@ towards a production-like setup (PostgreSQL, Redis, Celery worker, etc).
 """
 from pathlib import Path
 from decouple import config, Csv
+from celery.schedules import crontab
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-me-in-production')
 DEBUG = config('DEBUG', default=True, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='127.0.0.1,localhost', cast=Csv())
+
+# Absolute base URL used to build absolute links in SMS/email — e.g. the
+# invitation claim URL issued by accounts.tasks.deliver_invitation.
+# Set this to the public scheme+host in production (e.g. https://erp.school.mw).
+SITE_URL = config('SITE_URL', default='http://127.0.0.1:8000')
 
 # --------------------------------------------------------------------------
 # Applications
@@ -45,6 +51,7 @@ INSTALLED_APPS = [
 
     # Local apps
     'accounts',
+    'admissions',
     'students',
     'teachers',
     'staff',
@@ -148,8 +155,34 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'accounts.validators.PasswordHistoryValidator', 'OPTIONS': {'history_size': 3}},
 ]
 
-# AC-02: allow Students/Parents to self-register (Admin creates Teacher/Staff accounts).
-ENABLE_SELF_REGISTRATION = config('ENABLE_SELF_REGISTRATION', default=True, cast=bool)
+# --------------------------------------------------------------------------
+# Governance ("Who Should Create Accounts?")
+#
+# Accounts are a by-product of an administrative event, not a self-service
+# action. Self-registration is therefore parent-only, and only with a
+# verified link to an existing student (student ID + admission code +
+# guardian phone on file). Students, teachers, staff, and admins are all
+# created via an invitation or direct creation by an authorised creator —
+# see accounts/constants.py for the permission matrix and
+# accounts/services.py for the issuance/claim logic.
+# --------------------------------------------------------------------------
+# Roles permitted to hit the self-registration view. Keep this a list so a
+# future "student self-registration with guardian consent" pilot is a
+# config flip, not a code change. Default: parent only.
+SELF_REGISTRATION_ALLOWED_ROLES = config(
+    'SELF_REGISTRATION_ALLOWED_ROLES', default='parent', cast=Csv(),
+)
+
+# InvitationToken validity window, in days (doc §4).
+INVITATION_TOKEN_VALIDITY_DAYS = config(
+    'INVITATION_TOKEN_VALIDITY_DAYS', default=7, cast=int,
+)
+
+# Cool-off period for high-privilege accounts (admin / bursar / auditor)
+# before their first login is permitted (doc §5).
+HIGH_PRIVILEGE_COOLOFF_HOURS = config(
+    'HIGH_PRIVILEGE_COOLOFF_HOURS', default=24, cast=int,
+)
 
 # AC-14: password reset links expire after 24 hours (Django default is 3 days).
 PASSWORD_RESET_TIMEOUT = config('PASSWORD_RESET_TIMEOUT', default=60 * 60 * 24, cast=int)
@@ -163,13 +196,15 @@ ATTENDANCE_LOW_THRESHOLD = config('ATTENDANCE_LOW_THRESHOLD', default=80, cast=i
 
 # --------------------------------------------------------------------------
 # django-money: multi-currency support, defaulting to Malawian Kwacha.
-# Fee/payment monetary fields use MoneyField instead of DecimalField so a
-# school billing in USD (e.g. international MSCE candidates) or accepting
-# a foreign-currency bursary is a currency choice, not a schema change.
 # --------------------------------------------------------------------------
 DEFAULT_CURRENCY = 'MWK'
 CURRENCIES = ('MWK', 'USD', 'GBP', 'ZAR')
-CURRENCY_CHOICES = [('MWK', 'Malawian Kwacha'), ('USD', 'US Dollar'), ('GBP', 'British Pound'), ('ZAR', 'South African Rand')]
+CURRENCY_CHOICES = [
+    ('MWK', 'Malawian Kwacha'),
+    ('USD', 'US Dollar'),
+    ('GBP', 'British Pound'),
+    ('ZAR', 'South African Rand'),
+]
 
 # django-tables2: default to the Bootstrap 5 template so tables match the
 # rest of the UI without specifying template_name on every Table class.
@@ -177,10 +212,6 @@ DJANGO_TABLES2_TEMPLATE = 'django_tables2/bootstrap5.html'
 
 # --------------------------------------------------------------------------
 # Payment gateways (FP-17/26): pluggable, PayChangu enabled by default.
-# Add a new provider by writing a payments.gateways.<name>.<Name>Gateway
-# class implementing PaymentGateway, registering it in
-# payments/registry.py, and adding its own block here - no other code
-# needs to change.
 # --------------------------------------------------------------------------
 DEFAULT_PAYMENT_GATEWAY = config('DEFAULT_PAYMENT_GATEWAY', default='paychangu')
 PAYMENT_GATEWAYS = {
@@ -192,7 +223,9 @@ PAYMENT_GATEWAYS = {
         'timeout': config('PAYCHANGU_TIMEOUT', default=15, cast=int),
     },
 }
-# and provide the throttling asked for in the non-functional requirements.
+
+# --------------------------------------------------------------------------
+# django-axes: lockout after repeated failed logins (AC-25/26)
 # --------------------------------------------------------------------------
 AXES_FAILURE_LIMIT = 5
 AXES_COOLOFF_TIME = 0.25  # 15 minutes
@@ -229,8 +262,7 @@ CRISPY_TEMPLATE_PACK = 'bootstrap5'
 # Channels
 # In-memory layer is enough for a single-process dev server: no Redis
 # needed to get started. Set CHANNEL_LAYER_BACKEND=redis (and REDIS_URL)
-# once you need multi-process / multi-worker fan-out (e.g. behind Daphne
-# with several instances, or once Celery workers need to push events too).
+# once you need multi-process / multi-worker fan-out.
 # --------------------------------------------------------------------------
 if config('CHANNEL_LAYER_BACKEND', default='memory') == 'redis':
     CHANNEL_LAYERS = {
@@ -252,8 +284,6 @@ else:
 # Celery
 # Defaults to "eager" mode for development on Windows: tasks run
 # synchronously in-process, so no broker/worker is required at all.
-# Set CELERY_ALWAYS_EAGER=False and provide a REDIS_URL to run a real
-# `celery -A config worker --pool=solo` worker.
 # --------------------------------------------------------------------------
 CELERY_TASK_ALWAYS_EAGER = config('CELERY_ALWAYS_EAGER', default=True, cast=bool)
 CELERY_TASK_EAGER_PROPAGATES = True
@@ -263,6 +293,20 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
+
+# --------------------------------------------------------------------------
+# Celery beat schedule
+# Runs in Africa/Blantyre (CELERY_TIMEZONE above). The TCM sweep is
+# idempotent — it dedupes on an AuditLog row per (teacher, window) — so
+# it is safe to run this manually or move the time without double-notifying.
+# --------------------------------------------------------------------------
+CELERY_BEAT_SCHEDULE = {
+    'teachers.send_tcm_expiry_reminders': {
+        'task': 'teachers.tasks.send_tcm_expiry_reminders',
+        # 06:00 daily, so the HR digest lands before the school day.
+        'schedule': crontab(hour=6, minute=0),
+    },
+}
 
 # --------------------------------------------------------------------------
 # Import/Export

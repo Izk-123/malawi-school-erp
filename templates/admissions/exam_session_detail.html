@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ session.name }}{% endblock %}
+{% block page_title %}{{ session.name }}{% endblock %}
+
+{% block content %}
+
+{# ─────────── Header ─────────── #}
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3"
+     data-motion="fade-down" data-motion-duration="440">
+  <a href="{% url 'admissions:exam_session_list' %}" class="btn btn-ghost btn-sm"
+     data-motion-while-hover='{"x":-3}'
+     data-motion-while-tap='{"scale":0.94}'>
+    <i class="bi bi-arrow-left"></i> Back
+  </a>
+  <div class="d-flex flex-wrap gap-2">
+    {% if not session.is_published %}
+    <form method="post" action="{% url 'admissions:exam_publish' session.pk %}"
+          class="d-inline"
+          data-motion="fade-up" data-motion-delay="120">
+      {% csrf_token %}
+      <button class="btn btn-primary btn-sm" type="submit"
+              data-motion-while-hover='{"y":-2,"scale":1.02}'
+              data-motion-while-tap='{"scale":0.97}'
+              data-ripple>
+        <i class="bi bi-megaphone"></i> Publish results
+      </button>
+    </form>
+    {% else %}
+    <span class="badge badge-success"
+          data-motion="scale-in" data-motion-delay="120">
+      <i class="bi bi-check2-circle"></i> Results published
+    </span>
+    {% endif %}
+  </div>
+</div>
+
+{# ─────────── Hero ─────────── #}
+<section class="profile-hero" style="padding-top:8px;"
+         data-motion-orchestrate='{"staggerChildren":0.08,"delayChildren":0.05}'>
+  <h1 class="profile-name"
+      data-reveal-text
+      data-reveal-delay="60"
+      data-reveal-stagger="26">{{ session.name }}</h1>
+  <p class="profile-email" data-motion="fade-up">
+    {{ session.exam_date|date:"j M Y" }} · {{ session.start_time|time:"H:i" }}{% if session.end_time %}–{{ session.end_time|time:"H:i" }}{% endif %}
+    · {{ session.venue }}
+  </p>
+  <ul class="profile-roles" role="list">
+    <li class="role-pill role-admin" data-motion="scale-in">
+      {{ session.registered_count }} / {{ session.capacity }} registered
+    </li>
+    <li class="role-pill role-parent" data-motion="scale-in">
+      Cutoff {{ session.cutoff_score }}
+    </li>
+  </ul>
+</section>
+
+{# ─────────── Assign ─────────── #}
+<section class="profile-section"
+         data-motion="fade-up" data-motion-delay="180">
+  <div class="profile-section-head" style="cursor:default;">
+    <h2 class="profile-section-title">Assign applicant</h2>
+  </div>
+  <div class="profile-section-body">
+    <form method="post" action="{% url 'admissions:exam_assign' session.pk %}"
+          class="d-flex flex-wrap gap-2 align-items-end"
+          data-motion-orchestrate='{"staggerChildren":0.06,"delayChildren":0.05}'>
+      {% csrf_token %}
+      <div class="field" style="flex:2; min-width:240px;"
+           data-motion="fade-up">
+        <label class="field-label" for="assign_applicant">Applicant</label>
+        {{ assign_form.applicant }}
+      </div>
+      <div class="field" style="max-width:140px;"
+           data-motion="fade-up">
+        <label class="field-label" for="assign_seat">Seat</label>
+        {{ assign_form.seat_number }}
+      </div>
+      <button class="btn btn-primary" type="submit"
+              data-motion="fade-up"
+              data-motion-while-hover='{"y":-2,"scale":1.02}'
+              data-motion-while-tap='{"scale":0.97}'
+              data-ripple>
+        Assign
+      </button>
+    </form>
+  </div>
+</section>
+
+{# ─────────── Roster ─────────── #}
+<section class="profile-section"
+         data-motion="fade-up" data-motion-delay="240">
+  <div class="profile-section-head" style="cursor:default;">
+    <h2 class="profile-section-title">Roster ({{ assignments|length }})</h2>
+  </div>
+  <div class="profile-section-body" style="padding:0;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Seat</th>
+          <th>Applicant</th>
+          <th>Attendance</th>
+          <th>Marks</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in assignments %}
+        <tr data-motion="fade-up"
+            data-motion-delay="{% widthratio forloop.counter0 1 35 %}"
+            data-motion-while-hover='{"x":3}'>
+          <td data-label="Seat" class="tabular-nums">
+            <span class="badge badge-info">{{ a.seat_number }}</span>
+          </td>
+          <td data-label="Applicant">
+            <a href="{% url 'admissions:applicant_detail' a.applicant.pk %}"
+               class="text-decoration-none fw-medium">
+              {{ a.applicant.full_name }}
+            </a>
+          </td>
+          <td data-label="Attendance">{{ a.get_attended_display }}</td>
+          <td data-label="Marks">
+            {% if a.marks.all %}
+              <div class="d-flex flex-wrap gap-1 mb-2">
+                {% for m in a.marks.all %}
+                <span class="badge badge-info"
+                      data-motion="scale-in"
+                      data-motion-delay="{% widthratio forloop.counter0 1 30 %}">
+                  {{ m.get_subject_display }}: {{ m.score }}
+                </span>
+                {% endfor %}
+              </div>
+            {% else %}
+              <span class="text-muted-sm">—</span>
+            {% endif %}
+
+            <form method="post" action="{% url 'admissions:exam_record_mark' a.pk %}"
+                  class="d-flex gap-2 align-items-center mt-2" style="max-width:340px;">
+              {% csrf_token %}
+              <select name="subject" class="input" style="max-width:150px;">
+                {% for value, label in subject_choices %}
+                  <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+              <input type="number" step="0.01" name="score"
+                     class="input" style="max-width:100px;" placeholder="Score">
+              <button class="btn btn-ghost btn-sm" type="submit"
+                      data-motion-while-hover='{"y":-1}'
+                      data-motion-while-tap='{"scale":0.94}'>
+                Save
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4" style="padding:0;">
+            <div class="empty-state"
+                 data-motion="scale-in" data-motion-delay="200">
+              <div class="empty-icon"
+                   data-motion-variant="brandMark"
+                   data-motion-initial="hidden"
+                   data-motion-animate="visible">
+                <i class="bi bi-people"></i>
+              </div>
+              <p class="mb-0">No applicants assigned yet.</p>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+{% include "partials/dashboard-widgets.html" %}
+{% endblock %}

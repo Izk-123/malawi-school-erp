@@ -1,10 +1,92 @@
 {% extends "base.html" %}
-{% load crispy_forms_tags %}
+{% load static crispy_forms_tags %}
 {% block page_title %}Promote Students{% endblock %}
+
 {% block content %}
-<div class="card"><div class="card-header"><h5 class="mb-0 fw-bold">Bulk Promote Students</h5></div>
-<div class="card-body">
-<p class="text-secondary small">Moves every <strong>active</strong> student in the chosen class/stream to a new class. This does not change the stream.</p>
-{% crispy form %}
-</div></div>
+
+{# ─── Header ─── #}
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text
+            data-reveal-delay="40"
+            data-reveal-stagger="22">Bulk promote students</h1>
+        <p class="text-secondary small mb-0">
+            Move an entire class to the next form in one step.
+        </p>
+    </div>
+    <a href="{% url 'students:list' %}"
+       class="btn btn-secondary btn-sm"
+       data-motion="fade-up" data-motion-delay="140"
+       data-motion-while-hover='{"y":-2}'
+       data-motion-while-tap='{"scale":0.97}'
+       data-ripple>
+        <i class="bi bi-arrow-left me-1"></i> Back to list
+    </a>
+</div>
+
+{# ─── Warning callout ─── #}
+<div class="card mb-3"
+     data-motion="fade-up" data-motion-delay="80">
+    <div class="card-body d-flex align-items-start gap-3">
+        <div class="flex-shrink-0 d-flex align-items-center justify-content-center"
+             style="width:44px;height:44px;border-radius:12px;
+                    background:var(--status-warning-bg);
+                    color:var(--status-warning-fg);"
+             data-motion-variant="brandMark"
+             data-motion-initial="hidden"
+             data-motion-animate="visible"
+             data-motion-delay="260">
+            <i class="bi bi-info-circle-fill fs-5"></i>
+        </div>
+        <div>
+            <div class="fw-semibold mb-1">How this works</div>
+            <p class="text-secondary small mb-0">
+                Every <strong>active</strong> student in the chosen class/stream
+                is moved to a new class. The stream is preserved. This action
+                is logged and can be reversed by an administrator.
+            </p>
+        </div>
+    </div>
+</div>
+
+{# ─── Form ─── #}
+<div class="card"
+     data-motion="fade-up" data-motion-delay="160"
+     data-motion-layout>
+    <div class="card-header">
+        <h6 class="mb-0 fw-bold">Promotion details</h6>
+    </div>
+    <div class="card-body">
+        <div class="crispy-form-wrap"
+             data-motion-orchestrate='{"staggerChildren":0.04,"delayChildren":0.1}'>
+            {% crispy form %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const form = document.querySelector('.crispy-form-wrap form');
+    if (!form) return;
+
+    form.querySelectorAll(':scope > div').forEach((row, i) => {
+        row.setAttribute('data-motion', 'fade-up');
+        row.setAttribute('data-motion-delay', String(80 + i * 40));
+    });
+
+    form.querySelectorAll('button[type="submit"], input[type="submit"], a.btn').forEach((b) => {
+        b.setAttribute('data-motion-while-hover', '{"y":-2,"scale":1.01}');
+        b.setAttribute('data-motion-while-tap',   '{"scale":0.97}');
+        b.setAttribute('data-ripple', '');
+    });
+
+    if (window.Motion?.refresh) window.Motion.refresh(form);
+    if (window.MotionPro?.refresh) window.MotionPro.refresh();
+})();
+</script>
 {% endblock %}

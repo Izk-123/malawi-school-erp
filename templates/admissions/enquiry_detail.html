@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ enquiry.student_name }}{% endblock %}
+{% block page_title %}Enquiry{% endblock %}
+
+{% block content %}
+
+{# ─────────── Header ─────────── #}
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3"
+     data-motion="fade-down" data-motion-duration="440">
+  <a href="{% url 'admissions:enquiry_list' %}" class="btn btn-ghost btn-sm"
+     data-motion-while-hover='{"x":-3}'
+     data-motion-while-tap='{"scale":0.94}'>
+    <i class="bi bi-arrow-left"></i> Back to enquiries
+  </a>
+  <div class="d-flex flex-wrap gap-2"
+       data-motion-orchestrate='{"staggerChildren":0.05,"delayChildren":0.1}'>
+    <a class="btn btn-secondary btn-sm"
+       href="{% url 'admissions:enquiry_update' enquiry.pk %}"
+       data-motion="fade-up"
+       data-motion-while-hover='{"y":-2}'
+       data-motion-while-tap='{"scale":0.97}'
+       data-ripple>
+      <i class="bi bi-pencil"></i> Edit
+    </a>
+    {% if enquiry.status != 'converted' %}
+    <form method="post" action="{% url 'admissions:enquiry_convert' enquiry.pk %}"
+          class="d-inline"
+          data-motion="fade-up">
+      {% csrf_token %}
+      <button class="btn btn-primary btn-sm" type="submit"
+              data-motion-while-hover='{"y":-2,"scale":1.02}'
+              data-motion-while-tap='{"scale":0.97}'
+              data-ripple>
+        <i class="bi bi-arrow-right-circle"></i> Convert to applicant
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+{# ─────────── Hero ─────────── #}
+<section class="profile-hero" style="padding-top:8px;"
+         data-motion-orchestrate='{"staggerChildren":0.08,"delayChildren":0.05}'>
+  <h1 class="profile-name"
+      data-reveal-text
+      data-reveal-delay="60"
+      data-reveal-stagger="26">{{ enquiry.student_name }}</h1>
+  <p class="profile-email"
+     data-motion="fade-up">
+    Enquiry #{{ enquiry.id }} · {{ enquiry.enquiry_date|date:"j M Y" }}
+  </p>
+  <ul class="profile-roles" role="list">
+    {% if enquiry.status == 'new' %}
+      <li class="role-pill role-admin" data-motion="scale-in">New</li>
+    {% elif enquiry.status == 'followed_up' %}
+      <li class="role-pill role-parent" data-motion="scale-in">Followed up</li>
+    {% elif enquiry.status == 'converted' %}
+      <li class="role-pill role-student" data-motion="scale-in">Converted</li>
+    {% else %}
+      <li class="role-pill role-staff" data-motion="scale-in">Lost</li>
+    {% endif %}
+    <li class="role-pill" data-motion="scale-in">{{ enquiry.get_source_display }}</li>
+  </ul>
+</section>
+
+{# ─────────── Guardian ─────────── #}
+<section class="profile-section"
+         data-motion="fade-up" data-motion-delay="180">
+  <div class="profile-section-head" style="cursor:default;">
+    <h2 class="profile-section-title">Guardian</h2>
+  </div>
+  <div class="profile-section-body">
+    <dl class="profile-fields"
+        data-motion-orchestrate='{"staggerChildren":0.05,"delayChildren":0.05}'>
+      <div class="profile-field" data-motion="fade-up">
+        <dt>Name</dt>
+        <dd>{{ enquiry.parent_name }}</dd>
+      </div>
+      <div class="profile-field" data-motion="fade-up">
+        <dt>Phone</dt>
+        <dd>
+          <a href="tel:{{ enquiry.guardian_phone }}" class="text-decoration-none">
+            {{ enquiry.guardian_phone }}
+          </a>
+        </dd>
+      </div>
+      {% if enquiry.guardian_email %}
+      <div class="profile-field" data-motion="fade-up">
+        <dt>Email</dt>
+        <dd>
+          <a href="mailto:{{ enquiry.guardian_email }}" class="text-decoration-none">
+            {{ enquiry.guardian_email }}
+          </a>
+        </dd>
+      </div>
+      {% endif %}
+    </dl>
+  </div>
+</section>
+
+{# ─────────── Enquiry details ─────────── #}
+<section class="profile-section"
+         data-motion="fade-up" data-motion-delay="240">
+  <div class="profile-section-head" style="cursor:default;">
+    <h2 class="profile-section-title">Enquiry details</h2>
+  </div>
+  <div class="profile-section-body">
+    <dl class="profile-fields"
+        data-motion-orchestrate='{"staggerChildren":0.05,"delayChildren":0.05}'>
+      <div class="profile-field" data-motion="fade-up">
+        <dt>Applying for</dt>
+        <dd>{{ enquiry.applying_for }}</dd>
+      </div>
+      <div class="profile-field" data-motion="fade-up">
+        <dt>Current class</dt>
+        <dd>{{ enquiry.current_class|default:"—" }}</dd>
+      </div>
+      <div class="profile-field" data-motion="fade-up">
+        <dt>Boarding</dt>
+        <dd>{{ enquiry.get_boarding_preference_display }}</dd>
+      </div>
+      {% if enquiry.follow_up_due %}
+      <div class="profile-field" data-motion="fade-up">
+        <dt>Follow-up due</dt>
+        <dd>{{ enquiry.follow_up_due|date:"j M Y" }}</dd>
+      </div>
+      {% endif %}
+      <div class="profile-field" data-motion="fade-up">
+        <dt>Created</dt>
+        <dd>
+          {{ enquiry.created_at|date:"j M Y, H:i" }} by
+          {{ enquiry.created_by.get_full_name|default:enquiry.created_by.username }}
+        </dd>
+      </div>
+    </dl>
+  </div>
+</section>
+
+{# ─────────── Notes ─────────── #}
+{% if enquiry.notes %}
+<section class="profile-section"
+         data-motion="fade-up" data-motion-delay="300">
+  <div class="profile-section-head" style="cursor:default;">
+    <h2 class="profile-section-title">Notes</h2>
+  </div>
+  <div class="profile-section-body">
+    <p class="mb-0">{{ enquiry.notes|linebreaksbr }}</p>
+  </div>
+</section>
+{% endif %}
+
+{# ─────────── Converted applicants ─────────── #}
+{% if enquiry.applicants.all %}
+<section class="profile-section"
+         data-motion="fade-up" data-motion-delay="360">
+  <div class="profile-section-head" style="cursor:default;">
+    <h2 class="profile-section-title">Converted applicants</h2>
+  </div>
+  <div class="profile-section-body"
+       data-motion-orchestrate='{"staggerChildren":0.07,"delayChildren":0.05}'>
+    {% for a in enquiry.applicants.all %}
+    <a href="{% url 'admissions:applicant_detail' a.pk %}"
+       class="role-card text-decoration-none"
+       data-motion="fade-up"
+       data-motion-while-hover='{"x":4}'
+       data-motion-while-tap='{"scale":0.98}'>
+      <span class="role-card-icon role-icon-{{ a.gender|lower }}">
+        <i class="bi bi-person"></i>
+      </span>
+      <div class="role-card-info">
+        <span class="role-card-title">{{ a.full_name }}</span>
+        <span class="role-card-desc">{{ a.applicant_code }} · {{ a.get_status_display }}</span>
+      </div>
+      <i class="bi bi-chevron-right text-secondary"></i>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

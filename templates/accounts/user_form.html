@@ -13,39 +13,49 @@
 <div class="profile-page">
 
     {# ───────── Hero ───────── #}
-    <div class="profile-hero" style="padding-top:16px;">
+    <div class="profile-hero" style="padding-top:16px;"
+         data-motion-orchestrate='{"staggerChildren":0.08,"delayChildren":0.05}'>
         <div class="profile-avatar-wrap">
-            <div class="profile-avatar">
+            <div class="profile-avatar"
+                 data-motion-variant="brandMark"
+                 data-motion-initial="hidden"
+                 data-motion-animate="visible">
                 {% if form.instance.profile_picture %}
-                    <img src="{{ form.instance.profile_picture.url }}" alt="">
+                <img src="{{ form.instance.profile_picture.url }}" alt="">
                 {% else %}
-                    <span aria-hidden="true">
-                        {{ form.instance.first_name|first|default:form.instance.username|first|upper }}{{ form.instance.last_name|first }}
-                    </span>
+                <span aria-hidden="true">
+                    {{ form.instance.first_name|first|default:form.instance.username|first|upper }}{{ form.instance.last_name|first }}
+                </span>
                 {% endif %}
             </div>
         </div>
-        <h1 class="profile-name">
+        <h1 class="profile-name"
+            data-reveal-text data-reveal-delay="120" data-reveal-stagger="22">
             {% if object %}{{ object.get_full_name|default:object.username }}{% else %}New account{% endif %}
         </h1>
-        <p class="profile-email">
+        <p class="profile-email" data-motion="fade-up">
             {% if object %}Update account details{% else %}Create a new user account{% endif %}
         </p>
     </div>
 
     <div class="profile-content">
-        <form method="post" enctype="multipart/form-data" novalidate>
+        <form method="post" enctype="multipart/form-data" novalidate
+              data-motion-orchestrate='{"when":"beforeChildren","staggerChildren":0.06,"delayChildren":0.1}'>
             {% csrf_token %}
 
             {% if form.non_field_errors %}
-            <div class="alert alert-danger" role="alert">
-                <i class="bi bi-exclamation-triangle"></i>
+            <div class="alert alert-danger d-flex align-items-start gap-2"
+                 role="alert"
+                 data-motion-variant="notice"
+                 data-motion-initial="hidden"
+                 data-motion-animate="visible">
+                <i class="bi bi-exclamation-triangle flex-shrink-0"></i>
                 <div>{{ form.non_field_errors.0 }}</div>
             </div>
             {% endif %}
 
             {# ───────── Identity ───────── #}
-            <section class="profile-section">
+            <section class="profile-section" data-motion="fade-up">
                 <div class="profile-section-head" style="cursor:default;">
                     <h2 class="profile-section-title">Identity</h2>
                 </div>
@@ -108,7 +118,7 @@
             </section>
 
             {# ───────── Contact ───────── #}
-            <section class="profile-section">
+            <section class="profile-section" data-motion="fade-up">
                 <div class="profile-section-head" style="cursor:default;">
                     <h2 class="profile-section-title">Contact</h2>
                 </div>
@@ -152,7 +162,7 @@
             </section>
 
             {# ───────── Role & access ───────── #}
-            <section class="profile-section">
+            <section class="profile-section" data-motion="fade-up">
                 <div class="profile-section-head" style="cursor:default;">
                     <h2 class="profile-section-title">Role &amp; access</h2>
                 </div>
@@ -212,7 +222,7 @@
 
             {# ───────── Password (create only) ───────── #}
             {% if 'password1' in form.fields %}
-            <section class="profile-section">
+            <section class="profile-section" data-motion="fade-up">
                 <div class="profile-section-head" style="cursor:default;">
                     <h2 class="profile-section-title">Password</h2>
                 </div>
@@ -272,9 +282,17 @@
             {% endif %}
 
             {# ───────── Sticky action bar ───────── #}
-            <div class="profile-actions-bar">
-                <a href="{% url 'accounts:user_list' %}" class="btn btn-outline">Cancel</a>
-                <button type="submit" class="btn btn-primary">
+            <div class="profile-actions-bar" data-motion="fade-up">
+                <a href="{% url 'accounts:user_list' %}" class="btn btn-outline"
+                   data-motion-while-hover='{"y":-2}'
+                   data-motion-while-tap='{"scale":0.97}'
+                   data-ripple>
+                    Cancel
+                </a>
+                <button type="submit" class="btn btn-primary"
+                        data-motion-while-hover='{"y":-2,"scale":1.01}'
+                        data-motion-while-tap='{"scale":0.97}'
+                        data-ripple>
                     {% if object %}Save changes{% else %}Create user{% endif %}
                 </button>
             </div>
@@ -287,4 +305,5 @@
 
 {% block extra_js %}
 <script src="{% static 'js/auth.js' %}" defer></script>
+{% include "partials/dashboard-widgets.html" %}
 {% endblock %}

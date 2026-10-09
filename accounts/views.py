@@ -3,7 +3,8 @@ Accounts app views.
 
 Covers:
   - Login / logout / dashboard (role-based landing)
-  - Self-registration (Student/Parent) with email + phone verification kickoff
+  - Parent self-registration (governance doc §3) with email + phone kickoff
+  - Invitation claim flow (governance doc §4)
   - Email verification (token-based) and phone verification (OTP)
   - Password change & reset (Django built-ins, styled)
   - Self-service profile (read + edit, inline avatar actions, live email check)
@@ -26,10 +27,13 @@ from django.contrib.auth.views import (
     PasswordResetCompleteView,
 )
 from django.core.mail import send_mail
+from django.db import models
 from django.http import JsonResponse
 from django.shortcuts import redirect, render, get_object_or_404
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.views.generic import CreateView, UpdateView, ListView, DetailView, View
+from django.core.cache import cache
 
 # Cross-app imports
 from students.models import Student
@@ -48,14 +52,18 @@ from .models import (
     AuditLog,
     EmailVerificationToken,
     PhoneOTP,
+    InvitationToken,
 )
 from .forms import (
     SchoolLoginForm,
-    SelfRegistrationForm,
+    ParentSelfRegistrationForm,
+    InvitationClaimForm,
     UserCreateForm,
     UserUpdateForm,
     ProfileForm,
+    ClaimByCodeForm,
 )
+from .services import claim_invitation
 from .signals import record_password_history
 
 
@@ -254,62 +262,269 @@ def dashboard(request):
 
 
 # ---------------------------------------------------------------------------
-# AC-02/03/04: self-registration for Students/Parents
+# Parent self-registration (governance doc §3)
 # ---------------------------------------------------------------------------
 class SignUpView(CreateView):
+    """Parent self-registration only, and only with a verified student link
+    (student ID + admission code + guardian phone on file). Students,
+    teachers, staff and admins never self-register — their accounts come
+    from an invitation (see ClaimInvitationView)."""
     model = User
-    form_class = SelfRegistrationForm
+    form_class = ParentSelfRegistrationForm
     template_name = 'registration/signup.html'
-    success_url = reverse_lazy('accounts:verify_email_pending')
+    success_url = reverse_lazy('accounts:dashboard')
 
     def dispatch(self, request, *args, **kwargs):
-        if not getattr(settings, 'ENABLE_SELF_REGISTRATION', True):
-            messages.error(
-                request,
-                'Self-registration is currently disabled. '
-                'Please contact your school administrator.',
-            )
+        allowed = getattr(settings, 'SELF_REGISTRATION_ALLOWED_ROLES', ('parent',))
+        if 'parent' not in allowed:
+            messages.error(request, 'Self-registration is disabled. Contact your school.')
             return redirect('accounts:login')
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         response = super().form_valid(form)
+        user = self.object
 
-        # New self-registered accounts start unverified on both channels.
-        self.object.email_verified = False
-        self.object.phone_verified = False
-        self.object.save(update_fields=['email_verified', 'phone_verified'])
+        # Enforce the parent role regardless of what the form's model default was.
+        user.role = User.Role.PARENT
+        user.phone_number = _normalise_malawi_phone(form.cleaned_data['phone_number'])
+        user.email_verified = False
+        user.phone_verified = False
+        user.activated_at = timezone.now()
+        user.created_by = None  # self-registered
+        user.save()
 
-        record_password_history(self.object, form.cleaned_data['password1'])
+        # Link the student into the parent's guardians M2M so the Parent
+        # portal shows the child immediately.
+        if form.student is not None:
+            form.student.guardians.add(user)
+
+        record_password_history(user, form.cleaned_data['password1'])
 
         AuditLog.objects.create(
-            user=self.object,
+            user=user,
+            target_user=user,
             action=AuditLog.Action.ACCOUNT_CREATED,
-            username_attempted=self.object.username,
+            method=AuditLog.Method.SELF_REGISTRATION,
+            reason=(
+                f'Parent self-registered via student '
+                f'{form.student.student_id if form.student else "?"}'
+            ),
+            username_attempted=user.username,
             ip_address=_client_ip(self.request),
-            detail='Self-registered',
         )
 
-        # Fire the verification email and, if a phone was given, the SMS OTP.
+        # Verification emails / OTPs — same as before.
         try:
-            _send_verification_email(self.request, self.object)
+            _send_verification_email(self.request, user)
         except Exception:
             pass
-        if self.object.phone_number:
+        if user.phone_number:
             try:
-                _send_phone_otp(self.object, self.object.phone_number)
+                _send_phone_otp(user, user.phone_number)
             except Exception:
                 pass
 
-        # Log the new user in so they can proceed to the pending screen.
-        auth_login(self.request, self.object)
-
+        auth_login(self.request, user)
         messages.success(
             self.request,
-            'Account created! Check your email to verify your address.',
+            'Account created. Verify your email to unlock the full portal.',
         )
         return response
 
+
+# ---------------------------------------------------------------------------
+# Invitation claim flow (governance doc §4)
+# ---------------------------------------------------------------------------
+class ClaimInvitationView(View):
+    """Single-use link that lets the record's owner set their own password.
+    No self-service record creation — the record already exists, we just
+    attach a User to it."""
+    template_name = 'registration/claim_invitation.html'
+    invalid_template_name = 'registration/claim_invitation_invalid.html'
+
+    def _get_invitation(self, token):
+        return (
+            InvitationToken.objects
+            .select_related('student', 'teacher', 'staff', 'issued_by')
+            .filter(token=token)
+            .first()
+        )
+
+    def _stub_user(self, invitation):
+        """A not-yet-saved User so SetPasswordForm has something to
+        validate against. The real User is created by `claim_invitation`."""
+        return User(
+            username=invitation.proposed_username,
+            email=invitation.invited_email,
+            first_name=invitation.invited_first_name,
+            last_name=invitation.invited_last_name,
+        )
+
+    def get(self, request, token):
+        invitation = self._get_invitation(token)
+        if not invitation or not invitation.is_valid():
+            return render(request, self.invalid_template_name, status=410)
+
+        form = InvitationClaimForm(user=self._stub_user(invitation))
+        return render(request, self.template_name, {
+            'form': form, 'invitation': invitation,
+        })
+
+    def post(self, request, token):
+        invitation = self._get_invitation(token)
+        if not invitation or not invitation.is_valid():
+            return render(request, self.invalid_template_name, status=410)
+
+        form = InvitationClaimForm(
+            user=self._stub_user(invitation), data=request.POST,
+        )
+        if not form.is_valid():
+            return render(request, self.template_name, {
+                'form': form, 'invitation': invitation,
+            })
+
+        user = claim_invitation(
+            invitation=invitation,
+            raw_password=form.cleaned_data['new_password1'],
+            request=request,
+        )
+        record_password_history(user, form.cleaned_data['new_password1'])
+        auth_login(request, user)
+
+        messages.success(request, 'Welcome! Your account is ready.')
+        return redirect('accounts:dashboard')
+
+# ---------------------------------------------------------------------------
+# Admission-code entry point (parent journey doc Stage 8, Step 1)
+# ---------------------------------------------------------------------------
+class ClaimByCodeView(View):
+    """Fallback for a parent who can't tap the invitation link.
+
+    Flow:
+      GET  → small form asking for admission code + guardian phone
+      POST → look up Student by admission_code, verify the phone matches
+             the guardian on file, find a valid pending InvitationToken
+             for that student, then redirect into ClaimInvitationView.
+
+    Deliberately vague errors: the same message is returned whether the
+    code is unknown or the phone doesn't match, so an attacker can't use
+    this endpoint to enumerate which admission codes exist. The only
+    distinguishing path is 'no active invitation', which only fires after
+    BOTH checks pass.
+
+    Rate limited per-IP via the cache backend so a scripted attempt to
+    guess codes can't run freely. The default LocMemCache is per-process,
+    so in a multi-worker deployment swap in Redis (already available as
+    CELERY_BROKER_URL) by setting CACHES['default'] accordingly.
+    """
+    template_name = 'registration/claim_by_code.html'
+    RATE_LIMIT_MAX = 15           # attempts
+    RATE_LIMIT_WINDOW = 60 * 15   # seconds
+
+    def _rate_limit_hit(self, request):
+        ip = _client_ip(request) or 'unknown'
+        key = f'claim_by_code:{ip}'
+        count = cache.get(key, 0)
+        if count >= self.RATE_LIMIT_MAX:
+            return True
+        cache.set(key, count + 1, self.RATE_LIMIT_WINDOW)
+        return False
+
+    def _find_invitation_for(self, student):
+        """Return the most recent valid invitation for this student,
+        preferring the parent's own portal invitation over the student's
+        (both are issued together on admission, but the parent should
+        land in their own account when they use the printed code)."""
+        base = InvitationToken.objects.filter(
+            student=student,
+            used=False,
+            revoked_at__isnull=True,
+            expires_at__gt=timezone.now(),
+        )
+        return (
+            base.filter(purpose=InvitationToken.Purpose.PARENT)
+            .order_by('-created_at').first()
+            or base.exclude(purpose=InvitationToken.Purpose.PARENT)
+            .order_by('-created_at').first()
+        )
+
+    def _phone_matches(self, student, phone):
+        if not student:
+            return False
+        if student.guardian_phone and student.guardian_phone == phone:
+            return True
+        return student.guardian_contacts.filter(phone_number=phone).exists()
+
+    def get(self, request):
+        return render(request, self.template_name, {'form': ClaimByCodeForm()})
+
+    def post(self, request):
+        if self._rate_limit_hit(request):
+            messages.error(
+                request,
+                'Too many attempts from this device. Please wait a few minutes '
+                'and try again, or call the school office.',
+            )
+            return render(request, self.template_name, {'form': ClaimByCodeForm()})
+
+        form = ClaimByCodeForm(request.POST)
+        if not form.is_valid():
+            return render(request, self.template_name, {'form': form})
+
+        code = form.cleaned_data['admission_code']
+        phone = form.cleaned_data['phone_number']
+
+        student = Student.objects.filter(admission_code__iexact=code).first()
+
+        if not student or not self._phone_matches(student, phone):
+            # Log the failure so a school admin can spot a pattern if
+            # someone is hammering this endpoint with guesses.
+            AuditLog.objects.create(
+                user=None,
+                action=AuditLog.Action.LOGIN_FAILED,
+                method=AuditLog.Method.SELF_REGISTRATION,
+                username_attempted=f'code:{code}',
+                ip_address=_client_ip(request),
+                detail='Admission-code claim failed (unknown code or phone mismatch).',
+            )
+            messages.error(
+                request,
+                "We couldn't find a matching admission. Please check the code "
+                "and phone number, or call the school office for help.",
+            )
+            return render(request, self.template_name, {'form': form})
+
+        invitation = self._find_invitation_for(student)
+        if not invitation:
+            # Both checks passed but there's nothing to claim — either the
+            # account already exists, or the invitation expired/was revoked.
+            if student.user_id or student.guardians.exists():
+                messages.info(
+                    request,
+                    f'An account for {student.full_name} already exists. '
+                    f'Please log in — or use "Forgot password" if you do not '
+                    f'remember it.',
+                )
+                return redirect('accounts:login')
+
+            messages.error(
+                request,
+                "There is no active invitation for that admission. It may have "
+                "expired or been replaced. Please call the school office to "
+                "request a new one.",
+            )
+            return render(request, self.template_name, {'form': form})
+
+        # Hand off to the normal claim flow. All the actual work (creating
+        # the User, linking to the student, writing the audit entry) happens
+        # there, so the code path and the link path are identical from here.
+        messages.success(
+            request,
+            f'Found your admission for {student.full_name}. Set a password '
+            f'to activate your account.',
+        )
+        return redirect('accounts:claim_invitation', token=invitation.token)
 
 # ---------------------------------------------------------------------------
 # AC-07c/e: email verification
@@ -667,7 +882,9 @@ class UserDetailView(LoginRequiredMixin, RoleRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['audit_logs'] = AuditLog.objects.filter(user=self.object)[:20]
+        ctx['audit_logs'] = AuditLog.objects.filter(
+            models.Q(user=self.object) | models.Q(target_user=self.object)
+        )[:20]
         try:
             from axes.models import AccessAttempt
             ctx['is_locked'] = AccessAttempt.objects.filter(
@@ -694,13 +911,19 @@ class UserCreateView(LoginRequiredMixin, RoleRequiredMixin, CreateView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
+        self.object.created_by = self.request.user
+        self.object.activated_at = timezone.now()
+        self.object.save(update_fields=['created_by', 'activated_at'])
+
         record_password_history(self.object, form.cleaned_data['password1'])
         AuditLog.objects.create(
-            user=self.object,
+            user=self.request.user,
+            target_user=self.object,
             action=AuditLog.Action.ACCOUNT_CREATED,
+            method=AuditLog.Method.DIRECT,
+            reason=f'Created directly by {self.request.user}',
             username_attempted=self.object.username,
             ip_address=_client_ip(self.request),
-            detail=f'Created by {self.request.user}',
         )
         messages.success(self.request, f'Account "{self.object.username}" created.')
         return response
@@ -719,7 +942,7 @@ class UserUpdateView(LoginRequiredMixin, RoleRequiredMixin, UpdateView):
 
 
 class UserToggleActiveView(LoginRequiredMixin, RoleRequiredMixin, View):
-    """AC-24: activate/deactivate/suspend accounts."""
+    """AC-24: activate/deactivate/suspend accounts. Doc §10: never delete."""
     allowed_roles = ['admin']
 
     def post(self, request, pk):
@@ -732,7 +955,8 @@ class UserToggleActiveView(LoginRequiredMixin, RoleRequiredMixin, View):
             if target.is_active else AuditLog.Action.ACCOUNT_DEACTIVATED
         )
         AuditLog.objects.create(
-            user=target,
+            user=request.user,
+            target_user=target,
             action=action,
             username_attempted=target.username,
             ip_address=_client_ip(request),
@@ -765,7 +989,8 @@ class UserUnlockView(LoginRequiredMixin, RoleRequiredMixin, View):
             pass
 
         AuditLog.objects.create(
-            user=target,
+            user=request.user,
+            target_user=target,
             action=AuditLog.Action.ACCOUNT_UNLOCKED,
             username_attempted=target.username,
             ip_address=_client_ip(request),

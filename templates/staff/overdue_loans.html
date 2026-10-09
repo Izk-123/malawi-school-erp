@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load static %}
+{% block page_title %}Overdue Books{% endblock %}
+
+{% block content %}
+
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text data-reveal-delay="40" data-reveal-stagger="22">Overdue Books</h1>
+        <p class="text-secondary small mb-0">
+            <span class="tabular-nums" data-counter="{{ loans|length }}">{{ loans|length }}</span> overdue
+        </p>
+    </div>
+</div>
+
+<div class="card" data-motion="fade-up" data-motion-delay="120" style="overflow:hidden;">
+    <div class="card-body p-0">
+        {% if loans %}
+        <table class="table table-hover mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Book</th><th>Borrower</th><th>Due</th>
+                    <th>Days</th><th>Fine</th><th class="text-end"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for l in loans %}
+                <tr data-motion="fade-up"
+                    data-motion-delay="{% widthratio forloop.counter0 1 40 %}">
+                    <td data-label="Book" class="fw-medium">{{ l.book.title }}</td>
+                    <td data-label="Borrower">
+                        {% if l.student %}{{ l.student.full_name }}
+                        {% elif l.staff %}{{ l.staff.full_name }}
+                        {% else %}â€”{% endif %}
+                    </td>
+                    <td data-label="Due" class="tabular-nums small">{{ l.due_date }}</td>
+                    <td data-label="Days" class="tabular-nums">
+                        <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis">
+                            {{ l.days_overdue }} d
+                        </span>
+                    </td>
+                    <td data-label="Fine" class="tabular-nums fw-semibold text-danger">
+                        MK {{ l.fine_amount }}
+                    </td>
+                    <td class="actions text-end">
+                        <form method="post" action="{% url 'staff:return_book' l.pk %}" class="d-inline">
+                            {% csrf_token %}
+                            <button class="btn btn-sm btn-primary"
+                                    data-motion-while-tap='{"scale":0.94}' data-ripple>
+                                <i class="bi bi-check2"></i> Mark Returned
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state text-center py-5">
+            <div class="empty-icon mx-auto mb-3">
+                <i class="bi bi-check-circle fs-2 text-success"></i>
+            </div>
+            <h3 class="h6 fw-semibold mb-1">No overdue books</h3>
+            <p class="text-secondary small mb-0">Everything is on track.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% include "partials/dashboard-widgets.html" %}
+{% endblock %}

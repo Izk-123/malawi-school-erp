@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}New exam session{% endblock %}
+{% block page_title %}New exam session{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock %}
+
+{% block content %}
+
+{# ─────────── Header ─────────── #}
+<div class="page-header"
+     data-motion="fade-down" data-motion-duration="460">
+  <div>
+    <h1 class="page-title"
+        data-reveal-text
+        data-reveal-delay="40"
+        data-reveal-stagger="22">New exam session</h1>
+    <p class="text-muted-sm mb-0"
+       data-motion="fade-up" data-motion-delay="200">
+      Schedule an entrance exam.
+    </p>
+  </div>
+  <div class="toolbar">
+    <a href="{% url 'admissions:exam_session_list' %}" class="btn btn-secondary"
+       data-motion="fade-up" data-motion-delay="220"
+       data-motion-while-hover='{"y":-2}'
+       data-motion-while-tap='{"scale":0.97}'
+       data-ripple>
+      <i class="bi bi-arrow-left"></i> Back
+    </a>
+  </div>
+</div>
+
+<form method="post" novalidate data-live-form
+      data-motion-orchestrate='{"when":"beforeChildren","staggerChildren":0.08,"delayChildren":0.05}'>
+
+  {% csrf_token %}
+
+  {% if form.non_field_errors %}
+  <div class="alert alert-danger" role="alert"
+       data-motion-variant="notice"
+       data-motion-initial="hidden"
+       data-motion-animate="visible">
+    <i class="bi bi-exclamation-triangle"></i> {{ form.non_field_errors.0 }}
+  </div>
+  {% endif %}
+
+  <div class="card mb-3"
+       data-motion="fade-up"
+       data-motion-layout>
+    <div class="card-body">
+      {% include "admissions/_form_section.html" with icon="bi-calendar-event" title="Session" sub="When, where and who" tone="info" %}
+      <div class="row g-3"
+           data-motion-orchestrate='{"staggerChildren":0.05,"delayChildren":0.05}'>
+        <div class="col-12" data-motion="fade-up">
+          {% include "admissions/_field.html" with field=form.name icon="bi-tag" %}
+        </div>
+        <div class="col-md-4" data-motion="fade-up">
+          {% include "admissions/_field.html" with field=form.exam_date icon="bi-calendar-event" %}
+        </div>
+        <div class="col-md-4" data-motion="fade-up">
+          {% include "admissions/_field.html" with field=form.start_time icon="bi-clock" %}
+        </div>
+        <div class="col-md-4" data-motion="fade-up">
+          {% include "admissions/_field.html" with field=form.end_time icon="bi-clock-history" %}
+        </div>
+        <div class="col-md-6" data-motion="fade-up">
+          {% include "admissions/_field.html" with field=form.venue icon="bi-geo-alt" %}
+        </div>
+        <div class="col-md-3" data-motion="fade-up">
+          {% include "admissions/_field.html" with field=form.capacity %}
+        </div>
+        <div class="col-md-3" data-motion="fade-up">
+          {% include "admissions/_field.html" with field=form.cutoff_score %}
+        </div>
+        <div class="col-12" data-motion="fade-up">
+          {% include "admissions/_field.html" with field=form.notes %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="profile-actions-bar"
+       data-motion="fade-up" data-motion-delay="280">
+    <a href="{% url 'admissions:exam_session_list' %}" class="btn btn-outline"
+       data-motion-while-hover='{"y":-2}'
+       data-motion-while-tap='{"scale":0.97}'
+       data-ripple>
+      Cancel
+    </a>
+    <button type="submit" class="btn btn-primary"
+            data-motion-while-hover='{"y":-2,"scale":1.02}'
+            data-motion-while-tap='{"scale":0.97}'
+            data-ripple>
+      <i class="bi bi-check2"></i> Create session
+    </button>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/admissions-form.js' %}" defer></script>
+{% endblock %}

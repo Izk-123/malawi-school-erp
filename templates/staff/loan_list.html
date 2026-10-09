@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% load static %}
+{% block page_title %}Book Loans{% endblock %}
+
+{% block content %}
+
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-4"
+     data-motion="fade-down" data-motion-duration="460">
+    <div>
+        <h1 class="h4 fw-bold mb-1"
+            data-reveal-text data-reveal-delay="40" data-reveal-stagger="22">Book Loans</h1>
+        <p class="text-secondary small mb-0">Currently issued and returned.</p>
+    </div>
+    <a class="btn btn-primary btn-sm"
+       href="{% url 'staff:issue_book' %}"
+       data-motion="fade-up" data-motion-delay="140"
+       data-motion-while-hover='{"y":-2,"scale":1.02}'
+       data-motion-while-tap='{"scale":0.97}' data-ripple>
+        <i class="bi bi-box-arrow-up me-1"></i> Issue Book
+    </a>
+</div>
+
+<div class="card" data-motion="fade-up" data-motion-delay="120" style="overflow:hidden;">
+    <div class="card-body p-0">
+        {% if loans %}
+        <table class="table table-hover mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Book</th><th>Borrower</th><th>Due</th>
+                    <th>Status</th><th class="text-end"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for l in loans %}
+                <tr data-motion="fade-up"
+                    data-motion-delay="{% widthratio forloop.counter0 1 40 %}">
+                    <td data-label="Book" class="fw-medium">{{ l.book.title }}</td>
+                    <td data-label="Borrower">
+                        {% if l.student %}{{ l.student.full_name }}
+                        {% elif l.staff %}{{ l.staff.full_name }}
+                        {% else %}â€”{% endif %}
+                    </td>
+                    <td data-label="Due" class="tabular-nums small">{{ l.due_date }}</td>
+                    <td data-label="Status">
+                        {% if l.returned_date %}
+                        <span class="badge rounded-pill bg-success-subtle text-success-emphasis">Returned</span>
+                        {% elif l.is_overdue %}
+                        <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis">
+                            Overdue ({{ l.days_overdue }}d &middot; MK {{ l.fine_amount }})
+                        </span>
+                        {% else %}
+                        <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis">On Loan</span>
+                        {% endif %}
+                    </td>
+                    <td class="actions text-end">
+                        {% if not l.returned_date %}
+                        <form method="post" action="{% url 'staff:return_book' l.pk %}" class="d-inline">
+                            {% csrf_token %}
+                            <button class="btn btn-sm btn-primary"
+                                    data-motion-while-tap='{"scale":0.94}' data-ripple>
+                                <i class="bi bi-check2"></i> Return
+                            </button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state text-center py-5">
+            <div class="empty-icon mx-auto mb-3">
+                <i class="bi bi-journal-bookmark fs-2 text-secondary"></i>
+            </div>
+            <h3 class="h6 fw-semibold mb-1">No loans yet</h3>
+            <p class="text-secondary small mb-3">Issue a book to get started.</p>
+            <a class="btn btn-primary btn-sm" href="{% url 'staff:issue_book' %}">Issue Book</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% include "partials/dashboard-widgets.html" %}
+{% endblock %}

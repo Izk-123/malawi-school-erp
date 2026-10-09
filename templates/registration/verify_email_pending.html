@@ -2,31 +2,53 @@
 {% block title %}Check your email{% endblock %}
 
 {% block content %}
-<div class="auth-steps" role="progressbar" aria-valuenow="1" aria-valuemin="1" aria-valuemax="3">
-    <span class="auth-step active">1</span>
-    <span class="auth-step-line"></span>
-    <span class="auth-step">2</span>
-    <span class="auth-step-line"></span>
-    <span class="auth-step">3</span>
+
+<div class="auth-steps"
+     role="progressbar"
+     aria-valuenow="1" aria-valuemin="1" aria-valuemax="3"
+     data-motion-orchestrate='{"staggerChildren":0.06,"delayChildren":0.05}'>
+    <span class="auth-step active" data-motion="pop">1</span>
+    <span class="auth-step-line" data-motion="fade-in" data-motion-delay="80"></span>
+    <span class="auth-step" data-motion="pop" data-motion-delay="140">2</span>
+    <span class="auth-step-line" data-motion="fade-in" data-motion-delay="200"></span>
+    <span class="auth-step" data-motion="pop" data-motion-delay="260">3</span>
 </div>
 
 <div class="auth-state">
-    <div class="auth-state-icon"><i class="bi bi-envelope-check"></i></div>
-    <h1 class="auth-state-title">Check your email</h1>
-    <p class="auth-state-body">
+
+    <div class="auth-state-icon"
+         data-motion-variant="brandMark"
+         data-motion-initial="hidden"
+         data-motion-animate="visible"
+         data-motion-delay="80">
+        <i class="bi bi-envelope-check"></i>
+    </div>
+
+    <h1 class="auth-state-title"
+        data-reveal-text data-reveal-delay="160" data-reveal-stagger="22">
+        Check your email
+    </h1>
+
+    <p class="auth-state-body" data-motion="fade-up" data-motion-delay="240">
         We've sent a verification link to<br>
         <strong>{{ user.email|default:"your email" }}</strong>.<br>
         The link expires in 24 hours.
     </p>
 
-    <form method="post" action="{% url 'accounts:resend_email' %}" class="auth-state-actions">
+    <form method="post"
+          action="{% url 'accounts:resend_email' %}"
+          class="auth-state-actions"
+          data-motion="fade-up" data-motion-delay="320">
         {% csrf_token %}
-        <button type="submit" class="btn btn-primary btn-auth">
+        <button type="submit" class="btn btn-primary btn-auth"
+                data-motion-while-hover='{"y":-2,"scale":1.01}'
+                data-motion-while-tap='{"scale":0.97}'
+                data-ripple>
             Resend verification email
         </button>
     </form>
 
-    <div class="auth-state-help">
+    <div class="auth-state-help" data-motion="fade-in" data-motion-delay="400">
         Wrong email? <a href="{% url 'accounts:profile' %}">Update it</a>
     </div>
 </div>
