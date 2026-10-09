@@ -2,21 +2,31 @@
 # ============================================================================
 # Deploy Malawi School ERP to production
 # Stack: Django + Channels (Daphne) + Celery + PostgreSQL + Redis + Nginx
+#
+# Usage:
+#   ./deploy_malawi_erp.sh                 # normal deploy / update
+#   ./deploy_malawi_erp.sh --reset-db      # DESTRUCTIVE: drop + recreate DB
+#                                          # only use before real data exists
 # ============================================================================
 set -euo pipefail
 
-PROJECT_NAME="malawi-erp"                # systemd prefix, e.g. daphne-malawi-erp
+PROJECT_NAME="malawi-erp"
 PROJECT_DIR="/home/project/malawi_school_erp"
 VENV_DIR="${PROJECT_DIR}/venv"
 REPO_URL="https://github.com/Izk-123/malawi-school-erp.git"
 BRANCH="main"
 
-DOMAIN="school.pritechmw.com"               # <-- CHANGE ME
+DOMAIN="school.pritechmw.com"
 DB_NAME="malawi_erp_db"
 DB_USER="malawi_erp_user"
-DB_PASS="$(openssl rand -base64 24 | tr -d '/+=' | cut -c1-24)"   # auto-generated
+DB_PASS="$(openssl rand -base64 24 | tr -d '/+=' | cut -c1-24)"
 DJANGO_SECRET="$(openssl rand -base64 48 | tr -d '/+=' | cut -c1-50)"
-DAPHNE_PORT=8010                         # pick a free port (J&N uses 8001)
+DAPHNE_PORT=8010
+
+RESET_DB=0
+if [ "${1:-}" = "--reset-db" ]; then
+    RESET_DB=1
+fi
 
 echo "======================================================="
 echo " Deploying Malawi School ERP"
@@ -24,8 +34,21 @@ echo "   Domain    : ${DOMAIN}"
 echo "   Directory : ${PROJECT_DIR}"
 echo "   DB        : ${DB_NAME} / ${DB_USER}"
 echo "   DB pass   : ${DB_PASS}   (save this!)"
+echo "   Reset DB? : ${RESET_DB}"
 echo "======================================================="
 sleep 2
+
+# ----------------------------------------------------------------------------
+# 0. Env-file helper — append a key only if it isn't already defined.
+#    Lets us add new required settings without clobbering existing values.
+# ----------------------------------------------------------------------------
+ensure_env_var() {
+    local key="$1" val="$2"
+    if ! grep -qE "^${key}=" "${PROJECT_DIR}/.env"; then
+        printf '%s=%s\n' "${key}" "${val}" >> "${PROJECT_DIR}/.env"
+        echo "    + added ${key}"
+    fi
+}
 
 # ----------------------------------------------------------------------------
 # 1. Clone or update the repo
@@ -48,20 +71,26 @@ cd "${PROJECT_DIR}"
 if [ ! -d "${VENV_DIR}" ]; then
     python3 -m venv "${VENV_DIR}"
 fi
+# shellcheck disable=SC1091
 source "${VENV_DIR}/bin/activate"
 pip install --upgrade pip wheel
 pip install -r requirements.txt
-pip install gunicorn psycopg2-binary   # gunicorn kept for utility (Daphne serves HTTP)
+pip install gunicorn psycopg2-binary
 
 # ----------------------------------------------------------------------------
-# 3. Production .env  (only created once — never overwritten)
+# 3. .env — create on first deploy, then top up missing keys on every run.
+#    NOTE: ENABLE_SELF_REGISTRATION defaults OFF in production. Flip to
+#    True only after a deliberate decision (see settings.py governance block).
 # ----------------------------------------------------------------------------
 if [ ! -f "${PROJECT_DIR}/.env" ]; then
-    echo ">>> Writing .env (first-time only)"
+    echo ">>> Writing .env (first-time)"
     cat > "${PROJECT_DIR}/.env" <<EOF
 SECRET_KEY=${DJANGO_SECRET}
 DEBUG=False
 ALLOWED_HOSTS=${DOMAIN},204.168.251.91
+
+# --- Absolute public URL (used to build invitation/claim links in SMS) ----
+SITE_URL=https://${DOMAIN}
 
 # --- Database -------------------------------------------------------------
 DB_ENGINE=postgres
@@ -81,6 +110,8 @@ CELERY_ALWAYS_EAGER=False
 # --- Security -------------------------------------------------------------
 SESSION_COOKIE_SECURE=True
 CSRF_COOKIE_SECURE=True
+CSRF_TRUSTED_ORIGINS=https://${DOMAIN}
+CSRF_COOKIE_DOMAIN=${DOMAIN}
 
 # --- Email (swap for your SMTP when ready) --------------------------------
 EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
@@ -103,13 +134,34 @@ PAYCHANGU_SECRET_KEY=
 PAYCHANGU_WEBHOOK_SECRET=
 PAYCHANGU_TIMEOUT=15
 
-# --- App toggles ----------------------------------------------------------
-ENABLE_SELF_REGISTRATION=True
+# --- App toggles / governance --------------------------------------------
+ENABLE_SELF_REGISTRATION=False
+SELF_REGISTRATION_ALLOWED_ROLES=parent
+INVITATION_TOKEN_VALIDITY_DAYS=7
+HIGH_PRIVILEGE_COOLOFF_HOURS=24
+PASSWORD_RESET_TIMEOUT=86400
+
+# --- Attendance -----------------------------------------------------------
+ATTENDANCE_EDIT_WINDOW_HOURS=24
+ATTENDANCE_PAST_LIMIT_DAYS=7
+ATTENDANCE_LOW_THRESHOLD=80
 EOF
     chmod 600 "${PROJECT_DIR}/.env"
 else
-    echo ">>> .env already exists — leaving it alone"
+    echo ">>> .env exists — topping up any missing required keys"
 fi
+
+# Top up keys that the new settings.py requires with no default. This makes
+# the script idempotent across settings-file changes.
+ensure_env_var SITE_URL                       "https://${DOMAIN}"
+ensure_env_var CSRF_TRUSTED_ORIGINS           "https://${DOMAIN}"
+ensure_env_var CSRF_COOKIE_DOMAIN             "${DOMAIN}"
+ensure_env_var ENABLE_SELF_REGISTRATION       "False"
+ensure_env_var SELF_REGISTRATION_ALLOWED_ROLES "parent"
+ensure_env_var INVITATION_TOKEN_VALIDITY_DAYS "7"
+ensure_env_var HIGH_PRIVILEGE_COOLOFF_HOURS   "24"
+ensure_env_var PASSWORD_RESET_TIMEOUT         "86400"
+chmod 600 "${PROJECT_DIR}/.env"
 
 # ----------------------------------------------------------------------------
 # 4. PostgreSQL database + role
@@ -126,6 +178,11 @@ END
 \$\$;
 SQL
 
+if [ "${RESET_DB}" -eq 1 ]; then
+    echo ">>> --reset-db: dropping and recreating ${DB_NAME}"
+    sudo -u postgres psql -c "DROP DATABASE IF EXISTS ${DB_NAME};"
+fi
+
 sudo -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname = '${DB_NAME}'" \
     | grep -q 1 || sudo -u postgres createdb -O "${DB_USER}" "${DB_NAME}"
 
@@ -133,15 +190,52 @@ sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_US
 sudo -u postgres psql -d "${DB_NAME}" -c "GRANT ALL ON SCHEMA public TO ${DB_USER};"
 
 # ----------------------------------------------------------------------------
-# 5. Migrate, seed, static
+# 5. Migrate  (with recovery hint if the migration graph is out of sync)
 # ----------------------------------------------------------------------------
+set +e
 python manage.py migrate --noinput
+MIGRATE_RC=$?
+set -e
+
+if [ "${MIGRATE_RC}" -ne 0 ]; then
+    echo ""
+    echo "======================================================="
+    echo " MIGRATE FAILED."
+    echo "======================================================="
+    echo "If the error is:  relation \"...\" does not exist"
+    echo "  → the DB schema is out of sync with the migration graph."
+    echo "    Usually this means a migration file was rewritten after it"
+    echo "    had already been applied to this database."
+    echo ""
+    echo "Diagnose:"
+    echo "  cd ${PROJECT_DIR} && source venv/bin/activate"
+    echo "  python manage.py showmigrations accounts"
+    echo ""
+    echo "If this DB has NO real data yet (safe):"
+    echo "  sudo -u postgres dropdb ${DB_NAME}"
+    echo "  sudo -u postgres createdb -O ${DB_USER} ${DB_NAME}"
+    echo "  python manage.py migrate --noinput"
+    echo "or re-run this script with:  $0 --reset-db"
+    echo ""
+    echo "If this DB HAS real data (do NOT drop):"
+    echo "  1. Dump first:"
+    echo "     sudo -u postgres pg_dump ${DB_NAME} > /root/${DB_NAME}-\$(date +%F).sql"
+    echo "  2. Reconcile state manually — either:"
+    echo "     python manage.py migrate accounts --fake   # mark the missing app applied"
+    echo "     then hand-write a data migration that backfills accounts_approvalrequest"
+    echo "     OR restore the dump into a fresh DB built from the new migration set."
+    echo ""
+    echo "Aborting before static/systemd steps."
+    exit 1
+fi
+
+# Seed data — all idempotent, all best-effort.
 python manage.py seed_demo_data            || true
 python manage.py seed_maneb_syllabus       || true
 python manage.py assign_role_permissions   || true
 python manage.py collectstatic --noinput
 
-# create superuser non-interactively if none exists
+# Superuser only if none exists
 python manage.py shell <<'PY' || true
 from django.contrib.auth import get_user_model
 U = get_user_model()
@@ -151,7 +245,7 @@ if not U.objects.filter(is_superuser=True).exists():
 PY
 
 # ----------------------------------------------------------------------------
-# 6. Systemd: Daphne (ASGI — serves HTTP + WebSockets)
+# 6. Systemd: Daphne
 # ----------------------------------------------------------------------------
 sudo tee /etc/systemd/system/daphne-${PROJECT_NAME}.service > /dev/null <<EOF
 [Unit]
@@ -231,20 +325,17 @@ server {
 
     client_max_body_size 25M;
 
-    # Static files
     location /static/ {
         alias ${PROJECT_DIR}/staticfiles/;
         expires 30d;
         access_log off;
     }
 
-    # Media (uploads)
     location /media/ {
         alias ${PROJECT_DIR}/media/;
         expires 7d;
     }
 
-    # WebSocket endpoint (Channels)
     location /ws/ {
         proxy_pass http://127.0.0.1:${DAPHNE_PORT};
         proxy_http_version 1.1;
@@ -257,7 +348,6 @@ server {
         proxy_read_timeout 86400;
     }
 
-    # Everything else → Daphne
     location / {
         proxy_pass http://127.0.0.1:${DAPHNE_PORT};
         proxy_set_header Host \$host;
@@ -274,7 +364,7 @@ sudo nginx -t
 sudo systemctl reload nginx
 
 # ----------------------------------------------------------------------------
-# 9. SSL (only if DNS already points at this server)
+# 9. SSL
 # ----------------------------------------------------------------------------
 if getent hosts "${DOMAIN}" > /dev/null; then
     echo ">>> DNS resolves — running certbot"
@@ -296,7 +386,7 @@ for s in daphne-${PROJECT_NAME} celery-worker-${PROJECT_NAME} celery-beat-${PROJ
     systemctl is-active --quiet $s && echo "   ✔ $s" || echo "   ✘ $s  (see: journalctl -u $s -n 50)"
 done
 echo ""
-echo " Login:  https://${DOMAIN}/   (or http://204.168.251.91/)"
+echo " Login:  https://${DOMAIN}/"
 echo " Admin:  https://${DOMAIN}/admin/"
 echo " Superuser: admin / ChangeMe123!  <-- CHANGE IT"
 echo "======================================================="
