@@ -5,8 +5,9 @@
 #
 # Usage:
 #   ./deploy_malawi_erp.sh                 # normal deploy / update
-#   ./deploy_malawi_erp.sh --reset-db      # DESTRUCTIVE: drop + recreate DB
-#                                          # only use before real data exists
+#   ./deploy_malawi_erp.sh --reset-db      # DESTRUCTIVE: stop services,
+#                                          # kill conns, drop + recreate DB.
+#                                          # Only use before real data exists.
 # ============================================================================
 set -euo pipefail
 
@@ -39,7 +40,7 @@ echo "======================================================="
 sleep 2
 
 # ----------------------------------------------------------------------------
-# 0. Env-file helper — append a key only if it isn't already defined.
+# 0. Helper — append a key to .env only if it isn't already defined.
 #    Lets us add new required settings without clobbering existing values.
 # ----------------------------------------------------------------------------
 ensure_env_var() {
@@ -75,12 +76,12 @@ fi
 source "${VENV_DIR}/bin/activate"
 pip install --upgrade pip wheel
 pip install -r requirements.txt
-pip install gunicorn psycopg2-binary
+pip install gunicorn psycopg2-binary   # gunicorn kept for utility; Daphne serves HTTP
 
 # ----------------------------------------------------------------------------
 # 3. .env — create on first deploy, then top up missing keys on every run.
-#    NOTE: ENABLE_SELF_REGISTRATION defaults OFF in production. Flip to
-#    True only after a deliberate decision (see settings.py governance block).
+#    NOTE: ENABLE_SELF_REGISTRATION defaults OFF in production. Flip to True
+#    only after a deliberate decision (see settings.py governance block).
 # ----------------------------------------------------------------------------
 if [ ! -f "${PROJECT_DIR}/.env" ]; then
     echo ">>> Writing .env (first-time)"
@@ -151,20 +152,20 @@ else
     echo ">>> .env exists — topping up any missing required keys"
 fi
 
-# Top up keys that the new settings.py requires with no default. This makes
-# the script idempotent across settings-file changes.
-ensure_env_var SITE_URL                       "https://${DOMAIN}"
-ensure_env_var CSRF_TRUSTED_ORIGINS           "https://${DOMAIN}"
-ensure_env_var CSRF_COOKIE_DOMAIN             "${DOMAIN}"
-ensure_env_var ENABLE_SELF_REGISTRATION       "False"
+# Top up keys the new settings.py requires with no default. Makes the script
+# idempotent across settings-file changes — never clobbers existing values.
+ensure_env_var SITE_URL                        "https://${DOMAIN}"
+ensure_env_var CSRF_TRUSTED_ORIGINS            "https://${DOMAIN}"
+ensure_env_var CSRF_COOKIE_DOMAIN              "${DOMAIN}"
+ensure_env_var ENABLE_SELF_REGISTRATION        "False"
 ensure_env_var SELF_REGISTRATION_ALLOWED_ROLES "parent"
-ensure_env_var INVITATION_TOKEN_VALIDITY_DAYS "7"
-ensure_env_var HIGH_PRIVILEGE_COOLOFF_HOURS   "24"
-ensure_env_var PASSWORD_RESET_TIMEOUT         "86400"
+ensure_env_var INVITATION_TOKEN_VALIDITY_DAYS  "7"
+ensure_env_var HIGH_PRIVILEGE_COOLOFF_HOURS    "24"
+ensure_env_var PASSWORD_RESET_TIMEOUT          "86400"
 chmod 600 "${PROJECT_DIR}/.env"
 
 # ----------------------------------------------------------------------------
-# 4. PostgreSQL database + role
+# 4. PostgreSQL role + database
 # ----------------------------------------------------------------------------
 sudo -u postgres psql <<SQL
 DO \$\$
@@ -179,7 +180,18 @@ END
 SQL
 
 if [ "${RESET_DB}" -eq 1 ]; then
-    echo ">>> --reset-db: dropping and recreating ${DB_NAME}"
+    echo ">>> --reset-db: stopping services and dropping ${DB_NAME}"
+
+    # Stop anything holding a connection to the DB before dropdb.
+    sudo systemctl stop daphne-${PROJECT_NAME} \
+                      celery-worker-${PROJECT_NAME} \
+                      celery-beat-${PROJECT_NAME} 2>/dev/null || true
+
+    # Force-terminate any lingering backends on the target DB.
+    sudo -u postgres psql -c \
+      "SELECT pg_terminate_backend(pid) FROM pg_stat_activity
+        WHERE datname = '${DB_NAME}' AND pid <> pg_backend_pid();" > /dev/null
+
     sudo -u postgres psql -c "DROP DATABASE IF EXISTS ${DB_NAME};"
 fi
 
@@ -190,7 +202,7 @@ sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_US
 sudo -u postgres psql -d "${DB_NAME}" -c "GRANT ALL ON SCHEMA public TO ${DB_USER};"
 
 # ----------------------------------------------------------------------------
-# 5. Migrate  (with recovery hint if the migration graph is out of sync)
+# 5. Migrate  (with recovery briefing if the migration graph is out of sync)
 # ----------------------------------------------------------------------------
 set +e
 python manage.py migrate --noinput
@@ -204,7 +216,7 @@ if [ "${MIGRATE_RC}" -ne 0 ]; then
     echo "======================================================="
     echo "If the error is:  relation \"...\" does not exist"
     echo "  → the DB schema is out of sync with the migration graph."
-    echo "    Usually this means a migration file was rewritten after it"
+    echo "    Usually means a migration file was rewritten after it"
     echo "    had already been applied to this database."
     echo ""
     echo "Diagnose:"
@@ -212,17 +224,14 @@ if [ "${MIGRATE_RC}" -ne 0 ]; then
     echo "  python manage.py showmigrations accounts"
     echo ""
     echo "If this DB has NO real data yet (safe):"
-    echo "  sudo -u postgres dropdb ${DB_NAME}"
-    echo "  sudo -u postgres createdb -O ${DB_USER} ${DB_NAME}"
-    echo "  python manage.py migrate --noinput"
-    echo "or re-run this script with:  $0 --reset-db"
+    echo "  re-run this script with:  $0 --reset-db"
     echo ""
     echo "If this DB HAS real data (do NOT drop):"
     echo "  1. Dump first:"
     echo "     sudo -u postgres pg_dump ${DB_NAME} > /root/${DB_NAME}-\$(date +%F).sql"
     echo "  2. Reconcile state manually — either:"
-    echo "     python manage.py migrate accounts --fake   # mark the missing app applied"
-    echo "     then hand-write a data migration that backfills accounts_approvalrequest"
+    echo "     python manage.py migrate accounts --fake   # mark missing app applied"
+    echo "     then hand-write a data migration that backfills the missing table"
     echo "     OR restore the dump into a fresh DB built from the new migration set."
     echo ""
     echo "Aborting before static/systemd steps."
@@ -245,7 +254,7 @@ if not U.objects.filter(is_superuser=True).exists():
 PY
 
 # ----------------------------------------------------------------------------
-# 6. Systemd: Daphne
+# 6. Systemd: Daphne (ASGI — serves HTTP + WebSockets)
 # ----------------------------------------------------------------------------
 sudo tee /etc/systemd/system/daphne-${PROJECT_NAME}.service > /dev/null <<EOF
 [Unit]
@@ -325,17 +334,20 @@ server {
 
     client_max_body_size 25M;
 
+    # Static files
     location /static/ {
         alias ${PROJECT_DIR}/staticfiles/;
         expires 30d;
         access_log off;
     }
 
+    # Media (uploads)
     location /media/ {
         alias ${PROJECT_DIR}/media/;
         expires 7d;
     }
 
+    # WebSocket endpoint (Channels)
     location /ws/ {
         proxy_pass http://127.0.0.1:${DAPHNE_PORT};
         proxy_http_version 1.1;
@@ -348,6 +360,7 @@ server {
         proxy_read_timeout 86400;
     }
 
+    # Everything else → Daphne
     location / {
         proxy_pass http://127.0.0.1:${DAPHNE_PORT};
         proxy_set_header Host \$host;
@@ -364,7 +377,7 @@ sudo nginx -t
 sudo systemctl reload nginx
 
 # ----------------------------------------------------------------------------
-# 9. SSL
+# 9. SSL (only if DNS already points at this server)
 # ----------------------------------------------------------------------------
 if getent hosts "${DOMAIN}" > /dev/null; then
     echo ">>> DNS resolves — running certbot"
@@ -386,7 +399,7 @@ for s in daphne-${PROJECT_NAME} celery-worker-${PROJECT_NAME} celery-beat-${PROJ
     systemctl is-active --quiet $s && echo "   ✔ $s" || echo "   ✘ $s  (see: journalctl -u $s -n 50)"
 done
 echo ""
-echo " Login:  https://${DOMAIN}/"
+echo " Login:  https://${DOMAIN}/   (or http://204.168.251.91/)"
 echo " Admin:  https://${DOMAIN}/admin/"
 echo " Superuser: admin / ChangeMe123!  <-- CHANGE IT"
 echo "======================================================="
